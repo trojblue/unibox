@@ -12,8 +12,11 @@ class UniLoader:
     数据cleaning写在具体使用的class里
     """
 
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self, logger=None):
+        if not logger:
+            self.logger = UniLogger(file_suffix="UniLoader")
+        else:
+            self.logger = logger
 
     def _load_data(self, file_path: Path, load_func, encoding="utf-8"):
         """
