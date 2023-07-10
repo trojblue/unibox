@@ -114,7 +114,7 @@ class ImageResizer:
         """
         with concurrent.futures.ThreadPoolExecutor() as executor:
             list(tqdm(executor.map(lambda task: task(), tasks), total=len(tasks),
-                       desc=f"Resizing images to min_side={self.min_side}"))
+                      desc=f"Resizing images to min_side={self.min_side}"))
 
     def resize_images(self):
         """
@@ -125,7 +125,8 @@ class ImageResizer:
         for file_path in self.src_dir.rglob("*"):
             if file_path.is_file() and file_path.suffix[1:].lower() in SUPPORTED_FORMATS:
                 relative_path = file_path.relative_to(self.src_dir)
-                tasks.append((lambda _image: lambda: self._resize_image(_image, _image.relative_to(self.src_dir)))(file_path))
+                tasks.append(
+                    (lambda _image: lambda: self._resize_image(_image, _image.relative_to(self.src_dir)))(file_path))
 
         self._execute_resize(tasks)
 
