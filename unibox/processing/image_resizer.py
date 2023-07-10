@@ -103,6 +103,8 @@ class ImageResizer:
         scale = self.min_side / min_dim
         return image.resize(scale)
 
+    def _task(self, file_path, relative_path):
+        self._resize_image(file_path, relative_path)
     def _save_image(self, image, dst_path: Path):
         """
         Save an image in the specified format.
@@ -128,7 +130,8 @@ class ImageResizer:
         Execute tasks using ProcessPoolExecutor
         """
         with concurrent.futures.ProcessPoolExecutor(max_workers=self.num_processes) as executor:
-            list(tqdm(executor.map(lambda task: task(), tasks), total=len(tasks),
+            futures = [executor.submit(task, *args) for task, *args in tasks]
+            list(tqdm(concurrent.futures.as_completed(futures), total=len(tasks),
                       desc=f"Resizing images to min_side={self.min_side}"))
 
     def resize_images(self):
@@ -142,12 +145,9 @@ class ImageResizer:
         for file_path in self.src_dir.rglob("*"):
             if file_path.is_file() and file_path.suffix[1:].lower() in SUPPORTED_FORMATS:
                 relative_path = file_path.relative_to(self.src_dir)
-                tasks.append(
-                    (lambda _image: lambda: self._resize_image(_image, _image.relative_to(self.src_dir)))(file_path))
+                tasks.append((self._task, file_path, relative_path))
 
         self._execute_resize(tasks)
-
-        return f"Resized {len(tasks)} images to min_side={self.min_side}"
 
     def _print_debug_string(self):
         """
