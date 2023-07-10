@@ -1,19 +1,24 @@
+import os
 import click
 
 from .processing import image_resizer
+
 
 @click.group()
 def cli():
     pass
 
+
 @click.group()
 def setup():
     pass
+
 
 @setup.command()
 def awscli():
     # install_awscli()
     print('Setting up awscli')
+
 
 @cli.command()
 @click.argument('src_dir')
@@ -30,12 +35,14 @@ def resize(src_dir, min_side, dst_dir, format, quality):
     if not format:
         format = click.prompt('- File format', default="webp")
     if not dst_dir:
-        dst_dir = click.prompt('- Destination', default=f"{src_dir}_{min_side}_{format}")
+        src_dir_name = os.path.basename(os.path.abspath(src_dir))
+        dst_dir = click.prompt('- Destination', default=f"{src_dir_name}_{min_side}_{format}")
     if not quality:
         quality = click.prompt('- Image quality', type=int, default=95)
 
     resizer = image_resizer.ImageResizer(src_dir, dst_dir, min_side, format=format, quality=quality)
     resizer.resize_images()
+
 
 cli.add_command(setup)
 

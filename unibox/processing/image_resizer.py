@@ -29,13 +29,28 @@ class ImageResizer:
         self.format = self._validate_format(format)
         self.quality = quality
 
-    def _validate_format(self, format: str) -> str:
+    def _resize_image(self, file_path: Path, relative_path: Path):
         """
-        Validate the provided image format.
+        Resize a single image and save the result.
         """
-        if format not in SUPPORTED_FORMATS:
-            raise ValueError(f"Unsupported image format '{format}'. Supported formats are {SUPPORTED_FORMATS}.")
-        return format
+        dst_path = self.dst_dir / relative_path.with_suffix(f".{self.format}")
+
+        # Ensure the destination directory exists
+        dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if HAS_PYVIPS:
+            image = self._resize_with_pyvips(file_path)
+        else:
+            image = self._resize_with_pil(file_path)
+
+        # Image might not need resizing but still needs to be saved in new format
+        if image is None:
+            if HAS_PYVIPS:
+                image = pyvips.Image.new_from_file(str(file_path), access="sequential")
+            else:
+                image = Image.open(file_path)
+
+        self._save_image(image, dst_path)
 
     def _resize_with_pil(self, image_path: Path) -> Image:
         """
@@ -50,8 +65,8 @@ class ImageResizer:
         width, height = image.size
         min_dim = min(width, height)
 
-        if min_dim < self.min_side:
-            return image
+        if min_dim <= self.min_side:
+            return None
 
         scale = self.min_side / min_dim
         new_width = round(width * scale)
@@ -69,7 +84,12 @@ class ImageResizer:
             print(f"Error opening image {image_path} with pyvips. Skipping...")
             return None
 
-        scale = self.min_side / min(image.width, image.height)
+        min_dim = min(image.width, image.height)
+
+        if min_dim <= self.min_side:
+            return None
+
+        scale = self.min_side / min_dim
         return image.resize(scale)
 
     def _save_image(self, image, dst_path: Path):
