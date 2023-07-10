@@ -8,7 +8,7 @@ from .logger import UniLogger
 
 
 class UniLoader:
-    """简单的loader uni_class, 用于原样加载json, txt, csv, image等数据;
+    """简单的loader utils, 用于原样加载json, txt, csv, image等数据;
     数据cleaning写在具体使用的class里
     """
 
