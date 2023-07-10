@@ -1,4 +1,5 @@
 import concurrent.futures
+import os
 from pathlib import Path
 from PIL import Image
 from tqdm.auto import tqdm
@@ -18,7 +19,7 @@ SUPPORTED_FORMATS = {"jpg", "webp", "png"}
 
 
 class ImageResizer:
-    def __init__(self, src_dir: str, dst_dir: str, min_side: int = 768, format: str = "webp", quality=95):
+    def __init__(self, src_dir: str, dst_dir: str, min_side: int = 768, format: str = "webp", quality: int = 95):
         """
         Initialize an instance of ImageResizer.
         """
@@ -40,7 +41,12 @@ class ImageResizer:
         """
         Resize an image using PIL.
         """
-        image = Image.open(image_path)
+        try:
+            image = Image.open(image_path)
+        except IOError:
+            print(f"Error opening image {image_path}. Skipping...")
+            return None
+
         width, height = image.size
         min_dim = min(width, height)
 
@@ -56,9 +62,13 @@ class ImageResizer:
     def _resize_with_pyvips(self, image_path: Path):
         """
         Resize an image using pyvips.
-        :return: pyvips.Image
         """
-        image = pyvips.Image.new_from_file(str(image_path), access="sequential")
+        try:
+            image = pyvips.Image.new_from_file(str(image_path), access="sequential")
+        except pyvips.error.Error:
+            print(f"Error opening image {image_path} with pyvips. Skipping...")
+            return None
+
         scale = self.min_side / min(image.width, image.height)
         return image.resize(scale)
 
@@ -73,10 +83,13 @@ class ImageResizer:
         }
 
         method_map = save_methods[self.format]
-        if HAS_PYVIPS:
-            getattr(image, method_map["pyvips"])(str(dst_path), **method_map["params"])
-        else:
-            image.save(dst_path, method_map["pil"], **method_map["params"])
+        try:
+            if HAS_PYVIPS:
+                getattr(image, method_map["pyvips"])(str(dst_path), **method_map["params"])
+            else:
+                image.save(dst_path, method_map["pil"], **method_map["params"])
+        except Exception as e:
+            print(f"Error saving image {dst_path}. Skipping...\n{str(e)}")
 
     def _resize_image(self, file_path: Path, relative_path: Path):
         """
@@ -92,7 +105,8 @@ class ImageResizer:
         else:
             image = self._resize_with_pil(file_path)
 
-        self._save_image(image, dst_path)
+        if image is not None:
+            self._save_image(image, dst_path)
 
     def _execute_resize(self, tasks):
         """
@@ -100,32 +114,22 @@ class ImageResizer:
         """
         with concurrent.futures.ThreadPoolExecutor() as executor:
             list(tqdm(executor.map(lambda task: task(), tasks), total=len(tasks),
-                      desc=f"Resizing images to min_side={self.min_side}"))
+                       desc=f"Resizing images to min_side={self.min_side}"))
 
     def resize_images(self):
         """
         Resize all supported images in the source directory.
         """
-        image_files = list(self.src_dir.rglob("*"))
-        image_files = [image for image in image_files if image.suffix[1:].lower() in SUPPORTED_FORMATS]
+        tasks = []
 
-        tasks = [
-            (lambda _image: lambda: self._resize_image(_image, _image.relative_to(self.src_dir)))(image)
-            for image in image_files
-        ]
+        for file_path in self.src_dir.rglob("*"):
+            if file_path.is_file() and file_path.suffix[1:].lower() in SUPPORTED_FORMATS:
+                relative_path = file_path.relative_to(self.src_dir)
+                tasks.append((lambda _image: lambda: self._resize_image(_image, _image.relative_to(self.src_dir)))(file_path))
 
         self._execute_resize(tasks)
 
-        return f"Resized {len(image_files)} images to min_side={self.min_side}"
-
-
-def resize_images(src_dir: str, min_side: int = 768, format: str = "webp"):
-    """
-    Resize images in the given source directory.
-    """
-    dst_dir = f"{src_dir}_{min_side}{format}"
-    resizer = ImageResizer(src_dir, dst_dir, min_side, format=format)
-    return resizer.resize_images()
+        return f"Resized {len(tasks)} images to min_side={self.min_side}"
 
 
 if __name__ == "__main__":
