@@ -29,6 +29,14 @@ class ImageResizer:
         self.format = self._validate_format(format)
         self.quality = quality
 
+    def _validate_format(self, format: str) -> str:
+        """
+        Validate the provided image format.
+        """
+        if format not in SUPPORTED_FORMATS:
+            raise ValueError(f"Unsupported image format '{format}'. Supported formats are {SUPPORTED_FORMATS}.")
+        return format
+
     def _resize_image(self, file_path: Path, relative_path: Path):
         """
         Resize a single image and save the result.
@@ -110,23 +118,6 @@ class ImageResizer:
                 image.save(dst_path, method_map["pil"], **method_map["params"])
         except Exception as e:
             print(f"Error saving image {dst_path}. Skipping...\n{str(e)}")
-
-    def _resize_image(self, file_path: Path, relative_path: Path):
-        """
-        Resize a single image and save the result.
-        """
-        dst_path = self.dst_dir / relative_path.with_suffix(f".{self.format}")
-
-        # Ensure the destination directory exists
-        dst_path.parent.mkdir(parents=True, exist_ok=True)
-
-        if HAS_PYVIPS:
-            image = self._resize_with_pyvips(file_path)
-        else:
-            image = self._resize_with_pil(file_path)
-
-        if image is not None:
-            self._save_image(image, dst_path)
 
     def _execute_resize(self, tasks):
         """
