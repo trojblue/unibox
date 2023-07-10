@@ -8,7 +8,7 @@ NOTICE = 25  # Value between WARNING (30) and INFO (20)
 
 
 class UniLogger:
-    """包含时间和 caller frame的 logger uni_class
+    """包含时间和 caller frame的 logger utils
 
     VERSION: 2023.06.11 (JUNE)
 
@@ -16,7 +16,7 @@ class UniLogger:
     >>> logger.info("test")
 
 
-    (Use in a uni_class:)
+    (Use in a utils:)
 
     if logger is not None:
         self.logger = logger
@@ -76,7 +76,7 @@ class UniLogger:
         caller_frame = inspect.currentframe().f_back.f_back  # Skip 'log' function frame
         caller_func_name = caller_frame.f_code.co_name
 
-        # Check if called from a uni_class
+        # Check if called from a utils
         if "self" in caller_frame.f_locals:
             caller_class_name = caller_frame.f_locals["self"].__class__.__name__
         else:
