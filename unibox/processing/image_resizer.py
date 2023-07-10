@@ -1,8 +1,10 @@
 import concurrent.futures
+import multiprocessing
 import os
 from pathlib import Path
 from PIL import Image
 from tqdm.auto import tqdm
+
 
 try:
     import pyvips
@@ -28,6 +30,7 @@ class ImageResizer:
         self.min_side = min_side
         self.format = self._validate_format(format)
         self.quality = quality
+        self.num_processes = multiprocessing.cpu_count()
 
     def _validate_format(self, format: str) -> str:
         """
@@ -119,11 +122,12 @@ class ImageResizer:
         except Exception as e:
             print(f"Error saving image {dst_path}. Skipping...\n{str(e)}")
 
+
     def _execute_resize(self, tasks):
         """
-        Execute tasks using ThreadPoolExecutor
+        Execute tasks using ProcessPoolExecutor
         """
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=self.num_processes) as executor:
             list(tqdm(executor.map(lambda task: task(), tasks), total=len(tasks),
                       desc=f"Resizing images to min_side={self.min_side}"))
 
@@ -132,6 +136,8 @@ class ImageResizer:
         Resize all supported images in the source directory.
         """
         tasks = []
+
+        self._print_debug_string()
 
         for file_path in self.src_dir.rglob("*"):
             if file_path.is_file() and file_path.suffix[1:].lower() in SUPPORTED_FORMATS:
@@ -142,6 +148,19 @@ class ImageResizer:
         self._execute_resize(tasks)
 
         return f"Resized {len(tasks)} images to min_side={self.min_side}"
+
+    def _print_debug_string(self):
+        """
+        prints debug message once resize_images is called
+        """
+        debug_string = ""
+        if HAS_PYVIPS:
+            debug_string += "Resizing with libvips: "
+        else:
+            debug_string += "Resizing with PIL: "
+        debug_string += f"num_processes = {self.num_processes}, src_dir={self.src_dir}, dst_dir={self.dst_dir}, " \
+                        f"min_side={self.min_side}, format={self.format}, quality={self.quality}"
+        print(debug_string)
 
 
 if __name__ == "__main__":

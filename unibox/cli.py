@@ -40,8 +40,13 @@ def resize(src_dir, min_side, dst_dir, format, quality):
     if not quality:
         quality = click.prompt('- Image quality', type=int, default=95)
 
+    # Printing the command
+    print("\nRunning Command:\n")
+    print(f"unibox resize {src_dir} --min_side {min_side} --dst_dir {dst_dir} --format {format} --quality {quality}\n")
+
     resizer = image_resizer.ImageResizer(src_dir, dst_dir, min_side, format=format, quality=quality)
     resizer.resize_images()
+
 
 
 cli.add_command(setup)
