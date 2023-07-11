@@ -1,7 +1,9 @@
-import logging
 import os
-from pathlib import Path
 import inspect
+import logging
+import colorlog
+
+from pathlib import Path
 from datetime import datetime
 
 NOTICE = 25  # Value between WARNING (30) and INFO (20)
@@ -28,7 +30,9 @@ class UniLogger:
     """
 
     def __init__(self, output_dir: str = "logs", file_suffix: str = "log", verbose: bool = True, logger_name: str = None):
-
+        """
+        The rest of your __init__ method...
+        """
         self.output_dir = Path(output_dir)
         self.log_file_suffix = file_suffix
         self.verbose = verbose
@@ -39,10 +43,25 @@ class UniLogger:
                 / f"{self.log_file_suffix}_{datetime.now().strftime('%Y%m%d')}.log"
         )
 
-        handlers = [logging.FileHandler(self.log_file, mode="a", encoding="utf-8")]
+        # Create a color handler
+        color_handler = colorlog.StreamHandler()
+        color_handler.setFormatter(
+            colorlog.ColoredFormatter(
+                fmt='%(log_color)s%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S',
+                log_colors={
+                    'DEBUG': 'cyan',
+                    'INFO': 'green',
+                    'WARNING': 'yellow',
+                    'ERROR': 'red',
+                    'CRITICAL': 'red,bg_white',
+                },
+            )
+        )
+
+        handlers = [logging.FileHandler(self.log_file, mode="a", encoding="utf-8"), color_handler]
 
         if verbose:
-            handlers.append(logging.StreamHandler())
             log_level = logging.DEBUG
         else:
             log_level = logging.INFO
@@ -51,23 +70,14 @@ class UniLogger:
         self.logger.setLevel(log_level)
 
         # Check if handlers already exist before adding them; prevents duplicate handlers in Jupyter notebooks
-        if not self.logger.handlers:
-            handlers = [logging.FileHandler(self.log_file, mode="a", encoding="utf-8")]
-
-            if verbose:
-                handlers.append(logging.StreamHandler())
-
+        if not self.logger.hasHandlers():
             formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
             for handler in handlers:
                 handler.setFormatter(formatter)
                 self.logger.addHandler(handler)
 
-        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-        for handler in handlers:
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-
         logging.addLevelName(NOTICE, "NOTICE")
+
 
     def log(self, log_level: str, message: str):
         level = getattr(logging, log_level.upper(), logging.INFO)
@@ -91,13 +101,16 @@ class UniLogger:
         self.logger.log(level, full_message)
 
     def notice(self, message: str):
-        self.log("NOTICE", message)
+        """
+        using INFO log level but with a checkmark √
+        """
+        self.log("NOTICE", "✅ " + message)
 
     def warning(self, message: str):
-        self.log("WARNING", message)
+        self.log("WARNING", "⚠️ " + message)
 
     def error(self, message: str):
-        self.log("ERROR", message)
+        self.log("ERROR", "❌ " + message)
 
     def info(self, message: str):
         self.log("INFO", message)

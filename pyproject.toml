@@ -13,6 +13,7 @@ tomli = "^2.0.1"
 omegaconf = "^2.3.0"
 pillow = "^10.0.0"
 tqdm = "^4.65.0"
+colorlog = "^6.7.0"
 
 [tool.poetry.scripts]
 unibox = 'unibox.cli:cli'

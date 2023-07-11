@@ -1,6 +1,6 @@
-# unibox
+# Unibox
 
-unibox is a tool that aims to provide a unified interface for various common daily operations.
+Unibox is a tool that aims to provide a unified interface for various common daily operations.
 
 ## Features
 
