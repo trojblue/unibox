@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unibox"
-version = "0.1.4"
+version = "0.1.4.1"
 description = "one toolbox to rule'em all"
 authors = ["yada <trojblue@gmail.com>"]
 license = "GPL-3.0"
