@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Callable
-import csv
 import json
 import tomli
 import pandas as pd
 from PIL import Image
+from pathlib import Path
 from omegaconf import OmegaConf
-import pyarrow.parquet as pq
 
 from .uni_logger import UniLogger
 
@@ -92,8 +89,8 @@ if __name__ == "__main__":
     # Usage example
     logger = UniLogger("logs", file_suffix="data_loader")
     data_loader = UniLoader(logger)
-    json_data = data_loader.loads("example.json")
-    txt_data = data_loader.loads(Path("example.txt"))
+    json_data = data_loader.loads("example.json") # string
+    txt_data = data_loader.loads(Path("example.txt")) # path
     csv_data = data_loader.loads(Path("example.csv"))
     image_data = data_loader.loads(Path("example.png"))
     toml_data = data_loader.loads(Path("example.toml"))
