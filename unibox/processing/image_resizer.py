@@ -20,8 +20,10 @@ except pyvips.error.Error:
 SUPPORTED_FORMATS = {"jpg", "webp", "png"}
 
 
+# Updated ImageResizer class
+
 class ImageResizer:
-    def __init__(self, src_dir: str, dst_dir: str, min_side: int = 768, format: str = "webp", quality: int = 95):
+    def __init__(self, src_dir: str, dst_dir: str, min_side: int = 768, format: str = "webp", quality: int = 95, exist_ok: bool = False):
         """
         Initialize an instance of ImageResizer.
         """
@@ -30,6 +32,7 @@ class ImageResizer:
         self.min_side = min_side
         self.format = self._validate_format(format)
         self.quality = quality
+        self.exist_ok = exist_ok
         self.num_processes = multiprocessing.cpu_count()
 
     def _validate_format(self, format: str) -> str:
@@ -105,6 +108,7 @@ class ImageResizer:
 
     def _task(self, file_path, relative_path):
         self._resize_image(file_path, relative_path)
+
     def _save_image(self, image, dst_path: Path):
         """
         Save an image in the specified format.
@@ -123,7 +127,6 @@ class ImageResizer:
                 image.save(dst_path, method_map["pil"], **method_map["params"])
         except Exception as e:
             print(f"Error saving image {dst_path}. Skipping...\n{str(e)}")
-
 
     def _execute_resize(self, tasks):
         """
@@ -145,7 +148,11 @@ class ImageResizer:
         for file_path in self.src_dir.rglob("*"):
             if file_path.is_file() and file_path.suffix[1:].lower() in SUPPORTED_FORMATS:
                 relative_path = file_path.relative_to(self.src_dir)
-                tasks.append((self._task, file_path, relative_path))
+                dst_path = self.dst_dir / relative_path.with_suffix(f".{self.format}")
+
+                # Check if the destination file exists and exist_ok is True
+                if not self.exist_ok or not dst_path.exists():
+                    tasks.append((self._task, file_path, relative_path))
 
         self._execute_resize(tasks)
 
@@ -159,7 +166,8 @@ class ImageResizer:
         else:
             debug_string += "Resizing with PIL: "
         debug_string += f"num_processes = {self.num_processes}, src_dir={self.src_dir}, dst_dir={self.dst_dir}, " \
-                        f"min_side={self.min_side}, format={self.format}, quality={self.quality}"
+                        f"min_side={self.min_side}, format={self.format}, quality={self.quality}," \
+                        f"exist_ok={self.exist_ok}"
         print(debug_string)
 
 
