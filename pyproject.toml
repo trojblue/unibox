@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "unibox"
 version = "0.1.4.3"
-description = "one toolbox to rule'em all"
+description = "Unibox is a tool that aims to provide a unified interface for various common daily operations"
 authors = ["yada <trojblue@gmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
+repository = "https://github.com/trojblue/unibox"
 
 [tool.poetry.dependencies]
 python = "^3.10"
