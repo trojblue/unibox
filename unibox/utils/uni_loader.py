@@ -26,6 +26,7 @@ class UniLoader:
         # Mapping of file extensions to loader functions
         self.loaders = {
             '.json': self._load_json,
+            '.jsonl': self._load_jsonl,  # Added '.jsonl' to the loaders dictionary
             '.txt': self._load_txt,
             '.csv': self._load_csv,
             '.png': self._load_image,
@@ -62,6 +63,11 @@ class UniLoader:
     def _load_json(self, file_path: Path, encoding):
         with open(file_path, "r", encoding=encoding) as f:
             return json.load(f)
+
+    def _load_jsonl(self, file_path: Path, encoding):
+        """Load data from a .jsonl file and return it as a list of dictionaries."""
+        with open(file_path, "r", encoding=encoding) as f:
+            return [json.loads(line) for line in f]
 
     def _load_txt(self, file_path: Path, encoding):
         with open(file_path, "r", encoding=encoding) as f:
