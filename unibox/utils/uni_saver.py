@@ -7,7 +7,7 @@ from typing import Union
 from .uni_logger import UniLogger
 
 
-class uniSaver:
+class UniSaver:
     """A simple utility class for saving various data types to appropriate file formats.
     """
 
