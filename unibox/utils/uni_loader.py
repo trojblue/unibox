@@ -47,17 +47,17 @@ class UniLoader:
         file_type = file_path.suffix
 
         if not file_path.exists():
-            self.logger.log("WARNING", f'{file_type} DOES NOT EXIST at "{file_path}"')
+            self.logger.warning(f'{file_type} DOES NOT EXIST at "{file_path}"')
             return None
 
         if file_type not in self.loaders:
-            self.logger.log("ERROR", f'Unsupported file type "{file_type}"')
+            self.logger.error(f'Unsupported file type "{file_type}"')
             return None
 
         try:
             return self.loaders[file_type](file_path, encoding)
         except Exception as e:
-            self.logger.log("ERROR", f'{file_type} LOAD ERROR at "{file_path}": {e}')
+            self.logger.error(f'{file_type} LOAD ERROR at "{file_path}": {e}')
             return None
 
     def _load_json(self, file_path: Path, encoding):
