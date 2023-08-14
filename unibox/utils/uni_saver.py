@@ -36,7 +36,7 @@ class UniSaver:
         }
 
         if data_type not in extension_mapping:
-            self.logger.log("ERROR", f'Unsupported data type "{data_type}"')
+            self.logger.error(f'Unsupported data type "{data_type}"')
             return
 
         expected_extension = extension_mapping[data_type]
@@ -59,9 +59,9 @@ class UniSaver:
             elif data_type == 'Image':
                 self._save_image(data, file_path)
 
-            self.logger.log("INFO", f'{data_type} SAVED SUCCESSFULLY to "{file_path}"')
+            self.logger.info(f'{data_type} saved successfully to "{file_path}"')
         except Exception as e:
-            self.logger.log("ERROR", f'{data_type} SAVE ERROR at "{file_path}": {e}')
+            self.logger.error(f'{data_type} save ERROR at "{file_path}": {e}')
 
     def _list_extension(self, data: list):
         if all(isinstance(item, dict) for item in data):
@@ -104,7 +104,7 @@ class UniSaver:
 if __name__ == "__main__":
     # Usage example
     logger = UniLogger("logs", file_suffix="data_saver")
-    data_saver = uniSaver(logger)
+    data_saver = UniSaver(logger)
     json_data = {'key': 'value'}
     data_saver.save(json_data, "example")  # Automatically adds .json
     jsonl_data = [{'key1': 'value1'}, {'key2': 'value2'}]
