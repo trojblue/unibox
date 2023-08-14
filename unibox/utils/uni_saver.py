@@ -44,10 +44,11 @@ class UniSaver:
         # Verify or append the correct extension
         if file_path.suffix != expected_extension:
             if file_path.suffix:
-                raise ValueError(
-                    f'Invalid file extension for {data_type}. Expected "{expected_extension}" but got "{file_path.suffix}"')
-            else:
-                file_path = file_path.with_suffix(expected_extension)
+                self.logger.error(f'Invalid file extension for {data_type}. Expected "{expected_extension}" but got "{file_path.suffix}"')
+                self.logger.warning("file extension will be appended to the file name")
+
+            file_path = file_path.with_suffix(expected_extension)
+            self.logger.warning(f"file without extension, saving to actual path: {file_path}")
 
         try:
             if data_type == 'dict':
