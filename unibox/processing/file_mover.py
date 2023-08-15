@@ -17,6 +17,7 @@ class DirMoverCopier:
         exclude_extensions: Optional list of file extensions to exclude.
         action: Action to perform ('move' or 'copy').
     """
+
     def __init__(self, src_dir: str, dst_dir: str, keep_structure: bool, include_extensions: list[str] = None,
                  exclude_extensions: list[str] = None, action: str = 'move'):
         self.src_dir = src_dir
@@ -70,5 +71,3 @@ class DirMoverCopier:
         traverser.traverse(file_handler)
 
         print(f"Processed {processed_files} files")
-
-
