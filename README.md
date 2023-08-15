@@ -11,8 +11,10 @@ Unibox is a tool that aims to provide a unified interface for various common dai
 
 **CLI**:
 - `unibox resize <dir>`: resizes a directory of images using either `pillow` or `libvips`
-- `unibox copy <dir>`: an awscli-like tool for copying files with certain suffix to a new dir, keeping the same directory structure
-- `unibox move <dir>`: like `copy`, but moves insteads
+  - customizable size / quality / encoding (png / webp / jpeg)
+- `unibox copy <dir>`: an awscli-like tool for copying files with certain suffix to a new dir, keeping the same directory structure. 
+  - bypasses windows explorer so it's much faster.
+- `unibox move <dir>`: like `copy`, but moves instead
 
 **utils**:
 - `UniLogger`: uniformed logger class

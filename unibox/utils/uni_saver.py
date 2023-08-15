@@ -44,23 +44,34 @@ class UniSaver:
         # Verify or append the correct extension
         if file_path.suffix != expected_extension:
             if file_path.suffix:
-                self.logger.error(f'Invalid file extension for {data_type}. Expected "{expected_extension}" but got "{file_path.suffix}"')
+                self.logger.error(
+                    f'Invalid file extension for {data_type}. Expected "{expected_extension}" but got "{file_path.suffix}"')
                 self.logger.warning("file extension will be appended to the file name")
 
             file_path = file_path.with_suffix(expected_extension)
             self.logger.warning(f"file without extension, saving to actual path: {file_path}")
 
-        try:
-            if data_type == 'dict':
-                self._save_json(data, file_path)
-            elif data_type == 'list':
-                self._save_list(data, file_path, expected_extension)
-            elif data_type == 'DataFrame':
-                self._save_parquet(data, file_path)
-            elif data_type == 'Image':
-                self._save_image(data, file_path)
+        self.handle_save(data, data_type, file_path, expected_extension)
 
-            self.logger.info(f'{data_type} saved successfully to "{file_path}"')
+    def _save_data(self, data, data_type, file_path, expected_extension=None):
+        if data_type == 'dict':
+            self._save_json(data, file_path)
+        elif data_type == 'list':
+            self._save_list(data, file_path, expected_extension)
+        elif data_type == 'DataFrame':
+            self._save_parquet(data, file_path)
+        elif data_type == 'Image':
+            self._save_image(data, file_path)
+        self.logger.info(f'{data_type} saved successfully to "{file_path}"')
+
+    def handle_save(self, data, data_type, file_path, expected_exteison=None):
+        try:
+            self._save_data(data, data_type, file_path, expected_exteison)
+        except PermissionError:
+            alternative_file_path = file_path.replace('.parquet', '_alternative.parquet')
+            self.logger.warning(
+                f'Permission denied for "{file_path}". Trying to save to "{alternative_file_path}" instead.')
+            self._save_data(data, data_type, alternative_file_path, expected_exteison)
         except Exception as e:
             self.logger.error(f'{data_type} save ERROR at "{file_path}": {e}')
 
@@ -96,7 +107,7 @@ class UniSaver:
                 f.write(f'{item}\n')
 
     def _save_parquet(self, data: pd.DataFrame, file_path: Path):
-        data.to_parquet(file_path)
+        data.to_parquet(file_path, index=False)
 
     def _save_image(self, data: Image.Image, file_path: Path):
         data.save(file_path)
