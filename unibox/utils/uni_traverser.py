@@ -38,6 +38,7 @@ class UniTraverser:
                 if (self.include_extensions is None or extension in self.include_extensions) and \
                         (self.exclude_extensions is None or extension not in self.exclude_extensions):
                     yield os.path.join(root, file_name)
+
     def traverse(self, file_handler: Callable[[str], None]) -> None:
         """
         Traverses the directory tree and applies the given file handler to each file.

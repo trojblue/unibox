@@ -95,8 +95,8 @@ if __name__ == "__main__":
     # Usage example
     logger = UniLogger("logs", file_suffix="data_loader")
     data_loader = UniLoader(logger)
-    json_data = data_loader.loads("example.json") # string
-    txt_data = data_loader.loads(Path("example.txt")) # path
+    json_data = data_loader.loads("example.json")  # string
+    txt_data = data_loader.loads(Path("example.txt"))  # path
     csv_data = data_loader.loads(Path("example.csv"))
     image_data = data_loader.loads(Path("example.png"))
     toml_data = data_loader.loads(Path("example.toml"))

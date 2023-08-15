@@ -5,7 +5,6 @@ from pathlib import Path
 from PIL import Image
 from tqdm.auto import tqdm
 
-
 try:
     import pyvips
 
@@ -23,7 +22,8 @@ SUPPORTED_FORMATS = {"jpg", "webp", "png"}
 # Updated ImageResizer class
 
 class ImageResizer:
-    def __init__(self, src_dir: str, dst_dir: str, min_side: int = 768, format: str = "webp", quality: int = 95, exist_ok: bool = False):
+    def __init__(self, src_dir: str, dst_dir: str, min_side: int = 768, format: str = "webp", quality: int = 95,
+                 exist_ok: bool = False):
         """
         Initialize an instance of ImageResizer.
         """

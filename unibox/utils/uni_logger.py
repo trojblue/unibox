@@ -29,7 +29,8 @@ class UniLogger:
         self.logger = logging.getLogger(__name__)
     """
 
-    def __init__(self, output_dir: str = "logs", file_suffix: str = "log", verbose: bool = True, logger_name: str = None):
+    def __init__(self, output_dir: str = "logs", file_suffix: str = "log", verbose: bool = True,
+                 logger_name: str = None):
         """
         The rest of your __init__ method...
         """
@@ -78,7 +79,6 @@ class UniLogger:
 
         logging.addLevelName(NOTICE, "NOTICE")
 
-
     def log(self, log_level: str, message: str):
         level = getattr(logging, log_level.upper(), logging.INFO)
 
@@ -114,4 +114,3 @@ class UniLogger:
 
     def info(self, message: str):
         self.log("INFO", message)
-
