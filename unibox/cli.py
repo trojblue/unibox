@@ -29,7 +29,6 @@ def awscli():
 @click.option('--quality', '-q', default=None, type=int, help='Quality of the image.')
 @click.option('--exist_ok', '-e', default=None, type=bool, help='Keep existing images')
 def resize(src_dir, min_side, dst_dir, format, quality, exist_ok):
-
     # resize implementation
     print(f'Resizing directory: {src_dir}')
 
@@ -54,24 +53,35 @@ def resize(src_dir, min_side, dst_dir, format, quality, exist_ok):
     resizer.resize_images()
 
 
+def extensions_option(value: str):
+    if value:
+        extensions = value.strip().split()
+        return [f".{ext.strip()}" if not ext.startswith('.') else ext.strip() for ext in extensions]
+    return None
+
 
 @cli.command()
 @click.argument('src_dir')
 @click.argument('dst_dir')
-@click.option('--keep_structure', '-k', default=False, type=bool, help='Keep directory structure.')
-@click.option('--include', '-i', default=None, multiple=True, help='File extensions to include.')
-@click.option('--exclude', '-e', default=None, multiple=True, help='File extensions to exclude.')
+@click.option('--keep_structure', '-k', is_flag=True, help='Keep directory structure.')
+@click.option('--include', '-i', default=None, type=extensions_option,
+              help='File extensions to include (e.g., ".txt .jpg .webp").')
+@click.option('--exclude', '-e', default=None, type=extensions_option,
+              help='File extensions to exclude (e.g., ".txt .jpg .webp").')
 def move(src_dir, dst_dir, keep_structure, include, exclude):
     mover = file_mover.DirMoverCopier(src_dir, dst_dir, keep_structure, include, exclude, 'move')
     mover.process_files()
     print(f'Moved files from {src_dir} to {dst_dir}')
 
+
 @cli.command()
 @click.argument('src_dir')
 @click.argument('dst_dir')
-@click.option('--keep_structure', '-k', default=False, type=bool, help='Keep directory structure.')
-@click.option('--include', '-i', default=None, multiple=True, help='File extensions to include.')
-@click.option('--exclude', '-e', default=None, multiple=True, help='File extensions to exclude.')
+@click.option('--keep_structure', '-k', is_flag=True, help='Keep directory structure.')
+@click.option('--include', '-i', default=None, type=extensions_option,
+              help='File extensions to include (e.g., ".txt .jpg .webp").')
+@click.option('--exclude', '-e', default=None, type=extensions_option,
+              help='File extensions to exclude (e.g., ".txt .jpg .webp").')
 def copy(src_dir, dst_dir, keep_structure, include, exclude):
     copier = file_mover.DirMoverCopier(src_dir, dst_dir, keep_structure, include, exclude, 'copy')
     copier.process_files()
