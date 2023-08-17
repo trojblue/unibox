@@ -64,6 +64,23 @@ class UniTraverser:
         if self.post_process:
             self.post_process()
 
+    def to_relative_unix_path(self, absolute_path: str, convert_slash: bool = True) -> str:
+        """
+        Converts the absolute Windows path to a relative path with respect to the root directory.
+        Optionally, converts the backslashes to forward slashes for cross-platform compatibility.
+
+        Args:
+            absolute_path: The absolute Windows path to convert.
+            convert_slash: Whether to convert backslashes to forward slashes.
+
+        Returns:
+            The relative Linux-like path.
+        """
+        relative_path = os.path.relpath(absolute_path, self.root_dir)
+        if convert_slash:
+            relative_path = relative_path.replace("\\", "/")
+        return relative_path
+
 
 # example code
 def pre_process():
