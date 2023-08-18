@@ -13,7 +13,7 @@ class UniSaver:
 
     def __init__(self, logger=None):
         if not logger:
-            self.logger = UniLogger(file_suffix="uniSaver")
+            self.logger = UniLogger(file_suffix="UniSaver")
         else:
             self.logger = logger
 

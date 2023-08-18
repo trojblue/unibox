@@ -25,7 +25,7 @@ def loads(file_path: Path | str) -> any:
 
 def saves(data: Any, file_path: Path | str) -> None:
     """
-    Saves arbitrary data to the given file path, using the uniSaver.save() method.
+    Saves arbitrary data to the given file path, using the UniSaver.save() method.
     :param data: The data to save.
     :param file_path: Path to the file to save.
 
