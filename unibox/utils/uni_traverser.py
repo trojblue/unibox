@@ -81,6 +81,12 @@ class UniTraverser:
             relative_path = relative_path.replace("\\", "/")
         return relative_path
 
+    def get_traversed_fils(self, relative_unix=False):
+        if relative_unix:
+            return [self.to_relative_unix_path(file_path) for file_path in self.traversed_files]
+        else:
+            return self.traversed_files
+
 
 # example code
 def pre_process():
