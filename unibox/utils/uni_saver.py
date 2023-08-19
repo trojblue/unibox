@@ -84,8 +84,8 @@ class UniSaver:
             raise TypeError("List content must be either all dictionaries or all strings.")
 
     def _save_json(self, data: dict, file_path: Path):
-        with open(file_path, "w") as f:
-            json.dump(data, f)
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
     def _save_list(self, data: list, file_path: Path, extension: str):
         if extension == '.jsonl':
@@ -96,13 +96,13 @@ class UniSaver:
             raise ValueError("Invalid extension for list data.")
 
     def _save_jsonl(self, data: list, file_path: Path):
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             for item in data:
                 json.dump(item, f)
                 f.write('\n')
 
     def _save_txt(self, data: list, file_path: Path):
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             for item in data:
                 f.write(f'{item}\n')
 

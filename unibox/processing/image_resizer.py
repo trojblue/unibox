@@ -47,7 +47,10 @@ class ImageResizer:
         """
         Resize a single image and save the result.
         """
-        dst_path = self.dst_dir / relative_path.with_suffix(f".{self.format}")
+        # dst_path = self.dst_dir / relative_path.with_suffix(f".{self.format}")
+
+        # new:
+        dst_path = relative_path.with_name(relative_path.stem + "_resized").with_suffix(f".{self.format}")
 
         # Ensure the destination directory exists
         dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -136,6 +139,20 @@ class ImageResizer:
             futures = [executor.submit(task, *args) for task, *args in tasks]
             list(tqdm(concurrent.futures.as_completed(futures), total=len(tasks),
                       desc=f"Resizing images to min_side={self.min_side}"))
+
+
+    def resize_single_image(self, image_path: str):
+        """
+        Resize a single image and save the result next to the original image with "_resized" in the name.
+        """
+        file_path = Path(image_path)
+        relative_path = file_path.name
+        # Add "_resized" before the file extension
+        resized_name = relative_path.stem + "_resized" + relative_path.suffix
+        relative_resized_path = file_path.parent / resized_name
+
+        self._resize_image(file_path, relative_resized_path)
+
 
     def resize_images(self):
         """

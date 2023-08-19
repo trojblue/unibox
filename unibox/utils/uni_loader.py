@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import timeit
+
 import tomli
 import pandas as pd
 from PIL import Image
@@ -41,6 +43,7 @@ class UniLoader:
 
         The type of data returned depends on the file extension.
         """
+        start_time = timeit.default_timer()
         if isinstance(file_path, str):
             file_path = Path(file_path)
 
@@ -55,7 +58,9 @@ class UniLoader:
             return None
 
         try:
-            return self.loaders[file_type](file_path, encoding)
+            result = self.loaders[file_type](file_path, encoding)
+            self.logger.info(f'{file_type} LOADED from "{file_path} in {timeit.default_timer() - start_time:.2f}s"')
+            return result
         except Exception as e:
             self.logger.error(f'{file_type} LOAD ERROR at "{file_path}": {e}')
             return None
