@@ -18,8 +18,8 @@ Unibox is a tool that aims to provide a unified interface for various common dai
 
 **utils**:
 - `UniLogger`: uniformed logger class (`logger = unibox.UniLogger()`, and use `logger.info(...)`)
-- `UniLoader`: uniformed data loader class (`unibox.loads(<any file>)`)
-- `UniSaver`: uniformed data saver class (`unibox.saves(<any file>)`)
+- `UniLoader`: uniformed data loader class (`unibox.loads(<filename>)`)
+- `UniSaver`: uniformed data saver class (`unibox.saves(<data>, <filename>)`)
 - `UniTraverser`: uniformed directory traverser class, with callbacks in multiple stages
 
 ## Install
