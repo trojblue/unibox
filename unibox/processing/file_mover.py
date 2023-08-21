@@ -1,6 +1,7 @@
 import os
 import shutil
 from tqdm.auto import tqdm
+from typing import List
 
 from unibox.utils.uni_traverser import UniTraverser
 
@@ -18,8 +19,8 @@ class DirMoverCopier:
         action: Action to perform ('move' or 'copy').
     """
 
-    def __init__(self, src_dir: str, dst_dir: str, keep_structure: bool, include_extensions: list[str] = None,
-                 exclude_extensions: list[str] = None, action: str = 'move'):
+    def __init__(self, src_dir: str, dst_dir: str, keep_structure: bool, include_extensions: List[str] = None,
+                 exclude_extensions: List[str] = None, action: str = 'move'):
         self.src_dir = src_dir
         self.dst_dir = dst_dir
         self.keep_structure = keep_structure
