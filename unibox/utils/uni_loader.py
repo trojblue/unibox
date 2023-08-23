@@ -19,11 +19,13 @@ class UniLoader:
     Data cleaning should be done in the class that uses this loader.
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, logger=None, debug_print=True):
         if not logger:
             self.logger = UniLogger(file_suffix="UniLoader")
         else:
             self.logger = logger
+
+        self.debug_print = debug_print
 
         # Mapping of file extensions to loader functions
         self.loaders = {
@@ -59,7 +61,8 @@ class UniLoader:
 
         try:
             result = self.loaders[file_type](file_path, encoding)
-            self.logger.info(f'{file_type} LOADED from "{file_path} in {timeit.default_timer() - start_time:.2f}s"')
+            if self.debug_print:
+                self.logger.info(f'{file_type} LOADED from "{file_path} in {timeit.default_timer() - start_time:.2f}s"')
             return result
         except Exception as e:
             self.logger.error(f'{file_type} LOAD ERROR at "{file_path}": {e}')
