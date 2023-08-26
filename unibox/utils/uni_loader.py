@@ -32,6 +32,7 @@ class UniLoader:
             '.json': self._load_json,
             '.jsonl': self._load_jsonl,  # Added '.jsonl' to the loaders dictionary
             '.txt': self._load_txt,
+            '.html': self._load_txt,
             '.csv': self._load_csv,
             '.png': self._load_image,
             '.jpg': self._load_image,

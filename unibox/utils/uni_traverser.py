@@ -87,6 +87,25 @@ class UniTraverser:
             return self.traversed_files
 
 
+def traverses(root_dir: str, include_extensions: List[str] = None,
+              exclude_extensions: List[str] = None, relative_unix=False):
+    """
+
+    Args:
+        root_dir: the root dir to traverse
+        include_extensions: list of extensions that will be included in the traversal (.txt .jpg .webp)
+        exclude_extensions: list of extensions that will be excluded in the traversal (.txt .jpg .webp)
+        relative_unix: whether to give a relative path or not (default False gives absolute path)
+
+    Returns:
+        list of files that were traversed
+    """
+    traverser = UniTraverser(root_dir, include_extensions, exclude_extensions)
+    traverser.traverse()
+    files = traverser.get_traversed_fils(relative_unix=relative_unix)
+    return files
+
+
 # example code
 def pre_process():
     print("Starting traversal...")
