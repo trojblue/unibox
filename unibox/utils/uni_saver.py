@@ -58,6 +58,8 @@ class UniSaver:
             self._save_json(data, file_path)
         elif data_type == 'list':
             self._save_list(data, file_path, expected_extension)
+        elif data_type == 'set':
+            self._save_list(list(data), file_path, expected_extension)
         elif data_type == 'DataFrame':
             self._save_parquet(data, file_path)
         elif data_type == 'Image':

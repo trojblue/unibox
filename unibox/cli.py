@@ -1,6 +1,7 @@
 import os
 import click
 
+import unibox
 from .processing import image_resizer
 from .processing import file_mover
 
