@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Callable, Optional
 
 from .utils.uni_loader import UniLoader
 from .utils.uni_logger import UniLogger
 from .utils.uni_saver import UniSaver
 from .utils.uni_traverser import UniTraverser
+from .utils.uni_traverser import traverses as _onestep_traverse
 from .utils import constants #  from unibox.constants import IMG_FILES
+
 
 def loads(file_path: Path | str) -> any:
     """
@@ -41,3 +43,19 @@ def saves(data: Any, file_path: Path | str) -> None:
     """
     saver = UniSaver()
     saver.save(data, file_path)
+
+
+def traverses(root_dir: str, include_extensions: List[str] = None,
+              exclude_extensions: List[str] = None, relative_unix=False):
+    """
+
+    Args:
+        root_dir: the root dir to traverse
+        include_extensions: list of extensions that will be included in the traversal (.txt .jpg .webp)
+        exclude_extensions: list of extensions that will be excluded in the traversal (.txt .jpg .webp)
+        relative_unix: whether to give a relative path or not (default False gives absolute path)
+
+    Returns:
+        list of files that were traversed
+    """
+    _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)

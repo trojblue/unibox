@@ -80,7 +80,7 @@ class UniTraverser:
             relative_path = relative_path.replace("\\", "/")
         return relative_path
 
-    def get_traversed_fils(self, relative_unix=False):
+    def get_traversed_files(self, relative_unix=False):
         if relative_unix:
             return [self.to_relative_unix_path(file_path) for file_path in self.traversed_files]
         else:
@@ -102,7 +102,7 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
     """
     traverser = UniTraverser(root_dir, include_extensions, exclude_extensions)
     traverser.traverse()
-    files = traverser.get_traversed_fils(relative_unix=relative_unix)
+    files = traverser.get_traversed_files(relative_unix=relative_unix)
     return files
 
 
