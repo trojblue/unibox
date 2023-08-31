@@ -63,7 +63,7 @@ class UniLoader:
         try:
             result = self.loaders[file_type](file_path, encoding)
             if self.debug_print:
-                self.logger.info(f'{file_type} LOADED from "{file_path} in {timeit.default_timer() - start_time:.2f}s"')
+                self.logger.info(f'{file_type} LOADED from "{file_path}" in {timeit.default_timer() - start_time:.2f}s')
             return result
         except Exception as e:
             self.logger.error(f'{file_type} LOAD ERROR at "{file_path}": {e}')
