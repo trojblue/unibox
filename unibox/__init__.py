@@ -58,4 +58,4 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
     Returns:
         list of files that were traversed
     """
-    _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
+    return _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
