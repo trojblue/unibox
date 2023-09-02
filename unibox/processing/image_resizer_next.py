@@ -13,7 +13,6 @@ from typing import List, Tuple
 
 
 class ImageResizer:
-
     TRUNCATE_MULTIPLIER = 32  # the shorter side will be a multiple of 32 after scaling
     WEBP_QUALITY = 98  # quality of the output image (max:100)
     EXTENSION = ".webp"  # file extension (.webp)
@@ -158,7 +157,7 @@ class ImageResizer:
             with open(dst_file_path, "wb") as f:
                 image.save(f, "webp", quality=self.WEBP_QUALITY)
         except OSError:
-            print(f"Error saving image {dst_file_path}. Skipping...")
+            self.logger.error(f"Error saving image {dst_file_path}. Skipping...")
 
     @staticmethod
     def _execute_resize_tasks(tasks: List[Tuple]):
@@ -171,15 +170,19 @@ class ImageResizer:
 
     def resizer_sketch(self):
 
+        self.logger.info("Getting image paths...")
         image_files = unibox.traverses(self.root_dir, include_extensions=unibox.constants.IMG_FILES, relative_unix=True)
 
         if self.exist_ok:
-            existing_files = unibox.traverses(self.dst_dir, include_extensions=unibox.constants.IMG_FILES, relative_unix=False)
+            self.logger.info("Checking existing files...")
+            existing_files = unibox.traverses(self.dst_dir, include_extensions=unibox.constants.IMG_FILES,
+                                              relative_unix=False)
             expected_files = [self._get_dst_path(og_rel_image_path) for og_rel_image_path in image_files]
             image_files = list(set(expected_files) - set(existing_files))
 
         tasks = [(self._resize_single_image_task, og_rel_image_path) for og_rel_image_path in image_files]
 
+        self.logger.info("Resizing images...")
         self._execute_resize_tasks(tasks)
 
 
