@@ -36,6 +36,8 @@ class UniLoader:
             '.csv': self._load_csv,
             '.png': self._load_image,
             '.jpg': self._load_image,
+            '.webp': self._load_image,
+            '.jpeg': self._load_image,
             '.toml': self._load_toml,
             '.yaml': self._load_yaml,
             '.parquet': self._load_parquet,
@@ -50,7 +52,7 @@ class UniLoader:
         if isinstance(file_path, str):
             file_path = Path(file_path)
 
-        file_type = file_path.suffix
+        file_type = file_path.suffix.lower()
 
         if not file_path.exists():
             self.logger.warning(f'{file_type} DOES NOT EXIST at "{file_path}"')
