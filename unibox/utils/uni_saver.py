@@ -48,7 +48,8 @@ class UniSaver:
                     f'Invalid file extension for {data_type}. Expected "{expected_extension}" but got "{file_path.suffix}"')
                 self.logger.warning("file extension will be appended to the file name")
 
-            file_path = Path(str(file_path )+ expected_extension)   # something.txt -> something.txt.json, so no overwrite
+            file_path = Path(
+                str(file_path) + expected_extension)  # something.txt -> something.txt.json, so no overwrite
             self.logger.warning(f"file without extension, saving to actual path: {file_path}")
 
         self.handle_save(data, data_type, file_path, expected_extension)
