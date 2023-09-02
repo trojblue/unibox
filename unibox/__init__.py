@@ -11,17 +11,17 @@ from .utils.uni_traverser import traverses as _onestep_traverse
 from .utils import constants #  from unibox.constants import IMG_FILES
 
 
-def loads(file_path: Path | str) -> any:
+def loads(file_path: Path | str, debug_print=True) -> any:
     """
     Loads arbitrary data from the given file path, using UniLoader.loads() method.
     :param file_path: Path to the file to load.
-
+    :param debug_print: Whether to print debug messages. (advised to turn off if loading many files)
     example:
     >>> df = unibox.loads("data.csv")
     >>> json_dict_list = unibox.loads("data.jsonl")
     >>> pil_iimage = unibox.loads("image.png")
     """
-    Loader = UniLoader()
+    Loader = UniLoader(debug_print=debug_print)
     return Loader.loads(file_path)
 
 
