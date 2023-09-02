@@ -198,7 +198,7 @@ if __name__ == "__main__":
     src_dir = input("dir path:")
 
     dst_dir = f"{src_dir}_768webp"
-    min_side = 64
+    min_side = 1024
 
     # Create an instance of the ImageResizer class
     resizer = ImageResizer(src_dir, dst_dir, min_side)
