@@ -12,7 +12,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import List, Tuple
 
 
-class ImageResizer:
+class UniResizer:
     """
     Resizes images in a directory to a specified size.
 
@@ -26,7 +26,7 @@ class ImageResizer:
         - by list: resize a list of images given
 
     Usage:
-    >>> resizer = ImageResizer(root_dir, dst_dir, min_dim=min_dim, max_dim=max_dim, target_pixels=target_pixels,
+    >>> resizer = UniResizer(root_dir, dst_dir, min_dim=min_dim, max_dim=max_dim, target_pixels=target_pixels,
     >>>                   keep_hierarchy=False, exist_ok=True)
     >>> resizer.execute_resize_jobs(resizer.get_resize_jobs())
     """
@@ -39,7 +39,7 @@ class ImageResizer:
                  min_dim: int = None, max_dim: int = None, target_pixels: int = None,
                  keep_hierarchy: bool = True, exist_ok: bool = True, logger: UniLogger = None):
         """
-        Initialize an instance of ImageResizer.
+        Initialize an instance of UniResizer.
 
         :param root_dir: root directory containing the images to be resized
         :param dst_dir: destination directory to save the resized images
@@ -116,7 +116,7 @@ class ImageResizer:
     def _create_dst_dir(self, dst_file_path: str) -> None:
         Path(dst_file_path).parent.mkdir(parents=True, exist_ok=True)
 
-    def _resize_image(self, image: Image.Image) -> Image.Image:
+    def resize_single_image(self, image: Image.Image) -> Image.Image:
         """
         输入PIL Image对象，输出resize之后的 PIL Image
 
@@ -161,7 +161,7 @@ class ImageResizer:
         """
         loader = UniLoader(debug_print=False)
         image = loader.loads(os.path.join(self.root_dir, og_rel_image_path))
-        image = self._resize_image(image)
+        image = self.resize_single_image(image)
 
         # Handle save path
         dst_file_path = self._get_dst_path(og_rel_image_path)
@@ -234,8 +234,8 @@ if __name__ == '__main__':
     max_dim = int(1024 * 3)  # higher priority
     target_pixels = int(1024 * 1024 * 1.25)  # highest priority
 
-    resizer = ImageResizer(root_dir, dst_dir, min_dim=min_dim, max_dim=max_dim, target_pixels=target_pixels,
-                           keep_hierarchy=False, exist_ok=True)
+    resizer = UniResizer(root_dir, dst_dir, min_dim=min_dim, max_dim=max_dim, target_pixels=target_pixels,
+                         keep_hierarchy=False, exist_ok=True)
 
     images_to_resize = resizer.get_resize_jobs()
     resizer.execute_resize_jobs(images_to_resize)
