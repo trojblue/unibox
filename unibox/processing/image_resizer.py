@@ -50,10 +50,10 @@ class ImageResizer:
         # dst_path = self.dst_dir / relative_path.with_suffix(f".{self.format}")
 
         # new:
-        dst_path = relative_path.with_name(relative_path.stem + "_resized").with_suffix(f".{self.format}")
+        rel_dst_path = relative_path.with_name(relative_path.stem + "_resized").with_suffix(f".{self.format}")
 
         # Ensure the destination directory exists
-        dst_path.parent.mkdir(parents=True, exist_ok=True)
+        rel_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
         if HAS_PYVIPS:
             image = self._resize_with_pyvips(file_path)
@@ -67,7 +67,7 @@ class ImageResizer:
             else:
                 image = Image.open(file_path)
 
-        self._save_image(image, dst_path)
+        self._save_image(image, rel_dst_path)
 
     def _resize_with_pil(self, image_path: Path) -> Image:
         """
@@ -113,6 +113,11 @@ class ImageResizer:
         self._resize_image(file_path, relative_path)
 
     def _save_image(self, image, dst_path: Path):
+        """
+        Save an image in the specified format.
+        :param image: PIL.Image or pyvips.Image
+        :param dst_path: Path (route/new_name.webp)
+        """
         """
         Save an image in the specified format.
         """
