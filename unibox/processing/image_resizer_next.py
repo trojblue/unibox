@@ -6,25 +6,30 @@ from pathlib import Path
 from tqdm.auto import tqdm
 
 import unibox
-from unibox import UniLoader
+from unibox import UniLoader, UniLogger
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import List, Tuple
 
 
 class ImageResizer:
-    # value to which the shorter side will be rounded down after scaling
-    TRUNCATE_MULTIPLIER = 32
-    WEBP_QUALITY = 98
+
+    TRUNCATE_MULTIPLIER = 32  # the shorter side will be a multiple of 32 after scaling
+    WEBP_QUALITY = 98  # quality of the output image (max:100)
     EXTENSION = ".webp"  # file extension (.webp)
 
     def __init__(self, root_dir: str, dst_dir: str,
                  min_dim: int = None, max_dim: int = None, target_pixels: int = None,
-                 keep_hierarchy: bool = True, ):
+                 keep_hierarchy: bool = True, exist_ok: bool = True, logger: UniLogger = None):
         """
+        Initialize an instance of ImageResizer.
+
+        :param root_dir: root directory containing the images to be resized
+        :param dst_dir: destination directory to save the resized images
         :param min_dim: minimum dimension of the shorter side
         :param max_dim: maximum dimension of the longer side (higher priority than min_dim)
-        :param target_pixels: target number of pixels (truncate short side to a multiple of TRUNCATE_MULTIPLIER; higher priority than max_dim)
+        :param target_pixels: target number of pixels (higher priority than max_dim), will be truncated
+        :param keep_hierarchy: if True, keep the original directory hierarchy; otherwise, flatten the directory
         """
         self.root_dir = root_dir
         self.dst_dir = dst_dir
@@ -32,13 +37,17 @@ class ImageResizer:
         self.min_dim = min_dim
         self.max_dim = max_dim
         self.target_pixels = target_pixels
+
         self.keep_hierarchy = keep_hierarchy
-        pass
+        self.exist_ok = exist_ok
+
+        self.logger = logger if logger is not None else UniLogger()
 
     @staticmethod
     def _get_new_dimensions(width: int, height: int, target_side: int, resize_by_longer_side: bool = False) -> tuple:
         """
-        Calculates new dimensions based on the target for either the shorter or longer side while maintaining aspect ratio.
+        Calculates new dimensions based on the target,
+        for either the shorter or longer side while maintaining aspect ratio.
 
         :param width: original width of the image
         :param height: original height of the image
@@ -70,10 +79,9 @@ class ImageResizer:
         else:
             return new_shorter_side, new_longer_side
 
-    def _get_dst_path(self, og_rel_image_path: str, create_dir: bool = True) -> Path:
+    def _get_dst_path(self, og_rel_image_path: str) -> str:
         """
         :param og_rel_image_path: original relative image path
-        :param create_dir: if True, create the destination directory if it doesn't exist
         """
         assert self.EXTENSION.startswith(".") and self.EXTENSION != ".", "extension must start with a dot"
 
@@ -82,12 +90,14 @@ class ImageResizer:
 
         if self.keep_hierarchy:
             dst_file_path = Path(self.dst_dir) / rel_resized_path
-            if create_dir:
-                dst_file_path.parent.mkdir(parents=True, exist_ok=True)
+
         else:
             dst_file_path = Path(self.dst_dir) / rel_resized_path.name
 
-        return dst_file_path
+        return str(dst_file_path)
+
+    def _create_dst_dir(self, dst_file_path: str) -> None:
+        Path(dst_file_path).parent.mkdir(parents=True, exist_ok=True)
 
     def _resize_image(self, image: Image.Image) -> Image.Image:
         """
@@ -127,6 +137,11 @@ class ImageResizer:
         return image.resize((new_width, new_height), Image.LANCZOS)
 
     def _resize_single_image_task(self, og_rel_image_path: str) -> None:
+        """
+        Resize a single image and save the result.
+
+        :param og_rel_image_path: original image path relative to self.root_dir
+        """
         loader = UniLoader(debug_print=False)
         image = loader.loads(os.path.join(self.root_dir, og_rel_image_path))
         image = self._resize_image(image)
@@ -134,14 +149,19 @@ class ImageResizer:
         # Handle save path
         dst_file_path = self._get_dst_path(og_rel_image_path)
 
+        # Create destination directory
+        if self.keep_hierarchy:
+            self._create_dst_dir(dst_file_path)
+
         # Save
         try:
             with open(dst_file_path, "wb") as f:
-                image.save(f, "webp", quality=95)
+                image.save(f, "webp", quality=self.WEBP_QUALITY)
         except OSError:
             print(f"Error saving image {dst_file_path}. Skipping...")
 
-    def _execute_resize_tasks(self, tasks: List[Tuple]):
+    @staticmethod
+    def _execute_resize_tasks(tasks: List[Tuple]):
         """
         Execute tasks using ProcessPoolExecutor
         """
@@ -153,10 +173,14 @@ class ImageResizer:
 
         image_files = unibox.traverses(self.root_dir, include_extensions=unibox.constants.IMG_FILES, relative_unix=True)
 
+        if self.exist_ok:
+            existing_files = unibox.traverses(self.dst_dir, include_extensions=unibox.constants.IMG_FILES, relative_unix=False)
+            expected_files = [self._get_dst_path(og_rel_image_path) for og_rel_image_path in image_files]
+            image_files = list(set(expected_files) - set(existing_files))
+
         tasks = [(self._resize_single_image_task, og_rel_image_path) for og_rel_image_path in image_files]
 
         self._execute_resize_tasks(tasks)
-
 
 
 if __name__ == '__main__':
@@ -168,5 +192,5 @@ if __name__ == '__main__':
     target_pixels = int(1024 * 1024 * 1.25)
 
     resizer = ImageResizer(root_dir, dst_dir, min_dim=min_dim, max_dim=max_dim, target_pixels=target_pixels,
-                           keep_hierarchy=False)
+                           keep_hierarchy=False, exist_ok=True)
     resizer.resizer_sketch()
