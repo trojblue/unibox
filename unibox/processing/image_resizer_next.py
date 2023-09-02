@@ -110,37 +110,52 @@ def get_dst_path(dst_dir: str, og_rel_image_path: str, extension: str, keep_hier
     return dst_file_path
 
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import List, Tuple
+
+def resize_single_image_task(root_dir: str, og_rel_image_path: str, dst_dir: str,
+                             min_dim: int, max_dim: int, target_pixels: int,
+                             extension: str, keep_hierarchy: bool) -> None:
+    loader = UniLoader(debug_print=False)
+    image = loader.loads(os.path.join(root_dir, og_rel_image_path))
+    image = resize_image(image, min_dim=min_dim, max_dim=max_dim, target_pixels=target_pixels)
+
+    # Handle save path
+    dst_file_path = get_dst_path(dst_dir, og_rel_image_path, extension, keep_hierarchy)
+
+    # Save
+    try:
+        with open(dst_file_path, "wb") as f:
+            image.save(f, "webp", quality=95)
+    except OSError:
+        print(f"Error saving image {dst_file_path}. Skipping...")
+
+def execute_resize_tasks(tasks: List[Tuple]):
+    """
+    Execute tasks using ProcessPoolExecutor
+    """
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(task, *args) for task, *args in tasks]
+        list(tqdm(as_completed(futures), total=len(tasks), desc="Resizing images"))
+
+
 def resizer_sketch(root_dir, dst_dir, keep_hierarchy=True):
     min_dim = 512
     max_dim = int(1024 * 3)
     target_pixels = int(1024 * 1024 * 1.25)
     extension = ".webp"
 
-    loader = UniLoader(debug_print=False)
     image_files = unibox.traverses(root_dir, include_extensions=unibox.constants.IMG_FILES, relative_unix=True)
 
+    tasks = [(resize_single_image_task, root_dir, og_rel_image_path, dst_dir,
+              min_dim, max_dim, target_pixels, extension, keep_hierarchy) for og_rel_image_path in image_files]
 
-    for og_rel_image_path in tqdm(image_files):
-        image = loader.loads(os.path.join(root_dir, og_rel_image_path))
-        image = resize_image(image, min_dim=min_dim, max_dim=max_dim, target_pixels=target_pixels)
-
-        # handle save path
-        dst_file_path = get_dst_path(dst_dir, og_rel_image_path, extension, keep_hierarchy)
-
-        # save
-        try:
-            with open(dst_file_path, "wb") as f:
-                image.save(f, "webp", quality=98)
-        except OSError:
-            print(f"Error saving image {dst_file_path}. Skipping...")
-            continue
-
-    pass
+    execute_resize_tasks(tasks)
 
 
 def driver():
-    root_dir = r"E:\_benchmark\small"
-    dst_dir = r"E:\_benchmark\small_resized"
+    root_dir = r"E:\_benchmark\1k"
+    dst_dir = r"E:\_benchmark\1k_resized"
     resizer_sketch(root_dir, dst_dir)
 
 
