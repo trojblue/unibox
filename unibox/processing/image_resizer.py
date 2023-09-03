@@ -19,13 +19,21 @@ except pyvips.error.Error:
 SUPPORTED_FORMATS = {"jpg", "webp", "png"}
 
 
-# Updated ImageResizer class
+# Updated UniResizer class
+
+"""
+@@@@@@@@@@@@@@@@
+
+DEPRECIATED: use uni_resizer.py instead
+
+@@@@@@@@@@@@@@@@
+"""
 
 class ImageResizer:
     def __init__(self, src_dir: str, dst_dir: str, min_side: int = 768, format: str = "webp", quality: int = 95,
                  exist_ok: bool = False):
         """
-        Initialize an instance of ImageResizer.
+        Initialize an instance of UniResizer.
         """
         self.src_dir = Path(src_dir)
         self.dst_dir = Path(dst_dir)
@@ -198,9 +206,9 @@ if __name__ == "__main__":
     src_dir = input("dir path:")
 
     dst_dir = f"{src_dir}_768webp"
-    min_side = 64
+    min_side = 1024
 
-    # Create an instance of the ImageResizer class
+    # Create an instance of the UniResizer class
     resizer = ImageResizer(src_dir, dst_dir, min_side)
 
     # Get a list of image files from the source directory

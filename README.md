@@ -21,6 +21,13 @@ Unibox is a tool that aims to provide a unified interface for various common dai
 - `UniLoader`: uniformed data loader class (`unibox.loads(<filename>)`)
 - `UniSaver`: uniformed data saver class (`unibox.saves(<data>, <filename>)`)
 - `UniTraverser`: uniformed directory traverser class, with callbacks in multiple stages
+- `UniResizer`: uniformed image resizer class, with callbacks in multiple stages
+
+**callables**:
+- `unibox.traverses(dir, include, exclude, relative_unix)`: traverse a directory using specified exclude / include extensions, and return a list of files
+- `unibox.loads(filepath)`: load arbitrary data from a file into suitable formats, with automatic detection of file type
+  - supported formats: see UniLoader class implementation
+- `unibox.saves(data, filepath)`: save arbitrary data to a file, with automatic detection of file type
 
 ## Install
 

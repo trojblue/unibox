@@ -30,7 +30,7 @@ class UniTraverser:
     def _files_to_traverse(self):
         for root, _, files in os.walk(self.root_dir):
             for file_name in files:
-                extension = os.path.splitext(file_name)[1]
+                extension = os.path.splitext(file_name)[1].lower()
                 if (self.include_extensions is None or extension in self.include_extensions) and \
                         (self.exclude_extensions is None or extension not in self.exclude_extensions):
                     yield os.path.join(root, file_name)
