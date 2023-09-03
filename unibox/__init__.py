@@ -8,6 +8,7 @@ from .utils.uni_logger import UniLogger
 from .utils.uni_saver import UniSaver
 from .utils.uni_traverser import UniTraverser
 from .utils.uni_traverser import traverses as _onestep_traverse
+from .utils.uni_resizer import UniResizer
 from .utils import constants #  from unibox.constants import IMG_FILES
 
 
