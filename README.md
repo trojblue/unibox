@@ -1,13 +1,17 @@
-# Unibox
+# unibox
 
-![Python](https://img.shields.io/badge/python-3.8-blue.svg) 
+![Python](https://img.shields.io/badge/python-3.8-blue.svg)
+![Python](https://img.shields.io/badge/python-3.10-blue.svg) 
 [![PyPI Version](https://img.shields.io/pypi/v/unibox.svg)](https://pypi.python.org/pypi/unibox)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Unibox is a tool that aims to provide a unified interface for various common daily operations.
+unibox provides unified interface for common file operations.
 
 ## Features
+
+The package is designed to be running with python 3.10, but targets 3.8+ for compatibility:
+
 
 **CLI**:
 - `unibox resize <dir>`: resizes a directory of images using either `pillow` or `libvips`
