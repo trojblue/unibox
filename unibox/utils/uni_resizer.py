@@ -117,13 +117,6 @@ class UniResizer:
         Path(dst_file_path).parent.mkdir(parents=True, exist_ok=True)
 
     def resize_single_image(self, image: Image.Image) -> Image.Image:
-        """
-        输入PIL Image对象，输出resize之后的 PIL Image
-
-        :param image: PIL.Image.Image object to be resized
-        :return: PIL.Image.Image object after resizing
-        """
-
         width, height = image.size
         new_width, new_height = width, height
 
@@ -133,10 +126,11 @@ class UniResizer:
 
         # Priority 1: Resize based on target_pixels
         if self.target_pixels is not None:
-            scale_factor = math.sqrt(self.target_pixels / (width * height))
-            target_shorter_side = round(
-                (min(width, height) * scale_factor) // self.TRUNCATE_MULTIPLIER) * self.TRUNCATE_MULTIPLIER
-            new_width, new_height = self._get_new_dimensions(width, height, target_shorter_side)
+            if width * height > self.target_pixels:  # Add this check
+                scale_factor = math.sqrt(self.target_pixels / (width * height))
+                target_shorter_side = round(
+                    (min(width, height) * scale_factor) // self.TRUNCATE_MULTIPLIER) * self.TRUNCATE_MULTIPLIER
+                new_width, new_height = self._get_new_dimensions(width, height, target_shorter_side)
 
         # Priority 2: Resize based on max_dim
         elif self.max_dim is not None and need_resize:
@@ -144,7 +138,8 @@ class UniResizer:
 
         # Priority 3: Resize based on min_dim
         elif self.min_dim is not None and need_resize:
-            new_width, new_height = self._get_new_dimensions(width, height, self.min_dim)
+            if min(width, height) > self.min_dim:  # Add this check
+                new_width, new_height = self._get_new_dimensions(width, height, self.min_dim)
 
         # If resizing is not needed, return the original image
         elif not need_resize:
@@ -222,7 +217,7 @@ class UniResizer:
         """
         tasks = [(self._resize_single_image_task, og_rel_image_path) for og_rel_image_path in image_files]
 
-        self.logger.info("Resizing images...")
+        self.logger.info(f"Resizing {len(tasks)} images...")
         self._execute_resize_tasks(tasks)
 
 
