@@ -30,19 +30,31 @@ class UniLogger:
     """
 
     def __init__(self, output_dir: str = "logs", file_suffix: str = "log", verbose: bool = True,
-                 logger_name: str = None):
+                 logger_name: str = None, write_log: bool = True):
         """
-        The rest of your __init__ method...
-        """
-        self.output_dir = Path(output_dir)
-        self.log_file_suffix = file_suffix
-        self.verbose = verbose
+        Initialize an instance of UniLogger.
 
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.log_file = (
-                self.output_dir
-                / f"{self.log_file_suffix}_{datetime.now().strftime('%Y%m%d')}.log"
-        )
+        :param output_dir: directory to save the log file
+        :param file_suffix: suffix of the log file
+        :param verbose: if True, set the log level to DEBUG; otherwise, set to INFO
+        :param logger_name: name of the logger
+        :param write_log: if True, write the log to a file; otherwise, only print to console
+        """
+
+        self.verbose = verbose
+        self.write_log = write_log
+
+        handlers = []
+
+        if self.write_log:
+            self.output_dir = Path(output_dir)
+            self.log_file_suffix = file_suffix
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            self.log_file = (
+                    self.output_dir
+                    / f"{self.log_file_suffix}_{datetime.now().strftime('%Y%m%d')}.log"
+            )
+            handlers.append(logging.FileHandler(self.log_file, mode="a", encoding="utf-8"))
 
         # Create a color handler
         color_handler = colorlog.StreamHandler()
@@ -59,8 +71,7 @@ class UniLogger:
                 },
             )
         )
-
-        handlers = [logging.FileHandler(self.log_file, mode="a", encoding="utf-8"), color_handler]
+        handlers.append(color_handler)
 
         if verbose:
             log_level = logging.DEBUG

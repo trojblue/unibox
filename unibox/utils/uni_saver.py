@@ -42,7 +42,7 @@ class UniSaver:
         expected_extension = extension_mapping[data_type]
 
         # Verify or append the correct extension
-        if file_path.suffix != expected_extension:
+        if file_path.suffix.lower() != expected_extension:
             if file_path.suffix:
                 self.logger.error(
                     f'Invalid file extension for {data_type}. Expected "{expected_extension}" but got "{file_path.suffix}"')
