@@ -101,7 +101,7 @@ class UniSaver:
     def _save_jsonl(self, data: list, file_path: Path):
         with open(file_path, "w", encoding="utf-8") as f:
             for item in data:
-                json.dump(item, f)
+                json.dump(item, f, ensure_ascii=False)
                 f.write('\n')
 
     def _save_txt(self, data: list, file_path: Path):
