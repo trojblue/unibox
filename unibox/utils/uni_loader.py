@@ -82,7 +82,8 @@ class UniLoader:
 
     def _load_txt(self, file_path: Path, encoding):
         with open(file_path, "r", encoding=encoding) as f:
-            return f.readlines()
+            raw_lines = f.readlines()
+            return [line.strip() for line in raw_lines]
 
     def _load_csv(self, file_path: Path, encoding):
         return pd.read_csv(file_path, delimiter=',')
