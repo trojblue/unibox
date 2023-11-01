@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, List, Callable, Optional
+from typing import Union, List, Dict, Any
 
 from .utils.uni_loader import UniLoader
 from .utils.uni_logger import UniLogger
@@ -9,6 +9,7 @@ from .utils.uni_saver import UniSaver
 from .utils.uni_traverser import UniTraverser
 from .utils.uni_traverser import traverses as _onestep_traverse
 from .utils.uni_resizer import UniResizer
+from .utils.uni_merger import UniMerger
 from .utils import constants #  from unibox.constants import IMG_FILES
 
 
@@ -60,3 +61,19 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
         list of files that were traversed
     """
     return _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
+
+
+def merges(*data: Union[str, Dict, List[Any], Any], debug_print=True) -> Any:
+    """
+    Merges arbitrary data using UniMerger.merges() method.
+    :param data: A variable number of data entries to merge. Each entry can be a dictionary, a list, a dataframe, or a string representing a file path.
+    :param debug_print: Whether to print debug messages. (advised to turn off if merging many data entries)
+    :return: Merged data
+    example:
+    >>> merged_dict = merges(dict1, dict2, dict3)
+    >>> merged_df = merges(df1, df2, df3)
+    >>> merged_data_from_files = merges("data1.csv", "data2.json", "data3.parquet")
+    """
+    loader = UniLoader(debug_print=debug_print)
+    merger = UniMerger(uni_loader=loader, logger=loader.logger)
+    return merger.merges(*data)
