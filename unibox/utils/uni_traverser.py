@@ -16,10 +16,16 @@ class UniTraverser:
         error_handler: Optional function to handle errors during traversal.
     """
 
-    def __init__(self, root_dir: str, include_extensions: List[str] = None,
-                 exclude_extensions: List[str] = None, pre_process: Callable[[], None] = None,
-                 post_process: Callable[[], None] = None, error_handler: Callable[[Exception], None] = None):
-        self.root_dir = root_dir
+    def __init__(self,
+                 root_dir: str,
+                 include_extensions: List[str] = None,
+                 exclude_extensions: List[str] = None,
+                 pre_process: Callable[[], None] = None,
+                 post_process: Callable[[], None] = None,
+                 error_handler: Callable[[Exception], None] = None):
+
+        # Expand user and variable paths
+        self.root_dir = os.path.expanduser(os.path.expandvars(root_dir))
         self.include_extensions = tuple(include_extensions) if include_extensions else None
         self.exclude_extensions = tuple(exclude_extensions) if exclude_extensions else None
         self.pre_process = pre_process
@@ -75,6 +81,9 @@ class UniTraverser:
         Returns:
             The relative Linux-like path.
         """
+        # Expand user and variable paths
+        absolute_path = os.path.expanduser(os.path.expandvars(absolute_path))
+
         relative_path = os.path.relpath(absolute_path, self.root_dir)
         if convert_slash:
             relative_path = relative_path.replace("\\", "/")
