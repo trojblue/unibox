@@ -63,7 +63,7 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
     return _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
 
 
-def merges(*data: Union[str, Dict, List[Any], Any], debug_print=True) -> Any:
+def merges(*data: Union[str, Dict, List[Any], Any]) -> Any:
     """
     Merges arbitrary data using UniMerger.merges() method.
     :param data: A variable number of data entries to merge. Each entry can be a dictionary, a list, a dataframe, or a string representing a file path.
@@ -74,6 +74,5 @@ def merges(*data: Union[str, Dict, List[Any], Any], debug_print=True) -> Any:
     >>> merged_df = merges(df1, df2, df3)
     >>> merged_data_from_files = merges("data1.csv", "data2.json", "data3.parquet")
     """
-    loader = UniLoader(debug_print=debug_print)
-    merger = UniMerger(uni_loader=loader, logger=loader.logger)
+    merger = UniMerger()
     return merger.merges(*data)
