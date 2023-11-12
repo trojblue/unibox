@@ -25,10 +25,14 @@ def is_s3_uri(uri: str) -> bool:
 
 def loads(file_path: str | Path, debug_print=True) -> any:
     """
-    Loads arbitrary data from the given file path or S3 URI, using UniLoader.
-    REQUIRES s3 logged in.
-    :param file_path: Path to the file or S3 URI to load.
-    :param debug_print: Whether to print debug messages.
+    Loads arbitrary data from the given file path, using UniLoader.loads() method.
+    :param file_path: Path to the file to load.
+    :param debug_print: Whether to print debug messages. (advised to turn off if loading many files)
+
+    example:
+    >>> df = unibox.loads("data.csv")
+    >>> json_dict_list = unibox.loads("data.jsonl")
+    >>> pil_iimage = unibox.loads("image.png")
     """
     loader = UniLoader(debug_print=debug_print)
 
@@ -56,8 +60,16 @@ def saves(data: Any, file_path: Path | str) -> None:
     >>> pil_image = Image.new('RGB', (60, 30), color='red')
     >>> unibox.saves(pil_image, "image.png")
     """
-    saver = UniSaver()
-    saver.save(data, file_path)
+    if is_s3_uri(str(file_path)):
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            UniSaver().save(data, tmp_file.name)
+            s3_client = S3Client()
+            s3_client.upload(tmp_file.name, str(file_path))
+            if not s3_client.exists(str(file_path)):
+                raise Exception(f"File {file_path} was not successfully uploaded to S3.")
+            os.remove(tmp_file.name)
+    else:
+        UniSaver().save(data, file_path)
 
 
 def traverses(root_dir: str, include_extensions: List[str] = None,

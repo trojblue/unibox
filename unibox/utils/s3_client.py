@@ -47,6 +47,16 @@ class S3Client:
         bucket, key = parse_s3_url(s3_dir)
         self.s3.upload_file(file_path, bucket, key)
 
+    def exists(self, s3_uri):
+        """Check if a file exists in S3 at the given URI."""
+        bucket, key = parse_s3_url(s3_uri)
+        try:
+            self.s3.head_object(Bucket=bucket, Key=key)
+            return True
+        except self.s3.exceptions.ClientError as e:
+            # The exception is thrown when the object does not exist
+            return False
+
     def download_parallel(self, s3_uri_list, target_dir):
         failed_downloads = []
 
