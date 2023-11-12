@@ -60,17 +60,8 @@ def saves(data: Any, file_path: Path | str) -> None:
     >>> pil_image = Image.new('RGB', (60, 30), color='red')
     >>> unibox.saves(pil_image, "image.png")
     """
-    if is_s3_uri(str(file_path)):
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            UniSaver().save(data, tmp_file.name)
-            s3_client = S3Client()
-            # Pass the full S3 URI, including the filename, directly to the upload method
-            s3_client.upload(tmp_file.name, str(file_path))
-            if not s3_client.exists(str(file_path)):
-                raise Exception(f"File {file_path} was not successfully uploaded to S3.")
-            os.remove(tmp_file.name)
-    else:
-        UniSaver().save(data, file_path)
+    saver = UniSaver()
+    saver.save(data, file_path)
 
 
 def traverses(root_dir: str, include_extensions: List[str] = None,
