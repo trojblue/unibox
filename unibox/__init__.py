@@ -64,6 +64,7 @@ def saves(data: Any, file_path: Path | str) -> None:
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             UniSaver().save(data, tmp_file.name)
             s3_client = S3Client()
+            # Pass the full S3 URI, including the filename, directly to the upload method
             s3_client.upload(tmp_file.name, str(file_path))
             if not s3_client.exists(str(file_path)):
                 raise Exception(f"File {file_path} was not successfully uploaded to S3.")
