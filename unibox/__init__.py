@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import os
+import tempfile
+from urllib.parse import urlparse
+
 from pathlib import Path
 from typing import Union, List, Dict, Any
 
@@ -10,22 +14,31 @@ from .utils.uni_traverser import UniTraverser
 from .utils.uni_traverser import traverses as _onestep_traverse
 from .utils.uni_resizer import UniResizer
 from .utils.uni_merger import UniMerger
-from .utils import constants #  from unibox.constants import IMG_FILES
+from .utils.s3_client import S3Client
+from .utils import constants  # from unibox.constants import IMG_FILES
 
 
-def loads(file_path: Path | str, debug_print=True) -> any:
+def is_s3_uri(uri: str) -> bool:
+    """Check if the URI is an S3 URI."""
+    parsed = urlparse(uri)
+    return parsed.scheme == 's3'
+
+def loads(file_path: str | Path, debug_print=True) -> any:
     """
-    Loads arbitrary data from the given file path, using UniLoader.loads() method.
-    :param file_path: Path to the file to load.
-    :param debug_print: Whether to print debug messages. (advised to turn off if loading many files)
-    example:
-    >>> df = unibox.loads("data.csv")
-    >>> json_dict_list = unibox.loads("data.jsonl")
-    >>> pil_iimage = unibox.loads("image.png")
+    Loads arbitrary data from the given file path or S3 URI, using UniLoader.
+    REQUIRES s3 logged in.
+    :param file_path: Path to the file or S3 URI to load.
+    :param debug_print: Whether to print debug messages.
     """
-    Loader = UniLoader(debug_print=debug_print)
-    return Loader.loads(file_path)
+    loader = UniLoader(debug_print=debug_print)
 
+    if is_s3_uri(str(file_path)):
+        s3_client = S3Client()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            local_path = Path(s3_client.download(str(file_path), tmp_dir))
+            return loader.loads(local_path)
+    else:
+        return loader.loads(file_path)
 
 def saves(data: Any, file_path: Path | str) -> None:
     """
