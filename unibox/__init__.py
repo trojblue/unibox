@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import requests
 from urllib.parse import urlparse
 
 from pathlib import Path
@@ -23,6 +24,14 @@ def is_s3_uri(uri: str) -> bool:
     parsed = urlparse(uri)
     return parsed.scheme == 's3'
 
+
+def is_url(path: str) -> bool:
+    try:
+        result = urlparse(path)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
 def loads(file_path: str | Path, debug_print=True) -> any:
     """
     Loads arbitrary data from the given file path, using UniLoader.loads() method.
@@ -41,6 +50,12 @@ def loads(file_path: str | Path, debug_print=True) -> any:
         with tempfile.TemporaryDirectory() as tmp_dir:
             local_path = Path(s3_client.download(str(file_path), tmp_dir))
             return loader.loads(local_path)
+    elif is_url(str(file_path)):
+        response = requests.get(file_path)
+        response.raise_for_status()  # Ensure the request was successful
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_file.write(response.content)
+            return loader.loads(tmp_file.name)
     else:
         return loader.loads(file_path)
 
