@@ -11,17 +11,6 @@ def cli():
     pass
 
 
-@click.group()
-def setup():
-    pass
-
-
-@setup.command()
-def awscli():
-    # install_awscli()
-    print('Setting up awscli')
-
-
 @cli.command()
 @click.argument('src_dir')
 @click.option('--min_side', '-m', default=None, type=int, help='Minimum side length of the image.')
@@ -71,7 +60,8 @@ def resize(img_root_dir, to_dir, min_side, max_side, target_pixels, keep_hierarc
         img_root_dir = click.prompt('- Image root directory', type=str)
 
     if not target_pixels:
-        target_pixels = click.prompt('- Target number of pixels (-1 to unset)', type=int, default=int(1024*1024*1.25))
+        target_pixels = click.prompt('- Target number of pixels (-1 to unset)', type=int,
+                                     default=int(1024 * 1024 * 1.25))
         if target_pixels == -1:
             target_pixels = None
 
@@ -134,8 +124,6 @@ def copy(src_dir, dst_dir, keep_structure, include, exclude):
     copier.process_files()
     print(f'Copied files from {src_dir} to {dst_dir}')
 
-
-cli.add_command(setup)
 
 if __name__ == '__main__':
     cli()

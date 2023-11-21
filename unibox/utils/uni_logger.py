@@ -34,7 +34,7 @@ class UniLogger:
         """
         Initialize an instance of UniLogger.
 
-        :param output_dir: directory to save the log file
+        :param output_dir: directory to saves the log file
         :param file_suffix: suffix of the log file
         :param verbose: if True, set the log level to DEBUG; otherwise, set to INFO
         :param logger_name: name of the logger

@@ -11,13 +11,15 @@ class UniSaver:
     """A simple utility class for saving various data types to appropriate file formats.
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, logger=None, debug_print=True):
         if not logger:
             self.logger = UniLogger(file_suffix="UniSaver")
         else:
             self.logger = logger
 
-    def save(self, data, file_path: Union[Path, str]):
+        self.debug_print = debug_print
+
+    def saves(self, data, file_path: Union[Path, str]):
         """Save data to the given file path.
 
         The type of file saved depends on the data type.
@@ -33,6 +35,7 @@ class UniSaver:
             'list': self._list_extension(data),
             'DataFrame': '.parquet',
             'Image': '.png',
+            'str': '.txt',  # Added case for strings
         }
 
         if data_type not in extension_mapping:
@@ -65,7 +68,11 @@ class UniSaver:
             self._save_parquet(data, file_path)
         elif data_type == 'Image':
             self._save_image(data, file_path)
-        self.logger.info(f'{data_type} saved successfully to "{file_path}"')
+        elif data_type == 'str':  # New case for saving strings
+            self._save_txt([data], file_path)  # Wrapping data in a list
+
+        if self.debug_print:
+            self.logger.info(f'{data_type} saved successfully to "{file_path}"')
 
     def handle_save(self, data, data_type, file_path, expected_exteison=None):
         try:
@@ -73,10 +80,10 @@ class UniSaver:
         except PermissionError:
             alternative_file_path = file_path.replace('.parquet', '_alternative.parquet')
             self.logger.warning(
-                f'Permission denied for "{file_path}". Trying to save to "{alternative_file_path}" instead.')
+                f'Permission denied for "{file_path}". Trying to saves to "{alternative_file_path}" instead.')
             self._save_data(data, data_type, alternative_file_path, expected_exteison)
         except Exception as e:
-            self.logger.error(f'{data_type} save ERROR at "{file_path}": {e}')
+            self.logger.error(f'{data_type} saves ERROR at "{file_path}": {e}')
 
     def _list_extension(self, data: list):
         if all(isinstance(item, dict) for item in data):
@@ -118,15 +125,15 @@ class UniSaver:
 
 if __name__ == "__main__":
     # Usage example
-    logger = UniLogger("logs", file_suffix="data_saver")
-    data_saver = UniSaver(logger)
+    logger = UniLogger("logs", file_suffix="saver")
+    saver = UniSaver(logger)
     json_data = {'key': 'value'}
-    data_saver.save(json_data, "example")  # Automatically adds .json
+    saver.saves(json_data, "example")  # Automatically adds .json
     jsonl_data = [{'key1': 'value1'}, {'key2': 'value2'}]
-    data_saver.save(jsonl_data, "example.jsonl")
+    saver.saves(jsonl_data, "example.jsonl")
     txt_data = ['line1', 'line2']
-    data_saver.save(txt_data, "example.txt")
+    saver.saves(txt_data, "example.txt")
     image_data = Image.new('RGB', (60, 30), color='red')
-    data_saver.save(image_data, "example.png")
+    saver.saves(image_data, "example.png")
     df_data = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
-    data_saver.save(df_data, "example.parquet")
+    saver.saves(df_data, "example.parquet")

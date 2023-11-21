@@ -42,7 +42,7 @@ class UniResizer:
         Initialize an instance of UniResizer.
 
         :param root_dir: root directory containing the images to be resized
-        :param dst_dir: destination directory to save the resized images
+        :param dst_dir: destination directory to saves the resized images
         :param min_dim: minimum dimension of the shorter side
         :param max_dim: maximum dimension of the longer side (higher priority than min_dim)
         :param target_pixels: target number of pixels (higher priority than max_dim), will be truncated
@@ -150,7 +150,7 @@ class UniResizer:
 
     def _resize_single_image_task(self, og_rel_image_path: str) -> None:
         """
-        Resize a single image and save the result.
+        Resize a single image and saves the result.
 
         :param og_rel_image_path: original image path relative to self.root_dir
         """
@@ -158,7 +158,7 @@ class UniResizer:
         image = loader.loads(os.path.join(self.root_dir, og_rel_image_path))
         image = self.resize_single_image(image)
 
-        # Handle save path
+        # Handle saves path
         dst_file_path = self._get_dst_path(og_rel_image_path)
 
         # Create destination directory
