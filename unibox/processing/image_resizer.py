@@ -53,7 +53,7 @@ class ImageResizer:
 
     def _resize_image(self, file_path: Path, relative_path: Path):
         """
-        Resize a single image and save the result.
+        Resize a single image and saves the result.
         """
         # dst_path = self.dst_dir / relative_path.with_suffix(f".{self.format}")
 
@@ -140,7 +140,7 @@ class ImageResizer:
             if HAS_PYVIPS:
                 getattr(image, method_map["pyvips"])(str(dst_path), **method_map["params"])
             else:
-                image.save(dst_path, method_map["pil"], **method_map["params"])
+                image.saves(dst_path, method_map["pil"], **method_map["params"])
         except Exception as e:
             print(f"Error saving image {dst_path}. Skipping...\n{str(e)}")
 
@@ -156,7 +156,7 @@ class ImageResizer:
 
     def resize_single_image(self, image_path: str):
         """
-        Resize a single image and save the result next to the original image with "_resized" in the name.
+        Resize a single image and saves the result next to the original image with "_resized" in the name.
         """
         file_path = Path(image_path)
         relative_path = file_path.name

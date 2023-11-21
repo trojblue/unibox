@@ -31,7 +31,7 @@ The package is designed to be running with python 3.10, but targets 3.8+ for com
 - `unibox.traverses(dir, include, exclude, relative_unix)`: traverse a directory using specified exclude / include extensions, and return a list of files
 - `unibox.loads(filepath)`: load arbitrary data from a file into suitable formats, with automatic detection of file type
   - supported formats: see UniLoader class implementation
-- `unibox.saves(data, filepath)`: save arbitrary data to a file, with automatic detection of file type
+- `unibox.saves(data, filepath)`: saves arbitrary data to a file, with automatic detection of file type
 
 ## Install
 

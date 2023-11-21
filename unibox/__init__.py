@@ -61,9 +61,9 @@ def loads(file_path: str | Path, debug_print=True) -> any:
 
 def saves(data: Any, file_path: Path | str) -> None:
     """
-    Saves arbitrary data to the given file path, using the UniSaver.save() method.
-    :param data: The data to save.
-    :param file_path: Path to the file to save.
+    Saves arbitrary data to the given file path, using the UniSaver.saves() method.
+    :param data: The data to saves.
+    :param file_path: Path to the file to saves.
 
     example:
     >>> json_dict = {"name": "John", "age": 30}
@@ -76,7 +76,7 @@ def saves(data: Any, file_path: Path | str) -> None:
     >>> unibox.saves(pil_image, "image.png")
     """
     saver = UniSaver()
-    saver.save(data, file_path)
+    saver.saves(data, file_path)
 
 
 def traverses(root_dir: str, include_extensions: List[str] = None,
