@@ -5,13 +5,21 @@ from __future__ import annotations
 import json
 import timeit
 
+import os
+import mimetypes
+import tempfile
+import requests
+
 import tomli
 import pandas as pd
+
 from PIL import Image
 from pathlib import Path
 from omegaconf import OmegaConf
 
 from .uni_logger import UniLogger
+from .s3_client import S3Client
+from .utils import is_url, is_s3_uri
 
 
 class UniLoader:
@@ -43,12 +51,48 @@ class UniLoader:
             '.parquet': self._load_parquet,
         }
 
+    def _load_from_s3(self, s3_uri: str):
+        """Download a file from an S3 URI and load its content."""
+        s3_client = S3Client()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            local_path = Path(s3_client.download(s3_uri, tmp_dir))
+            return self.loads(local_path)
+
+    def _load_from_url(self, url: str):
+        """Download a file from a URL and load its content."""
+        response = requests.get(url)
+        response.raise_for_status()  # Ensure the request was successful
+
+        _, url_suffix = os.path.splitext(url)
+        if url_suffix == '':
+            content_type = response.headers.get('content-type')
+            mime_suffix = mimetypes.guess_extension(content_type)
+            suffix = mime_suffix if mime_suffix else ''
+        else:
+            suffix = url_suffix
+
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_file:
+            tmp_file.write(response.content)
+            tmp_file.flush()
+            tmp_file_path = tmp_file.name
+            tmp_file.close()
+            return self.loads(tmp_file_path)
+
     def loads(self, file_path: Path | str, encoding="utf-8"):
         """Load data from the given file path.
 
         The type of data returned depends on the file extension.
         """
         start_time = timeit.default_timer()
+
+        # check if is s3 uri or url (downloads the file)
+        if isinstance(file_path, str):
+            if is_url(file_path):
+                return self._load_from_url(file_path)
+            elif is_s3_uri(file_path):
+                return self._load_from_s3(file_path)
+
+        # is a local file
         if isinstance(file_path, str):
             file_path = Path(file_path)
 
@@ -63,6 +107,7 @@ class UniLoader:
             return None
 
         try:
+            # read the file using loader function
             result = self.loaders[file_type](file_path, encoding)
             if self.debug_print:
                 self.logger.info(f'{file_type} LOADED from "{file_path}" in {timeit.default_timer() - start_time:.2f}s')
