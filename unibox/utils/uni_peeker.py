@@ -31,19 +31,28 @@ class CompactJSONEncoder(json.JSONEncoder):
 class UniPeeker:
     """Utility class for peeking into data with efficient methods."""
 
-    def peeks(self, data: Any, n: int = 3, console_print: bool = True) -> dict:
+    def __init__(self, n: int = 3, console_print: bool = False):
+        self.n = n
+        self.console_print = console_print
+
+    def peeks(self, data: Any, n: int = None, console_print: bool = None) -> dict:
         """Peek into the data and return metadata and a preview of the data, with efficient handling for large data."""
+        peek_n = n if n else self.n
+        _print = console_print if console_print is not None else self.console_print
+
         data_type = type(data).__name__
         meta_dict = {}
         preview = None
 
         if data_type == 'dict':
-            meta_dict, preview = self._peek_dict(data, n)
+            meta_dict, preview = self._peek_dict(data, peek_n)
         elif data_type == 'DataFrame':
-            meta_dict, preview = self._peek_dataframe(data, n)
+            meta_dict, preview = self._peek_dataframe(data, peek_n)
+        elif data_type == 'list':
+            meta_dict, preview = self._peek_list(data, peek_n)
         # Handling for other data types...
 
-        if console_print:
+        if _print:
             self._print_info(data_type, meta_dict, preview)
 
         return {'metadata': meta_dict, 'preview': preview}
@@ -71,6 +80,15 @@ class UniPeeker:
         }
         preview = data.head(n)
         return meta_dict, preview
+
+    def _peek_list(self, data: list, n: int) -> tuple:
+        """Peek into a list."""
+        first_n = data[:n]
+        meta_dict = {
+            'len': len(data),
+            'item_type': type(data[0]).__name__ if data else 'None'
+        }
+        return meta_dict, first_n
 
     def _print_info(self, data_type: str, meta_dict: dict, preview: Any) -> None:
         """Print information about the data using custom pretty print for the metadata."""

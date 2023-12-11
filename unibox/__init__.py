@@ -93,7 +93,7 @@ def merges(*data: Union[str, Dict, List[Any], Any]) -> Any:
     return merger.merges(*data)
 
 
-def peeks(data: Any, n=3, console_print=True) -> Dict[str, Any]:
+def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
     """
     Peeks into arbitrary data using UniPeeker.peeks() method.
     :param data: The data to peek into.
@@ -108,5 +108,5 @@ def peeks(data: Any, n=3, console_print=True) -> Dict[str, Any]:
     >>> df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
     >>> peeked_df = peeks(df)
     """
-    peeker = UniPeeker()
-    return peeker.peeks(data, n, console_print)
+    peeker = UniPeeker(n, console_print)
+    return peeker.peeks(data)
