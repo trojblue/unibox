@@ -113,7 +113,7 @@ class S3Client:
                     "storage_class": obj["StorageClass"],
                 }
 
-    def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None):
+    def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None, relative_unix=False):
         bucket, prefix = parse_s3_url(s3_uri)
 
         # Ensure the prefix ends with a '/' to list contents of the directory
@@ -138,13 +138,15 @@ class S3Client:
                     continue
                 if exclude_extensions and ext in exclude_extensions:
                     continue
-                files.append({
-                    "key": file_key,
-                    "size": obj["Size"],
-                    "last_modified": obj["LastModified"],
-                    "etag": obj["ETag"],
-                    "storage_class": obj["StorageClass"]
-                })
+
+                if relative_unix:
+                    # Remove the prefix from the file key to get the relative path
+                    relative_key = file_key[len(prefix):]
+                    files.append(relative_key)
+                else:
+                    # Construct the full S3 URI
+                    full_uri = f"s3://{bucket}/{file_key}"
+                    files.append(full_uri)
 
         return {"directories": directories, "files": files}
 
