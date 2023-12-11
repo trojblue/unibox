@@ -16,6 +16,7 @@ from .utils.uni_traverser import UniTraverser
 from .utils.uni_traverser import traverses as _onestep_traverse
 from .utils.uni_resizer import UniResizer
 from .utils.uni_merger import UniMerger
+from .utils.uni_peeker import UniPeeker
 from .utils import constants  # from unibox.constants import IMG_FILES
 
 
@@ -85,3 +86,22 @@ def merges(*data: Union[str, Dict, List[Any], Any]) -> Any:
     """
     merger = UniMerger()
     return merger.merges(*data)
+
+
+def peeks(data: Any, n=3, console_print=True) -> Dict[str, Any]:
+    """
+    Peeks into arbitrary data using UniPeeker.peeks() method.
+    :param data: The data to peek into.
+    :param n: The number of entries to peek into.
+    :param console_print: Whether to print the peeked information to the console.
+    :return: A dictionary containing the metadata and the preview of the data.
+    example:
+    >>> json_dict = {"name": "John", "age": 30}
+    >>> peeked_dict = peeks(json_dict)
+    >>> json_dict_list = [{"name": "John", "age": 30}, {"name": "Doe", "age": 40}]
+    >>> peeked_dict_list = peeks(json_dict_list)
+    >>> df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    >>> peeked_df = peeks(df)
+    """
+    peeker = UniPeeker()
+    return peeker.peeks(data, n, console_print)
