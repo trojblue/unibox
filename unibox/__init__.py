@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-import os
-import tempfile
-import requests
-import mimetypes
-
-
 from pathlib import Path
 from typing import Union, List, Dict, Any
 
@@ -17,7 +11,9 @@ from .utils.uni_traverser import traverses as _onestep_traverse
 from .utils.uni_resizer import UniResizer
 from .utils.uni_merger import UniMerger
 from .utils.uni_peeker import UniPeeker
+from .utils.utils import is_s3_uri, is_url
 from .utils import constants  # from unibox.constants import IMG_FILES
+from .utils.constants import *
 
 
 
@@ -70,7 +66,15 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
     Returns:
         list of files that were traversed
     """
-    return _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
+    if is_s3_uri(root_dir):
+        from .utils.s3_client import S3Client
+        s3_client = S3Client()
+        result = s3_client.traverse(root_dir, include_extensions, exclude_extensions)
+        all_files = [item['key'] for item in result['files']]
+    else:
+        all_files = _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
+
+    return all_files
 
 
 def merges(*data: Union[str, Dict, List[Any], Any]) -> Any:
