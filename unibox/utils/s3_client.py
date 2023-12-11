@@ -113,18 +113,7 @@ class S3Client:
                     "storage_class": obj["StorageClass"],
                 }
 
-    def traverse(self, s3_uri:str, as_dataframe:bool=True):
-        """
-        Traverse an S3 directory and return a list of subdirectories and files.
-        Args:
-            s3_uri: s3://dataset-artstation-uw2/artists/_angelaramos_/
-            as_dataframe: return a dataframe instead of a dict
-
-        Returns:
-            A. a dict with keys "directories" and "files", each containing a list of strings
-            B. a dataframe with columns "key", "size", "last_modified", "etag", "storage_class", "is_directory"
-
-        """
+    def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None):
         bucket, prefix = parse_s3_url(s3_uri)
 
         # Ensure the prefix ends with a '/' to list contents of the directory
@@ -141,27 +130,23 @@ class S3Client:
             # Add subdirectories to the directories list
             directories.extend([d['Prefix'] for d in page.get('CommonPrefixes', [])])
 
-            # Add files to the files list
-            files.extend([{
-                "key": obj["Key"],
-                "size": obj["Size"],
-                "last_modified": obj["LastModified"],
-                "etag": obj["ETag"],
-                "storage_class": obj["StorageClass"]
-            } for obj in page.get('Contents', [])])
+            # Add files to the files list, applying filters if specified
+            for obj in page.get('Contents', []):
+                file_key = obj["Key"]
+                _, ext = os.path.splitext(file_key)
+                if include_extensions and ext not in include_extensions:
+                    continue
+                if exclude_extensions and ext in exclude_extensions:
+                    continue
+                files.append({
+                    "key": file_key,
+                    "size": obj["Size"],
+                    "last_modified": obj["LastModified"],
+                    "etag": obj["ETag"],
+                    "storage_class": obj["StorageClass"]
+                })
 
-        if not as_dataframe:
-            return {"directories": directories, "files": files}
-        else:
-            data = []
-            for d in directories:
-                data.append({"key": d, "is_directory": True})
-            for f in files:
-                f["is_directory"] = False
-                data.append(f)
-            df = pd.DataFrame(data)
-            return df
-
+        return {"directories": directories, "files": files}
 
 
 if __name__ == '__main__':
