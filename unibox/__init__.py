@@ -66,11 +66,12 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
     Returns:
         list of files that were traversed
     """
+
     if is_s3_uri(root_dir):
         from .utils.s3_client import S3Client
         s3_client = S3Client()
-        result = s3_client.traverse(root_dir, include_extensions, exclude_extensions)
-        all_files = [item['key'] for item in result['files']]
+        result = s3_client.traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
+        all_files = result['files']  # 'files' is already a list of file paths (either relative or full URIs)
     else:
         all_files = _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
 
