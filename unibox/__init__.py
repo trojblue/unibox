@@ -61,7 +61,7 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
     """
 
     Args:
-        root_dir: the root dir to traverse
+        root_dir: the root s3_uri to traverse
         include_extensions: list of extensions that will be included in the traversal (.txt .jpg .webp)
         exclude_extensions: list of extensions that will be excluded in the traversal (.txt .jpg .webp)
         relative_unix: whether to give a relative path or not (default False gives absolute path)

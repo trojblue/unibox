@@ -203,7 +203,7 @@ class ImageResizer:
 
 if __name__ == "__main__":
     # Define the source and destination directories and the minimum side length for resizing
-    src_dir = input("dir path:")
+    src_dir = input("s3_uri path:")
 
     dst_dir = f"{src_dir}_768webp"
     min_side = 1024
