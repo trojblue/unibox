@@ -125,7 +125,7 @@ class S3Client:
 
         all_entries = []
 
-        for page in tqdm(response_iterator, desc="Traversing S3"):
+        for page in tqdm(response_iterator, desc="Traversing S3", unit="page"):
             # Add subdirectories to the list, ensuring they end with '/'
             all_entries.extend([d['Prefix'] for d in page.get('CommonPrefixes', [])])
 
