@@ -116,7 +116,6 @@ class S3Client:
     def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None, relative_unix=False):
         bucket, prefix = parse_s3_url(s3_uri)
 
-        # Ensure the prefix ends with a '/' to list contents of the directory
         if not prefix.endswith('/'):
             prefix += '/'
 
@@ -126,8 +125,11 @@ class S3Client:
         all_entries = []
 
         for page in tqdm(response_iterator, desc="Traversing S3", unit="page"):
-            # Add subdirectories to the list, ensuring they end with '/'
-            all_entries.extend([d['Prefix'] for d in page.get('CommonPrefixes', [])])
+            # Add subdirectories to the list
+            for d in page.get('CommonPrefixes', []):
+                dir_key = d['Prefix']
+                dir_entry = dir_key if relative_unix else f"s3://{bucket}/{dir_key}"
+                all_entries.append(dir_entry)
 
             # Add files to the list, applying filters if specified
             for obj in page.get('Contents', []):
@@ -138,8 +140,8 @@ class S3Client:
                 if exclude_extensions and ext in exclude_extensions:
                     continue
 
-                entry = file_key[len(prefix):] if relative_unix else f"s3://{bucket}/{file_key}"
-                all_entries.append(entry)
+                file_entry = file_key[len(prefix):] if relative_unix else f"s3://{bucket}/{file_key}"
+                all_entries.append(file_entry)
 
         return all_entries
 
