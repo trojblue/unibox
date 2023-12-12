@@ -31,7 +31,7 @@ class CompactJSONEncoder(json.JSONEncoder):
 class UniPeeker:
     """Utility class for peeking into data with efficient methods."""
 
-    def __init__(self, n: int = 3, console_print: bool = False):
+    def __init__(self, n: int = 5, console_print: bool = False):
         self.n = n
         self.console_print = console_print
 
