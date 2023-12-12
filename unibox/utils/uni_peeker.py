@@ -110,7 +110,6 @@ if __name__ == '__main__':
     # df
     some_dict_or_dataframe = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
 
-
     unipeeker = UniPeeker()
     result = unipeeker.peeks(some_dict_or_dataframe)
 

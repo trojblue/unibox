@@ -123,14 +123,13 @@ class S3Client:
         paginator = self.s3.get_paginator("list_objects_v2")
         response_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter='/')
 
-        directories = []
-        files = []
+        all_entries = []
 
-        for page in response_iterator:
-            # Add subdirectories to the directories list
-            directories.extend([d['Prefix'] for d in page.get('CommonPrefixes', [])])
+        for page in tqdm(response_iterator, desc="Traversing S3"):
+            # Add subdirectories to the list, ensuring they end with '/'
+            all_entries.extend([d['Prefix'] for d in page.get('CommonPrefixes', [])])
 
-            # Add files to the files list, applying filters if specified
+            # Add files to the list, applying filters if specified
             for obj in page.get('Contents', []):
                 file_key = obj["Key"]
                 _, ext = os.path.splitext(file_key)
@@ -139,16 +138,10 @@ class S3Client:
                 if exclude_extensions and ext in exclude_extensions:
                     continue
 
-                if relative_unix:
-                    # Remove the prefix from the file key to get the relative path
-                    relative_key = file_key[len(prefix):]
-                    files.append(relative_key)
-                else:
-                    # Construct the full S3 URI
-                    full_uri = f"s3://{bucket}/{file_key}"
-                    files.append(full_uri)
+                entry = file_key[len(prefix):] if relative_unix else f"s3://{bucket}/{file_key}"
+                all_entries.append(entry)
 
-        return {"directories": directories, "files": files}
+        return all_entries
 
 
 if __name__ == '__main__':
