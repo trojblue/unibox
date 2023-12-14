@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unibox"
-version = "0.3.12"
+version = "0.3.13"
 description = "Unibox is a tool that aims to provide a unified interface for various common daily operations"
 authors = ["yada <trojblue@gmail.com>"]
 license = "MIT"
@@ -19,7 +19,7 @@ pandas = "*"
 pyarrow = "*"
 boto3 = "^1.28.76"
 requests = "^2.31.0"
-ipykernel = "^6.22.0" # ipykernel 6.7 has tqdm issues
+orjson = "^3.9.10"
 
 
 [tool.poetry.scripts]

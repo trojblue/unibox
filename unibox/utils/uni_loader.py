@@ -9,6 +9,7 @@ import os
 import mimetypes
 import tempfile
 import requests
+import orjson
 
 import tomli
 import pandas as pd
@@ -116,14 +117,15 @@ class UniLoader:
             self.logger.error(f'{file_type} LOAD ERROR at "{file_path}": {e}')
             return None
 
-    def _load_json(self, file_path: Path, encoding):
-        with open(file_path, "r", encoding=encoding) as f:
-            return json.load(f)
+    def _load_json(self, file_path: Path, encoding='utf-8'):
+        with open(file_path, "rb") as f:  # Reading as binary
+            return orjson.loads(f.read())  # orjson directly parses bytes
 
-    def _load_jsonl(self, file_path: Path, encoding):
+    def _load_jsonl(self, file_path: Path, encoding='utf-8'):
         """Load data from a .jsonl file and return it as a list of dictionaries."""
-        with open(file_path, "r", encoding=encoding) as f:
-            return [json.loads(line) for line in f]
+        with open(file_path, "rb") as f:
+            # Decode each line if necessary after parsing
+            return [orjson.loads(line) for line in f]
 
     def _load_txt(self, file_path: Path, encoding):
         with open(file_path, "r", encoding=encoding) as f:
