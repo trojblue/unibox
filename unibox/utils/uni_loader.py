@@ -88,10 +88,11 @@ class UniLoader:
 
         # check if is s3 uri or url (downloads the file)
         if isinstance(file_path, str):
-            if is_url(file_path):
-                return self._load_from_url(file_path)
-            elif is_s3_uri(file_path):
+            if is_s3_uri(file_path):
                 return self._load_from_s3(file_path)
+
+            elif is_url(file_path):
+                return self._load_from_url(file_path)
 
         # is a local file
         if isinstance(file_path, str):
