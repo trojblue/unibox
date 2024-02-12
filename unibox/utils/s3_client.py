@@ -113,7 +113,16 @@ class S3Client:
                     "storage_class": obj["StorageClass"],
                 }
 
-    def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None, relative_unix=False):
+    def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None, 
+                 relative_unix=False, debug_print=True):
+        """
+        traverse through a s3 directory and returns direct entries (folder or file) under the directory
+
+        :param include_extensions: list of extensions to include (e.g. ['.jpg', '.png']), defaults to everything
+        :param exclude_extensions: list of extensions to exclude (e.g. ['.txt', '.json']), defaults to nothing
+        :param relative_unix: whether to give a relative path (relative to bucket) or not 
+        :param debug_print: whether to print debug statuses (eg. tqdm bar) or not
+        """
         bucket, prefix = parse_s3_url(s3_uri)
 
         if not prefix.endswith('/'):
@@ -124,7 +133,10 @@ class S3Client:
 
         all_entries = []
 
-        for page in tqdm(response_iterator, desc="Traversing S3", unit="page"):
+        if debug_print:
+            response_iterator = tqdm(response_iterator, desc="Traversing S3", unit="page")
+
+        for page in response_iterator:
             # Add subdirectories to the list
             for d in page.get('CommonPrefixes', []):
                 dir_key = d['Prefix']

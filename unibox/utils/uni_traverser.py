@@ -41,12 +41,13 @@ class UniTraverser:
                         (self.exclude_extensions is None or extension not in self.exclude_extensions):
                     yield os.path.join(root, file_name)
 
-    def traverse(self, file_handler: Callable[[str], None] = None) -> None:
+    def traverse(self, file_handler: Callable[[str], None] = None, debug_print: bool = True) -> None:
         """
         Traverses the directory tree and applies the given file handler to each file.
 
         Args:
             file_handler: A function that takes a file path and performs the desired action.
+            debug_print: Whether to print debug messages such as tqdm. (turn off if traversing many files)
         """
         if not file_handler:
             file_handler = lambda x: x  # do nothing; only get the file paths
@@ -54,20 +55,27 @@ class UniTraverser:
         if self.pre_process:
             self.pre_process()
 
-        with tqdm(desc="Traversing files", leave=False, unit="files", total=None) as pbar:
-            for file_path in self._files_to_traverse():
-                try:
-                    file_handler(file_path)
-                except Exception as e:
-                    if self.error_handler:
-                        self.error_handler(e)
-                    else:
-                        raise e
+        # Conditionally initialize tqdm based on debug_print
+        pbar = tqdm(desc="Traversing files", leave=False, unit="files", total=None, disable=not debug_print) if debug_print else None
+
+        for file_path in self._files_to_traverse():
+            try:
+                file_handler(file_path)
+            except Exception as e:
+                if self.error_handler:
+                    self.error_handler(e)
+                else:
+                    raise e
+            if debug_print:
                 pbar.update(1)
-                self.traversed_files.append(file_path)
+            self.traversed_files.append(file_path)
+
+        if pbar is not None:  # Ensure the progress bar is closed if it was used
+            pbar.close()
 
         if self.post_process:
             self.post_process()
+
 
     def to_relative_unix_path(self, absolute_path: str, convert_slash: bool = True) -> str:
         """
@@ -97,7 +105,7 @@ class UniTraverser:
 
 
 def traverses(root_dir: str, include_extensions: List[str] = None,
-              exclude_extensions: List[str] = None, relative_unix=False):
+              exclude_extensions: List[str] = None, relative_unix=False, debug_print=True):
     """
 
     Args:
@@ -110,7 +118,7 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
         list of files that were traversed
     """
     traverser = UniTraverser(root_dir, include_extensions, exclude_extensions)
-    traverser.traverse()
+    traverser.traverse(debug_print=debug_print)
     files = traverser.get_traversed_files(relative_unix=relative_unix)
     return files
 
