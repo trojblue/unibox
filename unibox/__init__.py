@@ -54,7 +54,7 @@ def saves(data: Any, file_path: Path | str) -> None:
 
 
 def traverses(root_dir: str, include_extensions: List[str] = None,
-              exclude_extensions: List[str] = None, relative_unix=False):
+              exclude_extensions: List[str] = None, relative_unix=False, debug_print=True) -> List[str]:
     """
 
     Args:
@@ -72,9 +72,9 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
         s3_client = S3Client()
 
         # either files or folders
-        all_entries = s3_client.traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
+        all_entries = s3_client.traverse(root_dir, include_extensions, exclude_extensions, relative_unix, debug_print)
     else:
-        all_entries = _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix)
+        all_entries = _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix, debug_print)
 
     return all_entries
 
