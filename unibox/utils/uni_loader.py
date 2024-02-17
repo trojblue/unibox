@@ -72,7 +72,7 @@ class UniLoader:
         else:
             suffix = url_suffix
 
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as tmp_file:
             tmp_file.write(response.content)
             tmp_file.flush()
             tmp_file_path = tmp_file.name
@@ -119,8 +119,21 @@ class UniLoader:
             return None
 
     def _load_json(self, file_path: Path, encoding='utf-8'):
-        with open(file_path, "rb") as f:  # Reading as binary
-            return orjson.loads(f.read())  # orjson directly parses bytes
+        try:
+            with open(file_path, "rb") as f:
+                file_content = f.read()
+                # Check if the file content is empty
+                if not file_content:
+                    self.logger.error(f'{file_path} is empty or zero-length.')
+                    return None  # or {} depending on how you want to handle this case
+                return orjson.loads(file_content)
+        except orjson.JSONDecodeError as e:
+            self.logger.error(f'JSON LOAD ERROR at "{file_path}": {e}')
+            return None
+        except Exception as e:
+            self.logger.error(f'Unexpected error loading JSON at "{file_path}": {e}')
+            return None
+
 
     def _load_jsonl(self, file_path: Path, encoding='utf-8'):
         """Load data from a .jsonl file and return it as a list of dictionaries."""
