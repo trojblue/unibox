@@ -4,6 +4,7 @@ import shutil
 from PIL import Image
 from pathlib import Path
 from tqdm.auto import tqdm
+import time
 
 import unibox
 from unibox import UniLoader, UniLogger
@@ -174,13 +175,38 @@ class UniResizer:
             self.logger.error(f"Error saving image {dst_file_path}. Skipping...")
 
     @staticmethod
-    def _execute_resize_tasks(tasks: List[Tuple], max_workers: int) -> None:
+    def _execute_resize_tasks(tasks: List[Tuple], max_workers: int, report_interval:int=5) -> None:
         """
-        Execute tasks using ProcessPoolExecutor
+        Execute tasks using ProcessPoolExecutor, with tqdm progress updates every 5 seconds.
         """
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(task, *args) for task, *args in tasks]
-            list(tqdm(as_completed(futures), total=len(tasks), desc="Resizing images"))
+            # Submit all tasks and create a mapping from future to its index (or any other identifier)
+            future_to_task = {executor.submit(task, *args): i for i, (task, *args) in enumerate(tasks)}
+            
+            # Initialize tqdm progress bar
+            pbar = tqdm(total=len(tasks), desc=f"[interval={report_interval}] Resizing images")
+            last_update_time = time.time()
+            
+            # Collect futures as they complete
+            for future in as_completed(future_to_task):
+                # Calculate elapsed time since last update
+                current_time = time.time()
+                elapsed_time = current_time - last_update_time
+                
+                # Update the progress bar if more than 5 seconds have passed since last update
+                if elapsed_time >= report_interval:
+                    # Calculate the number of completed tasks since the last update
+                    # Update progress bar by the number of newly completed tasks
+                    completed_tasks = sum(1 for f in future_to_task if f.done())
+                    pbar.update(completed_tasks - pbar.n)
+                    
+                    # Reset the last update time
+                    last_update_time = current_time
+            
+            # Ensure the progress bar is complete
+            pbar.n = len(tasks)
+            pbar.refresh()
+            pbar.close()
 
     def get_resize_jobs(self) -> List[str]:
         """
@@ -209,7 +235,7 @@ class UniResizer:
 
         return todo_image_files
 
-    def execute_resize_jobs(self, image_files: List[str]) -> None:
+    def execute_resize_jobs(self, image_files: List[str], simplified_print=True) -> None:
         """
         Execute resizing tasks for the given list of image files.
 
@@ -219,7 +245,10 @@ class UniResizer:
         tasks = [(self._resize_single_image_task, og_rel_image_path) for og_rel_image_path in image_files]
 
         self.logger.info(f"Resizing {len(tasks)} images...")
-        self._execute_resize_tasks(tasks, self.max_workers)
+        if simplified_print:
+            self._execute_resize_tasks(tasks, self.max_workers, report_interval=5)
+        else:
+            self._execute_resize_tasks(tasks, self.max_workers, report_interval=1)
 
 
 if __name__ == '__main__':
