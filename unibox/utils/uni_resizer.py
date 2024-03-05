@@ -37,7 +37,7 @@ class UniResizer:
 
     def __init__(self, root_dir: str, dst_dir: str,
                  min_dim: int = None, max_dim: int = None, target_pixels: int = None,
-                 keep_hierarchy: bool = True, exist_ok: bool = True, logger: UniLogger = None):
+                 keep_hierarchy: bool = True, exist_ok: bool = True, logger: UniLogger = None, max_workers: int = None):
         """
         Initialize an instance of UniResizer.
 
@@ -59,6 +59,7 @@ class UniResizer:
         self.exist_ok = exist_ok
 
         self.logger = logger if logger is not None else UniLogger()
+        self.max_workers = int(os.cpu_count() -1) if max_workers is None else max_workers
 
     @staticmethod
     def _get_new_dimensions(width: int, height: int, target_side: int, resize_by_longer_side: bool = False) -> tuple:
@@ -173,11 +174,11 @@ class UniResizer:
             self.logger.error(f"Error saving image {dst_file_path}. Skipping...")
 
     @staticmethod
-    def _execute_resize_tasks(tasks: List[Tuple]):
+    def _execute_resize_tasks(tasks: List[Tuple], max_workers: int) -> None:
         """
         Execute tasks using ProcessPoolExecutor
         """
-        with ProcessPoolExecutor() as executor:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
             futures = [executor.submit(task, *args) for task, *args in tasks]
             list(tqdm(as_completed(futures), total=len(tasks), desc="Resizing images"))
 
@@ -218,7 +219,7 @@ class UniResizer:
         tasks = [(self._resize_single_image_task, og_rel_image_path) for og_rel_image_path in image_files]
 
         self.logger.info(f"Resizing {len(tasks)} images...")
-        self._execute_resize_tasks(tasks)
+        self._execute_resize_tasks(tasks, self.max_workers)
 
 
 if __name__ == '__main__':
