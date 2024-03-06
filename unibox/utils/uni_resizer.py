@@ -173,6 +173,9 @@ class UniResizer:
                 image.save(f, "webp", quality=self.WEBP_QUALITY)
         except OSError:
             self.logger.error(f"Error saving image {dst_file_path}. Skipping...")
+        
+        # Close the image
+        image.close()
 
     @staticmethod
     def _execute_resize_tasks(tasks: List[Tuple], max_workers: int, report_interval:int=5) -> None:
