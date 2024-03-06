@@ -156,26 +156,24 @@ class UniResizer:
 
         :param og_rel_image_path: original image path relative to self.root_dir
         """
-        loader = UniLoader(debug_print=False)
-        image = loader.loads(os.path.join(self.root_dir, og_rel_image_path))
-        image = self.resize_single_image(image)
-
-        # Handle saves path
+        # Define the source and destination paths
+        src_file_path = os.path.join(self.root_dir, og_rel_image_path)
         dst_file_path = self._get_dst_path(og_rel_image_path)
 
         # Create destination directory
         if self.keep_hierarchy:
             self._create_dst_dir(dst_file_path)
 
-        # Save
         try:
-            with open(dst_file_path, "wb") as f:
-                image.save(f, "webp", quality=self.WEBP_QUALITY)
-        except OSError:
-            self.logger.error(f"Error saving image {dst_file_path}. Skipping...")
-        
-        # Close the image
-        image.close()
+            # Open the image using a context manager to ensure it's closed after processing
+            with Image.open(src_file_path) as image:
+                resized_image = self.resize_single_image(image)
+
+                # Save the resized image using a context manager to ensure the file is closed after saving
+                with open(dst_file_path, "wb") as f:
+                    resized_image.save(f, "webp", quality=self.WEBP_QUALITY)
+        except OSError as e:
+            self.logger.error(f"Error processing image {og_rel_image_path}: {e}. Skipping...")
 
     @staticmethod
     def _execute_resize_tasks(tasks: List[Tuple], max_workers: int, report_interval:int=5) -> None:
