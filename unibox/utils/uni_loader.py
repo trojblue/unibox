@@ -55,9 +55,13 @@ class UniLoader:
     def _load_from_s3(self, s3_uri: str):
         """Download a file from an S3 URI and load its content."""
         s3_client = S3Client()
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            local_path = Path(s3_client.download(s3_uri, tmp_dir))
-            return self.loads(local_path)
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                local_path = Path(s3_client.download(s3_uri, tmp_dir))
+                return self.loads(local_path)
+        except Exception as e:
+            self.logger.error(f'Error loading from S3 at "{s3_uri}": {e}')
+            return None
 
     def _load_from_url(self, url: str):
         """Download a file from a URL and load its content."""
@@ -72,12 +76,16 @@ class UniLoader:
         else:
             suffix = url_suffix
 
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as tmp_file:
-            tmp_file.write(response.content)
-            tmp_file.flush()
-            tmp_file_path = tmp_file.name
-            tmp_file.close()
-            return self.loads(tmp_file_path)
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as tmp_file:
+                tmp_file.write(response.content)
+                tmp_file.flush()
+                tmp_file_path = tmp_file.name
+                tmp_file.close()
+                return self.loads(tmp_file_path)
+        except Exception as e:
+            self.logger.error(f'Error loading from URL at "{url}": {e}')
+            return None
 
     def loads(self, file_path: Path | str, encoding="utf-8"):
         """Load data from the given file path.
