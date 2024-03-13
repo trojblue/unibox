@@ -50,6 +50,7 @@ class UniLoader:
             '.toml': self._load_toml,
             '.yaml': self._load_yaml,
             '.parquet': self._load_parquet,
+            '.feather': self._load_feather,
         }
 
     def _load_from_s3(self, s3_uri: str):
@@ -171,6 +172,8 @@ class UniLoader:
     def _load_parquet(self, file_path: Path, encoding):
         return pd.read_parquet(file_path)
 
+    def _load_feather(self, file_path: Path, encoding):
+        return pd.read_feather(file_path)
 
 if __name__ == "__main__":
     # Usage example
