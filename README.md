@@ -83,7 +83,7 @@ some_function()
 
 <br>
 
-**resizing millions of images efficiently**:
+**resize millions of images efficiently**:
 
 - (pre-configured omitted here for simplicity; saves to 98% quality WEBP by default)
 - also able to resize by minimum or maximum of side lengths,
