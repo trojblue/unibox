@@ -31,6 +31,7 @@ some_dict = ub.loads("some_file.json")    # json → dict
 some_list = ub.loads("some_file.txt")     # txt  → list[str]
 some_img  = ub.loads("some_image.jpg")    # webp/jpg/png/..etc → PIL.Image
 some_df   = ub.loads("some_data.parquet") # parquet/csv/feather → pd.Dataframe
+
 # .... for more: see uni_loader.py#L40
 ```
 
@@ -41,8 +42,7 @@ some_df   = ub.loads("some_data.parquet") # parquet/csv/feather → pd.Dataframe
 - similar as `ub.loads` but also for saving files
 
 ```python
-# mostly similar as above
-ub.saves(some_dict, "some_file.json")
+ub.saves(some_dict, "some_file.json") # similar as above
 ub.saves(some_df, "some_df.parquet")
 ```
 
