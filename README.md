@@ -68,27 +68,35 @@ files_under_s3  = ub.traverses("s3://dataset-pixiv/resized_1572864") # list s3 f
 - includes caller frame info, emoji warnings, datetime, and more
 
 ```python
+import unibox as ub
+
 logger = ub.UniLogger()
-logger.info("....") 
-logger.warn("....")
-logger.error("....")
+
+def some_function(): 
+    logger.info("some info") 
+    # logger.warning("....")
+    # logger.error("....")
+
+some_function()
+# 2024-05-08 17:57:01,010 [INFO] UniLogger: <module>: some info
 ```
 
 <br>
 
 **resizing millions of images efficiently**:
 
-- (pre-configured omitted here for simplicity)
+- (pre-configured omitted here for simplicity; saves to 98% quality WEBP by default)
 - also able to resize by minimum or maximum of side lengths,
 
 ```python
-# Initialize resizer
-resizer = ub.UniResizer(root_dir, dst_dir,
-    target_pixels=int(1024 * 1024 * 1.5),
-)
+# root_dir: where the images to be resized are
+target_pixels = int(1024 * 1024 * 1.5)
+resizer = ub.UniResizer(root_dir, dst_dir, target_pixels)
 
-# Resize the images
+# get resize jobs
 images_to_resize = resizer.get_resize_jobs()
+
+# execute resize jobs
 resizer.execute_resize_jobs(images_to_resize)
 ```
 
