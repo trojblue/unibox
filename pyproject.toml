@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "unibox"
-version = "0.3.20"
-description = "Unibox is a tool that aims to provide a unified interface for various common daily operations"
+version = "0.4.0"
+description = "Unibox provides unified interface for common file operations."
 authors = ["yada <trojblue@gmail.com>"]
 license = "MIT"
 readme = "README.md"
