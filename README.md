@@ -78,7 +78,7 @@ def some_function():
     # logger.error("....")
 
 some_function()
-# 2024-05-08 17:57:01,010 [INFO] UniLogger: <module>: some info
+# 2024-05-08 17:57:23,149 [INFO] UniLogger: some_function: some info
 ```
 
 <br>
