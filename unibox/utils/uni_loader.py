@@ -51,6 +51,7 @@ class UniLoader:
             '.yaml': self._load_yaml,
             '.parquet': self._load_parquet,
             '.feather': self._load_feather,
+            ".har": self._load_json,
         }
 
     def _load_from_s3(self, s3_uri: str):
