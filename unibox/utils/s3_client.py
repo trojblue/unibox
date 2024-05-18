@@ -146,6 +146,8 @@ class S3Client:
             # Add files to the list, applying filters if specified
             for obj in page.get('Contents', []):
                 file_key = obj["Key"]
+                if file_key == prefix:  # Skip the input directory itself
+                    continue
                 _, ext = os.path.splitext(file_key)
                 if include_extensions and ext not in include_extensions:
                     continue
@@ -155,15 +157,16 @@ class S3Client:
                 file_entry = file_key[len(prefix):] if relative_unix else f"s3://{bucket}/{file_key}"
                 all_entries.append(file_entry)
 
+
         return all_entries
 
 
 if __name__ == '__main__':
     client = S3Client()
-    s3_uri = "s3://dataset-artstation-uw2/artists/_angelaramos_/"
+    # s3_uri = "s3://dataset-artstation-uw2/artists/_angelaramos_/"
+    s3_uri = "s3://dataset-ingested/gallery-dl/_todo_lists/"
     res = client.traverse(s3_uri)
 
     print(res)
-
     print("D")
 
