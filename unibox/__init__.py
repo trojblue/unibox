@@ -33,7 +33,7 @@ def loads(file_path: str | Path, debug_print=True) -> any:
     return loader.loads(file_path)
 
 
-def saves(data: Any, file_path: Path | str) -> None:
+def saves(data: Any, file_path: Path | str, debug_print=True) -> None:
     """
     Saves arbitrary data to the given file path, using the UniSaver.saves() method.
     :param data: The data to saves.
@@ -49,7 +49,7 @@ def saves(data: Any, file_path: Path | str) -> None:
     >>> pil_image = Image.new('RGB', (60, 30), color='red')
     >>> unibox.saves(pil_image, "image.png")
     """
-    saver = UniSaver()
+    saver = UniSaver(debug_print=debug_print)
     saver.saves(data, file_path)
 
 
