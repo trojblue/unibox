@@ -116,12 +116,12 @@ class S3Client:
     def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None, 
                  relative_unix=False, debug_print=True):
         """
-        traverse through a s3 directory and returns direct entries (folder or file) under the directory
+        Traverse through a s3 directory and return direct entries (folder or file) under the directory.
 
         :param include_extensions: list of extensions to include (e.g. ['.jpg', '.png']), defaults to everything
         :param exclude_extensions: list of extensions to exclude (e.g. ['.txt', '.json']), defaults to nothing
         :param relative_unix: whether to give a relative path (relative to bucket) or not 
-        :param debug_print: whether to print debug statuses (eg. tqdm bar) or not
+        :param debug_print: whether to print debug statuses (e.g., tqdm bar) or not
         """
         bucket, prefix = parse_s3_url(s3_uri)
 
@@ -148,15 +148,11 @@ class S3Client:
                 file_key = obj["Key"]
                 if file_key == prefix:  # Skip the input directory itself
                     continue
-                _, ext = os.path.splitext(file_key)
-                if include_extensions and ext not in include_extensions:
-                    continue
-                if exclude_extensions and ext in exclude_extensions:
-                    continue
-
-                file_entry = file_key[len(prefix):] if relative_unix else f"s3://{bucket}/{file_key}"
-                all_entries.append(file_entry)
-
+                
+                if (include_extensions is None or any(file_key.endswith(ext) for ext in include_extensions)) and \
+                   (exclude_extensions is None or not any(file_key.endswith(ext) for ext in exclude_extensions)):
+                    file_entry = file_key[len(prefix):] if relative_unix else f"s3://{bucket}/{file_key}"
+                    all_entries.append(file_entry)
 
         return all_entries
 
