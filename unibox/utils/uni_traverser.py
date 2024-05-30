@@ -36,9 +36,8 @@ class UniTraverser:
     def _files_to_traverse(self):
         for root, _, files in os.walk(self.root_dir):
             for file_name in files:
-                extension = os.path.splitext(file_name)[1].lower()
-                if (self.include_extensions is None or extension in self.include_extensions) and \
-                        (self.exclude_extensions is None or extension not in self.exclude_extensions):
+                if (self.include_extensions is None or any(file_name.endswith(ext) for ext in self.include_extensions)) and \
+                   (self.exclude_extensions is None or not any(file_name.endswith(ext) for ext in self.exclude_extensions)):
                     yield os.path.join(root, file_name)
 
     def traverse(self, file_handler: Callable[[str], None] = None, debug_print: bool = True) -> None:
