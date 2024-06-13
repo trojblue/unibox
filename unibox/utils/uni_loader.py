@@ -18,9 +18,9 @@ from PIL import Image
 from pathlib import Path
 from omegaconf import OmegaConf
 
-from .uni_logger import UniLogger
-from .s3_client import S3Client
-from .utils import is_url, is_s3_uri
+from unibox.utils.uni_logger import UniLogger
+from unibox.utils.s3_client import S3Client
+from unibox.utils.utils import is_url, is_s3_uri
 
 
 class UniLoader:
@@ -83,7 +83,7 @@ class UniLoader:
                 tmp_file.write(response.content)
                 tmp_file.flush()
                 tmp_file_path = tmp_file.name
-                tmp_file.close()
+                # tmp_file.close()
                 return self.loads(tmp_file_path)
         except Exception as e:
             self.logger.error(f'Error loading from URL at "{url}": {e}')
@@ -176,7 +176,7 @@ class UniLoader:
     def _load_feather(self, file_path: Path, encoding):
         return pd.read_feather(file_path)
 
-if __name__ == "__main__":
+def sample_usage():
     # Usage example
     logger = UniLogger("logs", file_suffix="data_loader")
     data_loader = UniLoader(logger)
@@ -187,3 +187,15 @@ if __name__ == "__main__":
     toml_data = data_loader.loads(Path("example.toml"))
     yaml_data = data_loader.loads(Path("example.yaml"))
     parquet_data = data_loader.loads(Path("example.parquet"))
+
+
+def debug_url():
+    loader = UniLoader()
+    img = loader.loads("https://cdn.donmai.us/sample/8e/ea/__karyl_princess_connect_drawn_by_maxwelzy__sample-8eea944690c0c0b27e303420cb1e65bd.jpg")
+
+    print(type(img))
+
+
+if __name__ == "__main__":
+    debug_url()
+
