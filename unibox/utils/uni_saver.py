@@ -40,8 +40,6 @@ class UniSaver:
         except Exception as e:
             self.logger.error(f'{data_type} save ERROR at "{local_file_path}": {e}')
 
-
-
     def _get_expected_extension(self, data_type, data):
         if data_type == 'list':
             extension = self._list_extension(data)
@@ -87,7 +85,7 @@ class UniSaver:
         
         save_function_mapping = {
             'dict': self._save_json,
-            'list': self._save_list,
+            'list': lambda d, p: self._save_list(d, p, expected_extension),
             'set': lambda d, p: self._save_list(list(d), p, expected_extension),
             'DataFrame': self._save_parquet,
             'str': lambda d, p: self._save_txt([d], p)
@@ -187,12 +185,3 @@ def debug_saver():
     
     saver = UniSaver()
     saver.saves(jpeg_file, "s3://unidataset-danbooru/sample_image.jpg")
-
-    print("Done")
-
-
-
-if __name__ == "__main__":
-    debug_saver()
-
-
