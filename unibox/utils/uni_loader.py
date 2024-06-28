@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import timeit
 
+import re
 import os
 import mimetypes
 import tempfile
@@ -146,10 +147,39 @@ class UniLoader:
 
 
     def _load_jsonl(self, file_path: Path, encoding='utf-8'):
-        """Load data from a .jsonl file and return it as a list of dictionaries."""
+        """
+        Load data from a .jsonl file and return it as a list of dictionaries.
+        Attempts to handle "NaN" gracefully by replacing them with "null".
+        """
+        data = []
         with open(file_path, "rb") as f:
-            # Decode each line if necessary after parsing
-            return [orjson.loads(line) for line in f]
+            for i, line in enumerate(f, start=1):
+                try:
+                    # Attempt to decode the line using UTF-8
+                    line = line.decode(encoding)
+                except UnicodeDecodeError as e:
+                    self.logger.error(f"Unicode decode error on line {i}: {e} \
+                                      \nContent: {line}")
+                    break
+                try:
+                    # Try loading the JSON directly
+                    data.append(orjson.loads(line))
+                except orjson.JSONDecodeError as initial_error:
+                    # If there's a JSON error, check and replace NaN with null
+                    if 'NaN' in line:
+                        self.logger.warning(f"NaN found and replaced with null on line {i}")
+                        line = re.sub(r'\bNaN\b', 'null', line)
+                        try:
+                            data.append(orjson.loads(line))
+                        except orjson.JSONDecodeError as e:
+                            self.logger.error(f"JSON decode error on line {i} after replacing NaN: {e} \
+                                              \nContent: {line}")
+                            break
+                    else:
+                        self.logger.error(f"JSON decode error on line {i}: {initial_error} \
+                                          \nContent: {line}")
+                        break
+        return data
 
     def _load_txt(self, file_path: Path, encoding):
         with open(file_path, "r", encoding=encoding) as f:
@@ -196,6 +226,13 @@ def debug_url():
     print(type(img))
 
 
+def debug_jsonl():
+    loader = UniLoader()
+    # /rmtrain/quail/sdxl_qft/sdxl_qft_v5.jsonl
+    data = loader.loads("/home/ubuntu/dev/unibox/noteooks/sdxl_qft_v5.jsonl")
+    print(data)
+
+
 if __name__ == "__main__":
-    debug_url()
+    debug_jsonl()
 
