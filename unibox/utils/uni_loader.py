@@ -158,9 +158,8 @@ class UniLoader:
                     # Attempt to decode the line using UTF-8
                     line = line.decode(encoding)
                 except UnicodeDecodeError as e:
-                    self.logger.error(f"Unicode decode error on line {i}: {e} \
-                                      \nContent: {line}")
-                    break
+                    self.logger.error(f"Unicode decode error on line {i}: {e}\nContent: {line}")
+                    continue
                 try:
                     # Try loading the JSON directly
                     data.append(orjson.loads(line))
@@ -172,13 +171,9 @@ class UniLoader:
                         try:
                             data.append(orjson.loads(line))
                         except orjson.JSONDecodeError as e:
-                            self.logger.error(f"JSON decode error on line {i} after replacing NaN: {e} \
-                                              \nContent: {line}")
-                            break
+                            self.logger.error(f"JSON decode error on line {i} after replacing NaN: {e}\nContent: {line}")
                     else:
-                        self.logger.error(f"JSON decode error on line {i}: {initial_error} \
-                                          \nContent: {line}")
-                        break
+                        self.logger.error(f"JSON decode error on line {i}: {initial_error}\nContent: {line}")
         return data
 
     def _load_txt(self, file_path: Path, encoding):

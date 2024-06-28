@@ -108,7 +108,8 @@ class UniLogger:
             full_message = f"{caller_class_name}.{caller_func_name}: {message}"
         else:
             full_message = f"{caller_func_name}: {message}"
-
+        
+        full_message = full_message.replace("UniLogger: ", "")
         self.logger.log(level, full_message)
 
     def notice(self, message: str):
