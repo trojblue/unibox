@@ -1,5 +1,6 @@
 import os
 import json
+import math
 import pandas as pd
 from PIL import Image, JpegImagePlugin, PngImagePlugin
 from typing import Union
@@ -115,8 +116,16 @@ class UniSaver:
         else:
             raise TypeError("List content must be either all dictionaries or all strings.")
 
+    def _replace_special_values(self, obj):
+        if isinstance(obj, dict):
+            return {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [None if isinstance(v, float) and math.isnan(v) else v for v in obj]
+        return obj
+
     def _save_json(self, data: dict, file_path: str):
-        with open(file_path, "w", encoding="utf-8") as f:
+        data = self._replace_special_values(data)
+        with open(file_path, "w", encoding="utf-8") as f:            
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def _save_list(self, data: list, file_path: str, extension: str):
@@ -130,6 +139,7 @@ class UniSaver:
     def _save_jsonl(self, data: list, file_path: str):
         with open(file_path, "w", encoding="utf-8") as f:
             for item in data:
+                item = self._replace_special_values(item)
                 json.dump(item, f, ensure_ascii=False)
                 f.write('\n')
 
