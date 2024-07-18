@@ -3,6 +3,7 @@ from collections import Counter
 from typing import Any, Union
 import json  # Import the json module
 
+from .ipython_utils import peek_df
 
 class CompactJSONEncoder(json.JSONEncoder):
     """Custom JSON Encoder for specific formatting of dictionaries and lists."""
@@ -35,7 +36,7 @@ class UniPeeker:
         self.n = n
         self.console_print = console_print
 
-    def peeks(self, data: Any, n: int = None, console_print: bool = None) -> dict:
+    def peeks(self, data: Any, n: int = None, console_print: bool = None) -> dict | None:
         """Peek into the data and return metadata and a preview of the data, with efficient handling for large data."""
         peek_n = n if n else self.n
         _print = console_print if console_print is not None else self.console_print
@@ -44,12 +45,19 @@ class UniPeeker:
         meta_dict = {}
         preview = None
 
-        if data_type == 'dict':
-            meta_dict, preview = self._peek_dict(data, peek_n)
-        elif data_type == 'DataFrame':
-            meta_dict, preview = self._peek_dataframe(data, peek_n)
+        if data_type == 'DataFrame':   # special handling for dataframes
+            peek_df(data, n=3)
+            return 
+
         elif data_type == 'list':
-            meta_dict, preview = self._peek_list(data, peek_n)
+            meta_dict, preview = self._peek_list(data, peek_n)   
+        if data_type == 'dict':
+            meta_dict, preview = self._peek_dict(data, peek_n)       
+        elif data_type == 'set':
+            meta_dict, preview = self._peek_list(list(data), peek_n)
+        elif data_type == 'tuple':
+            meta_dict, preview = self._peek_list(list(data), peek_n)
+        
         # Handling for other data types...
 
         if _print:
@@ -57,7 +65,8 @@ class UniPeeker:
 
         return {'metadata': meta_dict, 'preview': preview}
 
-    def _peek_dict(self, data: dict, n: int) -> tuple:
+    @staticmethod
+    def _peek_dict(data: dict, n: int) -> tuple:
         """Peek into a dictionary efficiently."""
         first_n = [(k, data[k]) for k in list(data)[:n]]
         value_types = Counter([type(v).__name__ for v in data.values()])
@@ -70,7 +79,8 @@ class UniPeeker:
         }
         return meta_dict, first_n
 
-    def _peek_dataframe(self, data: pd.DataFrame, n: int) -> tuple:
+    @staticmethod
+    def _peek_dataframe(data: pd.DataFrame, n: int) -> tuple:
         """Peek into a DataFrame."""
         meta_dict = {
             'len': len(data),
@@ -81,7 +91,8 @@ class UniPeeker:
         preview = data.head(n)
         return meta_dict, preview
 
-    def _peek_list(self, data: list, n: int) -> tuple:
+    @staticmethod
+    def _peek_list(data: list, n: int) -> tuple:
         """Peek into a list."""
         first_n = data[:n]
         meta_dict = {
@@ -90,7 +101,8 @@ class UniPeeker:
         }
         return meta_dict, first_n
 
-    def _print_info(self, data_type: str, meta_dict: dict, preview: Any) -> None:
+    @staticmethod
+    def _print_info(data_type: str, meta_dict: dict, preview: Any) -> None:
         """Print information about the data using custom pretty print for the metadata."""
         data_len = meta_dict['len']
 
