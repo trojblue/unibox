@@ -218,7 +218,7 @@ def concurrent_loads(uris_list, num_workers=8, debug_print=True):
     >>> dfs = concurrent_loads(selected_uris, num_workers)
     >>> df = pd.concat(dfs, ignore_index=True)
     """
-    loader = UniLoader(debug_print=debug_print)
+    loader = UniLoader(debug_print=False)
 
     results = []
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
