@@ -225,25 +225,25 @@ def concurrent_loads(uris_list, num_workers=8, debug_print=True):
     """
     loader = UniLoader(debug_print=False)
 
-    results = []
+    results = [None] * len(uris_list)  # Initialize a list to store results in correct order
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        future_to_uri = {executor.submit(
-            loader.loads, curr_uri): curr_uri for curr_uri in uris_list}
+        future_to_index = {executor.submit(loader.loads, uri): idx for idx, uri in enumerate(uris_list)}
 
         if debug_print:
-            futures_iter = tqdm(as_completed(future_to_uri), total=len(
-                uris_list), desc="Loading batches", mininterval=3)
+            futures_iter = tqdm(as_completed(future_to_index), total=len(uris_list), desc="Loading batches", mininterval=3)
         else:
-            futures_iter = as_completed(future_to_uri)
-
+            futures_iter = as_completed(future_to_index)
 
         for future in futures_iter:
-            curr_uri = future_to_uri[future]
+            idx = future_to_index[future]
             try:
-                _res = future.result()
-                results.append(_res)
+                results[idx] = future.result()
             except Exception as e:
-                print(f"Exception for {curr_uri}: {e}")
+                print(f"Exception for {uris_list[idx]}: {e}")
+    
+    # Filter out any None values if there were exceptions
+    results = [res for res in results if res is not None]
+    
     return results
 
 
