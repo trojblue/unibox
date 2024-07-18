@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unibox"
-version = "0.4.6"
+version = "0.4.7"
 description = "Unibox provides unified interface for common file operations."
 authors = ["yada <trojblue@gmail.com>"]
 license = "MIT"
@@ -16,7 +16,7 @@ pillow = "^10.0.0"
 tqdm = "^4.65.0"
 colorlog = "^6.7.0"
 pandas = "*"
-pyarrow = "*"
+pyarrow = ">=10.0.1"
 boto3 = "^1.28.76"
 requests = "^2.31.0"
 orjson = "^3.9.10"
