@@ -19,6 +19,9 @@ from PIL import Image
 from pathlib import Path
 from omegaconf import OmegaConf
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from tqdm.auto import tqdm
+
 from unibox.utils.uni_logger import UniLogger
 from unibox.utils.s3_client import S3Client
 from unibox.utils.utils import is_url, is_s3_uri
@@ -200,6 +203,44 @@ class UniLoader:
 
     def _load_feather(self, file_path: Path, encoding):
         return pd.read_feather(file_path)
+
+
+def concurrent_loads(uris_list, num_workers=8, debug_print=True):
+    """
+    Loads dataframes concurrently from a list of S3 URIs.
+
+    :param uris_list: list of S3 URIs (or local) to load
+    :param num_workers: int, number of concurrent workers
+    :param debug_print: bool, whether to print debug information or not
+    :return: list of loaded dataframes
+
+    >>> selected_uris = [f"{base_s3_uri}/{i}.merged.parquet" for i in selected_ids]
+    >>> dfs = concurrent_loads(selected_uris, num_workers)
+    >>> df = pd.concat(dfs, ignore_index=True)
+    """
+    loader = UniLoader(debug_print=debug_print)
+
+    results = []
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        future_to_uri = {executor.submit(
+            loader.loads, curr_uri): curr_uri for curr_uri in uris_list}
+
+        if debug_print:
+            futures_iter = tqdm(as_completed(future_to_uri), total=len(
+                uris_list), desc="Loading batches", mininterval=3)
+        else:
+            futures_iter = as_completed(future_to_uri)
+
+
+        for future in futures_iter:
+            curr_uri = future_to_uri[future]
+            try:
+                _res = future.result()
+                results.append(_res)
+            except Exception as e:
+                print(f"Exception for {curr_uri}: {e}")
+    return results
+
 
 def sample_usage():
     # Usage example
