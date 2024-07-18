@@ -64,10 +64,15 @@ class UniLoader:
         try:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 local_path = Path(s3_client.download(s3_uri, tmp_dir))
-                return self.loads(local_path)
+                if local_path.exists() and local_path.is_file():
+                    return self.loads(local_path)
+                else:
+                    self.logger.error(f'File was not found at the downloaded path: "{local_path}"')
+                    return None
         except Exception as e:
             self.logger.error(f'Error loading from S3 at "{s3_uri}": {e}')
             return None
+
 
     def _load_from_url(self, url: str):
         """Download a file from a URL and load its content."""
