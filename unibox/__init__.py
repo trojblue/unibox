@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from doctest import debug
 from pathlib import Path
 from typing import Union, List, Dict, Any
 
@@ -12,10 +13,8 @@ from .utils.uni_resizer import UniResizer
 from .utils.uni_merger import UniMerger
 from .utils.uni_peeker import UniPeeker
 from .utils.utils import is_s3_uri, is_url
-from .utils import constants  # from unibox.constants import IMG_FILES
-from .utils.constants import *
-
-
+from .utils import constants    # from unibox.constants import IMG_FILES
+from .utils.constants import *  # import unibox.IMG_FILES
 
 
 def loads(file_path: str | Path, debug_print=True) -> any:
@@ -50,7 +49,7 @@ def saves(data: Any, file_path: Path | str, debug_print=True) -> None:
     >>> unibox.saves(pil_image, "image.png")
     """
     saver = UniSaver(debug_print=debug_print)
-    saver.saves(data, file_path)
+    saver.saves(data, str(file_path))
 
 
 def traverses(root_dir: str, include_extensions: List[str] = None,
@@ -77,6 +76,24 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
         all_entries = _onestep_traverse(root_dir, include_extensions, exclude_extensions, relative_unix, debug_print)
 
     return all_entries
+
+
+def ls(root_dir: str, exts: List[str] = None,
+              excludes: List[str] = None, relative=False, debug_print=True) -> List[str]:
+    """
+    Wrapper function that calls ub.traverses() function
+
+    Args:
+        root_dir: the root s3_uri to traverse
+        exts: list of extensions that will be included in the traversal (.txt .jpg .webp)
+        excludes: list of extensions that will be excluded in the traversal (.txt .jpg .webp)
+        relative: whether to give a relative path or not (default False gives absolute path)
+
+    Returns:
+        list of files that were traversed
+    """
+    return traverses(root_dir=root_dir, include_extensions=exts, exclude_extensions=excludes, 
+                     relative_unix=relative, debug_print=debug_print)
 
 
 def merges(*data: Union[str, Dict, List[Any], Any]) -> Any:
