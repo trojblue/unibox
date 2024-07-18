@@ -21,7 +21,7 @@ def _src_from_data(data):
 
 
 def gallery(paths:list[str], labels:list[str] = [], 
-            row_height='300px', num_workers=16, debug_print=False, thumbnail_size:int=512):
+            row_height='300px', num_workers=32, debug_print=True, thumbnail_size:int=512):
     """Shows a set of images in a gallery that flexes with the width of the notebook.
     
     Parameters
