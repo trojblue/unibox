@@ -15,6 +15,7 @@ from .utils.uni_peeker import UniPeeker
 from .utils.utils import is_s3_uri, is_url
 from .utils import constants    # from unibox.constants import IMG_FILES
 from .utils.constants import *  # import unibox.IMG_FILES
+from .utils.ipython_utils import gallery
 
 
 def loads(file_path: str | Path, debug_print=True) -> any:

@@ -57,6 +57,9 @@ def gallery(paths:list[str], labels:list[str] = [],
             if thumbnail_size > 0:
                 image.thumbnail((thumbnail_size, thumbnail_size))
                 
+            if image.mode == 'RGBA':
+                image = image.convert('RGB')
+                
             buffered = BytesIO()
             image.save(buffered, format="JPEG")
             img_data = buffered.getvalue()
