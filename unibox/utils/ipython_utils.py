@@ -19,9 +19,8 @@ def _src_from_data(data):
             if mimetype.startswith('image/'):
                 return f'data:{mimetype};base64,{b64value}'
 
-
-def gallery(paths:list[str], labels:list[str] = [], 
-            row_height='300px', num_workers=32, debug_print=True, thumbnail_size:int=512):
+def gallery(paths: list[str], labels: list[str] = [], 
+            row_height='300px', num_workers=32, debug_print=True, thumbnail_size: int = 512):
     """Shows a set of images in a gallery that flexes with the width of the notebook.
     
     Parameters
@@ -57,7 +56,8 @@ def gallery(paths:list[str], labels:list[str] = [],
             if thumbnail_size > 0:
                 image.thumbnail((thumbnail_size, thumbnail_size))
                 
-            if image.mode == 'RGBA':
+            # Ensure image is in RGB mode for saving as JPEG
+            if image.mode in ('RGBA', 'P'):
                 image = image.convert('RGB')
                 
             buffered = BytesIO()
