@@ -15,7 +15,16 @@ from .utils.uni_peeker import UniPeeker
 from .utils.utils import is_s3_uri, is_url
 from .utils import constants    # from unibox.constants import IMG_FILES
 from .utils.constants import *  # import unibox.IMG_FILES
-from .utils.ipython_utils import gallery
+
+
+# from .utils.ipython_utils import gallery
+try:
+    from .utils.ipython_utils import gallery
+except (ImportError, ModuleNotFoundError):
+    print("IPython is not available. Gallery function will not work.")
+    def gallery(*args, **kwargs):
+        print("IPython is not available. Gallery function will not work.")
+
 
 
 def loads(file_path: str | Path, debug_print=True) -> any:
