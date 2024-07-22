@@ -1,9 +1,8 @@
+from ast import Module
 import pandas as pd
 from collections import Counter
 from typing import Any, Union
 import json  # Import the json module
-
-from .ipython_utils import peek_df
 
 class CompactJSONEncoder(json.JSONEncoder):
     """Custom JSON Encoder for specific formatting of dictionaries and lists."""
@@ -46,8 +45,13 @@ class UniPeeker:
         preview = None
 
         if data_type == 'DataFrame':   # special handling for dataframes
-            peek_df(data, n=3)
-            return 
+            try:
+                from .ipython_utils import peek_df
+                return peek_df(data, n=3)
+                
+            except ModuleNotFoundError:  # If IPython is not available
+                meta_dict, preview = self._peek_dataframe(data, peek_n)
+                return {'metadata': meta_dict, 'preview': preview}         
 
         elif data_type == 'list':
             meta_dict, preview = self._peek_list(data, peek_n)   
