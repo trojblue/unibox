@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unibox"
-version = "0.4.8"
+version = "0.4.9"
 description = "Unibox provides unified interface for common file operations."
 authors = ["yada <trojblue@gmail.com>"]
 license = "MIT"
