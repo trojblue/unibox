@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from doctest import debug
 from pathlib import Path
 from typing import Union, List, Dict, Any
@@ -140,11 +141,12 @@ def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
     return peeker.peeks(data)
 
 
-def presigns(s3_uri: str, timeout: int = 86400) -> str:
+def presigns(s3_uri: str, expiration: Union[int, str] = "1d") -> str:
     """
     Generate a presigned URL from a given S3 URI.
     :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
-    :param timeout: Time in seconds for the presigned URL to remain valid (default: 1 day)
+        :param expiration: Time in seconds for the presigned URL to remain valid (default: 1 day).
+                        Accepts either an integer (seconds) or human-readable strings like "1d", "1mo", "1y".
     :return: Presigned URL as string. If error, returns None.
     """
-    return s3_client.generate_presigned_uri(s3_uri, timeout)
+    return s3_client.generate_presigned_uri(s3_uri, expiration=expiration)

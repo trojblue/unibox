@@ -8,6 +8,12 @@ from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 import pandas as pd
 
+import logging
+import humanfriendly
+from botocore.exceptions import ClientError
+from typing import Union
+
+
 def parse_s3_url(url: str):
     parsed_url = urlparse(url)
     if parsed_url.scheme != "s3":
@@ -114,19 +120,32 @@ class S3Client:
 
         return all_entries
 
-    def generate_presigned_uri(self, s3_uri: str, timeout: int = 86400) -> str:
+
+    def generate_presigned_uri(self, s3_uri: str, expiration: Union[int, str] = "1d") -> str:
         """
         Generate a presigned URL from a given S3 URI.
 
         :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
-        :param timeout: Time in seconds for the presigned URL to remain valid (default: 1 day)
+        :param expiration: Time in seconds for the presigned URL to remain valid (default: 1 day).
+                        Accepts either an integer (seconds) or human-readable strings like "1d", "1mo", "1y".
         :return: Presigned URL as string. If error, returns None.
         """
         bucket, key = parse_s3_url(s3_uri)
+
+        # Convert human-readable time to seconds if needed
+        if isinstance(expiration, str):
+            try:
+                expiration = int(humanfriendly.parse_timespan(expiration))
+            except Exception as e:
+                logging.error(f"Invalid time format: {expiration}. Error: {e}")
+                return None
+
         try:
-            response = self.s3.generate_presigned_url('get_object',
-                                                      Params={'Bucket': bucket, 'Key': key},
-                                                      ExpiresIn=timeout)
+            response = self.s3.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': bucket, 'Key': key},
+                ExpiresIn=expiration
+            )
             return response
         except ClientError as e:
             logging.error(f"Failed to generate presigned URL for {s3_uri}: {e}")
