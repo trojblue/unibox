@@ -57,48 +57,6 @@ class S3Client:
             # The exception is thrown when the object does not exist
             return False
 
-    def download_parallel(self, s3_uri_list, target_dir):
-        failed_downloads = []
-
-        def download_one(target_dir, s3_uri):
-            self.download(s3_uri, target_dir)
-
-        func = partial(download_one, target_dir)
-        with tqdm(desc="Downloading images from S3", total=len(s3_uri_list)) as bar:
-            with ThreadPoolExecutor(max_workers=32) as executor:
-                # Using a dict for preserving the downloaded file for each future,
-                # to store it as a failure if we need that
-                futures = {
-                    executor.submit(func, file_to_download): file_to_download
-                    for file_to_download in s3_uri_list
-                }
-                for future in as_completed(futures):
-                    if future.exception():
-                        failed_downloads.append(futures[future])
-                    bar.update(1)
-
-        return failed_downloads
-
-    def upload_parallel(self, file_list, target_s3_uri):
-        failed_uploads = []
-
-        def upload_one(s3_uri, file_path):
-            self.upload(file_path, s3_uri)
-
-        func = partial(upload_one, target_s3_uri)
-        with tqdm(desc="Uploading images to S3", total=len(file_list)) as bar:
-            with ThreadPoolExecutor(max_workers=32) as executor:
-                futures = {
-                    executor.submit(func, file_to_upload): file_to_upload
-                    for file_to_upload in file_list
-                }
-                for future in as_completed(futures):
-                    if future.exception():
-                        failed_uploads.append(futures[future])
-                    bar.update(1)
-
-        return failed_uploads
-
     def walk(self, s3_uri:str):
         bucket, key = parse_s3_url(s3_uri)
         paginator = self.s3.get_paginator("list_objects_v2")
@@ -155,6 +113,24 @@ class S3Client:
                     all_entries.append(file_entry)
 
         return all_entries
+
+    def generate_presigned_uri(self, s3_uri: str, timeout: int = 86400) -> str:
+        """
+        Generate a presigned URL from a given S3 URI.
+
+        :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
+        :param timeout: Time in seconds for the presigned URL to remain valid (default: 1 day)
+        :return: Presigned URL as string. If error, returns None.
+        """
+        bucket, key = parse_s3_url(s3_uri)
+        try:
+            response = self.s3.generate_presigned_url('get_object',
+                                                      Params={'Bucket': bucket, 'Key': key},
+                                                      ExpiresIn=timeout)
+            return response
+        except ClientError as e:
+            logging.error(f"Failed to generate presigned URL for {s3_uri}: {e}")
+            return None
 
 
 if __name__ == '__main__':
