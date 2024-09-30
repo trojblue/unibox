@@ -16,6 +16,9 @@ from .utils.utils import is_s3_uri, is_url
 from .utils import constants    # from unibox.constants import IMG_FILES
 from .utils.constants import *  # import unibox.IMG_FILES
 
+# global s3 client
+from .utils.s3_client import S3Client
+s3_client = S3Client()
 
 # from .utils.ipython_utils import gallery
 try:
@@ -77,9 +80,6 @@ def traverses(root_dir: str, include_extensions: List[str] = None,
     """
 
     if is_s3_uri(root_dir):
-        from .utils.s3_client import S3Client
-        s3_client = S3Client()
-
         # either files or folders
         all_entries = s3_client.traverse(root_dir, include_extensions, exclude_extensions, relative_unix, debug_print)
     else:
@@ -138,3 +138,13 @@ def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
     """
     peeker = UniPeeker(n, console_print)
     return peeker.peeks(data)
+
+
+def presigns(s3_uri: str, timeout: int = 86400) -> str:
+    """
+    Generate a presigned URL from a given S3 URI.
+    :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
+    :param timeout: Time in seconds for the presigned URL to remain valid (default: 1 day)
+    :return: Presigned URL as string. If error, returns None.
+    """
+    return s3_client.generate_presigned_uri(s3_uri, timeout)
