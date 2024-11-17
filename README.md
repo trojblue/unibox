@@ -100,6 +100,23 @@ images_to_resize = resizer.get_resize_jobs()
 resizer.execute_resize_jobs(images_to_resize)
 ```
 
+<br>
+
+**view and label images within jupyter notebook**:
+
+```python
+import unibox as ub
+
+uris = ["https://cdn.donmai.us/180x180/8e/ea/8eea944690c0c0b27e303420cb1e65bd.jpg"] * 9
+labels = ['Image 1', 'Image 2', 'Image 3'] * 3
+
+# label data interactively
+ub.label_gallery(uris, labels)
+
+# or: view images only
+# ub.gallery(uris, labels)
+```
+
 
 
 ## Install
