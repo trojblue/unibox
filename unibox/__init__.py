@@ -24,11 +24,17 @@ s3_client = S3Client()
 # from .utils.ipython_utils import gallery
 try:
     from .utils.ipython_utils import gallery
+    from .utils.ipython_utils import label_gallery
 except (ImportError, ModuleNotFoundError):
     print("IPython is not available. Gallery function will not work.")
-    def gallery(*args, **kwargs):
+
+    def gallery(paths: list[str], labels: list[str] = [], 
+                row_height='300px', num_workers=32, debug_print=True, thumbnail_size: int = 512):
         print("IPython is not available. Gallery function will not work.")
 
+    def label_gallery(paths: list[str], labels: list[str] = [], 
+                                row_height='150px', num_workers=32, debug_print=True, thumbnail_size: int = 512):
+        print("IPython is not available. Gallery function will not work.")
 
 
 def loads(file_path: str | Path, debug_print=True) -> any:
