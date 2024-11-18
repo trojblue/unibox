@@ -120,6 +120,11 @@ def label_gallery(paths: list[str], labels: list[str] = [],
     # Load images using ub.concurrent_loads()
     images = concurrent_loads(paths, num_workers=num_workers)  # list of PIL images
 
+    # convert to rgb if necessary
+    for i, img in enumerate(images):
+        if img.mode in ('RGBA', 'P'):
+            images[i] = img.convert('RGB')
+
     # Process images: resize and handle None
     processed_images = []
     for img in images:
