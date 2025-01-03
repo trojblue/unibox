@@ -6,7 +6,7 @@ from typing import List
 class BaseBackend:
     """Interface for storage backends (local, S3, etc.)."""
 
-    def download(self, uri: str) -> Path:
+    def download(self, uri: str, target_dir: str = None) -> Path:
         """Download the resource identified by `uri` to a local temp path. Return local Path."""
         raise NotImplementedError
 

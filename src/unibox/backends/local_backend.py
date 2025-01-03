@@ -6,7 +6,7 @@ from .base_backend import BaseBackend
 
 
 class LocalBackend(BaseBackend):
-    def download(self, uri: str) -> Path:
+    def download(self, uri: str, target_dir: str = None) -> Path:
         # local path is the URI itself, so just return Path(uri)
         return Path(uri)
 

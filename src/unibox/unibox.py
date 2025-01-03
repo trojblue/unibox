@@ -3,8 +3,10 @@ import timeit
 from pathlib import Path
 from typing import Any, Union
 
+import os
 import pandas as pd
 
+from .utils.globals import GLOBAL_TMP_DIR
 from .backends.backend_router import LocalBackend, get_backend_for_uri
 from .backends.hf_backend import HuggingFaceBackend
 from .loaders.loader_router import get_loader_for_suffix
@@ -39,7 +41,10 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
 
     else:
         # Otherwise, do the normal "download + suffix-based loader" approach:
-        local_path = backend.download(str(uri))  # returns Path
+
+        # get a random directory name to download the file to, under the global temp directory
+        rand_dir = GLOBAL_TMP_DIR / str(os.getpid())
+        local_path = backend.download(str(uri), target_dir=rand_dir)  # returns Path
         suffix = local_path.suffix.lower()
         loader = get_loader_for_suffix(suffix)
         if loader is None:
@@ -47,6 +52,11 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
 
         # res = loader.load(local_path, **kwargs)
         res = loader.load(local_path)
+
+        if not isinstance(backend, LocalBackend):
+            # remove the downloaded file if it's from remote;
+            # could break if it's memory-mapped, like PIL or feather
+            os.remove(local_path)
 
     end_time = timeit.default_timer()
     if debug_print:

@@ -2,8 +2,10 @@
 import tempfile
 from pathlib import Path
 from typing import List
+import os
 
 from unibox.utils.s3_client import S3Client
+from unibox.utils.globals import GLOBAL_TMP_DIR
 
 from .base_backend import BaseBackend
 
@@ -12,15 +14,19 @@ class S3Backend(BaseBackend):
     def __init__(self):
         self._client = S3Client()
 
-    def download(self, uri: str) -> Path:
-        # Create temp dir, download from S3
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            local_path = self._client.download(uri, tmp_dir)
-            # We can't return a path that vanishes after we leave this scope
-            # so we might store it in a stable location or keep a reference
-            # For simplicity:
-            final_path = Path(tmp_dir) / Path(local_path).name
-            return final_path
+    def download(self, uri: str, target_dir: str = None) -> Path:
+        """
+        Download the file from S3. If target_dir is given, place it there,
+        else use your global or stable temp directory.
+        """
+        if not target_dir:
+            from unibox.utils.globals import GLOBAL_TMP_DIR
+            target_dir = GLOBAL_TMP_DIR
+        
+        os.makedirs(target_dir, exist_ok=True)
+
+        local_path = self._client.download(uri, target_dir)
+        return Path(local_path)
 
     def upload(self, local_path: Path, uri: str) -> None:
         self._client.upload(str(local_path), uri)
