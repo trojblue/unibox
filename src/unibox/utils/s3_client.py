@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Union
 from urllib.parse import urlparse
 
 import boto3
@@ -24,8 +23,7 @@ class S3Client:
         self.s3 = boto3.client("s3")
 
     def download(self, s3_uri: str, target_dir: str) -> str:
-        """
-        Download a file from S3 to a local directory.
+        """Download a file from S3 to a local directory.
         :param s3_uri: S3 URI (e.g. s3://bucket/key)
         :param target_dir: Local directory path
         :return: Local file path
@@ -37,8 +35,7 @@ class S3Client:
         return path
 
     def upload(self, file_path: str, s3_dir: str) -> None:
-        """
-        Upload a local file to S3.
+        """Upload a local file to S3.
         :param file_path: Local file path
         :param s3_dir: S3 URI directory (e.g. s3://bucket/some/folder/)
         """
@@ -48,8 +45,7 @@ class S3Client:
         self.s3.upload_file(file_path, bucket, key)
 
     def exists(self, s3_uri: str) -> bool:
-        """
-        Check if a file exists in S3 at the given URI.
+        """Check if a file exists in S3 at the given URI.
         :param s3_uri: S3 URI
         :return: True if object exists, False otherwise.
         """
@@ -61,8 +57,7 @@ class S3Client:
             return False
 
     def walk(self, s3_uri: str):
-        """
-        Generator that walks all objects under the given S3 URI.
+        """Generator that walks all objects under the given S3 URI.
         Yields metadata dictionaries for each object.
         """
         bucket, key = parse_s3_url(s3_uri)
@@ -86,8 +81,7 @@ class S3Client:
         relative_unix=False,
         debug_print=True,
     ):
-        """
-        Traverse through an S3 "directory" and return entries under it.
+        """Traverse through an S3 "directory" and return entries under it.
 
         :param include_extensions: list of file extensions to include (e.g. ['.jpg', '.png']).
         :param exclude_extensions: list of file extensions to exclude (e.g. ['.txt', '.json']).
@@ -122,17 +116,16 @@ class S3Client:
                     continue  # skip the directory itself
 
                 # Check include/exclude
-                if (include_extensions is None or any(file_key.endswith(ext) for ext in include_extensions)) and \
-                   (exclude_extensions is None or not any(file_key.endswith(ext) for ext in exclude_extensions)):
-
+                if (include_extensions is None or any(file_key.endswith(ext) for ext in include_extensions)) and (
+                    exclude_extensions is None or not any(file_key.endswith(ext) for ext in exclude_extensions)
+                ):
                     file_entry = file_key[len(prefix) :] if relative_unix else f"s3://{bucket}/{file_key}"
                     all_entries.append(file_entry)
 
         return all_entries
 
     def generate_presigned_uri(self, s3_uri: str, expiration: int = 604800) -> str:
-        """
-        Generate a presigned URL from a given S3 URI with a default expiration of 7 days.
+        """Generate a presigned URL from a given S3 URI with a default expiration of 7 days.
 
         :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
         :param expiration: Time in seconds for the presigned URL to remain valid (default 7 days).
@@ -141,8 +134,7 @@ class S3Client:
         bucket, key = parse_s3_url(s3_uri)
 
         # Constrain expiration to AWS max if needed.
-        if expiration > 604800:  # 7 days in seconds
-            expiration = 604800
+        expiration = min(expiration, 604800)
 
         try:
             response = self.s3.generate_presigned_url(

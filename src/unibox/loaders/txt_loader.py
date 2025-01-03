@@ -8,8 +8,7 @@ class TxtLoader(BaseLoader):
     """Load and (optionally) save text files."""
 
     def load(self, file_path: Path, encoding: str = "utf-8") -> List[str]:
-        """
-        Load a text file and return a list of stripped lines.
+        """Load a text file and return a list of stripped lines.
 
         Args:
             file_path (Path): The path to the text file.
@@ -18,12 +17,11 @@ class TxtLoader(BaseLoader):
         Returns:
             List[str]: A list of lines with leading and trailing whitespace removed.
         """
-        with open(file_path, "r", encoding=encoding) as f:
+        with open(file_path, encoding=encoding) as f:
             return [line.strip() for line in f.readlines()]
 
     def save(self, file_path: Path, data: List[str], encoding: str = "utf-8") -> None:
-        """
-        Save a list of strings to a text file.
+        """Save a list of strings to a text file.
 
         Args:
             file_path (Path): The path to the text file.
