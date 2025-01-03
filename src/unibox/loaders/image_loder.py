@@ -9,9 +9,7 @@ class ImageLoader(BaseLoader):
     """Load and (optionally) save images using PIL."""
 
     def load(self, file_path: Path) -> Image.Image:
-        with Image.open(file_path) as img:
-            # Return the loaded image object (still efficient, no copy needed)
-            return img
+        return Image.open(file_path)
 
     def save(self, file_path: Path, data: Image.Image) -> None:
         # Ensure the image is loaded in memory
