@@ -18,3 +18,27 @@ With [`uv`](https://docs.astral.sh/uv/):
 ```bash
 uv tool install unibox
 ```
+
+If you're not using python 3.13, it's also recommended to install pandas[performance]:
+
+```bash
+pip install "pandas[performance]"
+```
+
+
+to update or remove project dependencies:
+
+```bash
+
+uv add requests
+
+uv remove requests
+
+# after adding new package: rerun
+make setup
+```
+
+to get a coverage report, run:
+```bash
+pytest --cov=src/unibox --cov-report=term-missing tests
+```

@@ -1,4 +1,3 @@
-# image_loader.py
 from pathlib import Path
 
 from PIL import Image
@@ -10,7 +9,9 @@ class ImageLoader(BaseLoader):
     """Load and (optionally) save images using PIL."""
 
     def load(self, file_path: Path) -> Image.Image:
-        return Image.open(file_path)
+        with Image.open(file_path) as img:
+            # Return the loaded image object (still efficient, no copy needed)
+            return img
 
     def save(self, file_path: Path, data: Image.Image) -> None:
         data.save(file_path)
