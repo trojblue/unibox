@@ -1,0 +1,41 @@
+// Workspace settings
+{
+    // The following will hide the js and map files in the editor
+    "files.exclude": {
+        "**/*.js": true,
+        "**/*.map": true,        
+
+
+        // venvs and build files
+        "**/.venv": true,
+        "**/.venvs": true,
+        "**/.pdm-build": true,
+        "**/.ruff_cache": true,
+        "**/__pycache__": true,
+        "**/htmlcov": true,
+        "**/.coverage.310": true,
+
+        // unused configs
+        "**/config": true,
+
+        // Additional files to hide
+        "**/.copier-answers.yml": true,
+        // "**/.envrc": true,
+        // "**/.gitignore": true,
+        "**/.python-version": true,
+        // "**/CHANGELOG.md": true,
+        "**/CODE_OF_CONDUCT.md": true,
+        "**/CONTRIBUTING.md": true,
+        "**/duties.py": true,
+        "**/LICENSE": true,
+        "**/Makefile": true,
+        // "**/mkdocs.yml": true,
+        // "**/pyproject.toml": true,
+        // "**/README.md": true,
+        "**/uv.lock": true,
+        "**/site": true,
+        "**/tests": true,
+        // "**/.github": true,
+        // "**/scripts": true,
+    }
+}
