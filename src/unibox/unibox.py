@@ -53,9 +53,9 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
         backend_name = backend.__class__.__name__
         loader_name = loader.__class__.__name__ if loader else "None"
         res_module, res_name = _get_type_info(res)
-        logger.info(
-            f'{res_name} LOADED from "{uri}" in {end_time-start_time:.2f} seconds   [{backend_name}:{loader_name} -> {res_module}.{res_name}]'
-        )
+        # log_str = f'{res_name} LOADED from "{uri}" in {end_time-start_time:.2f} seconds\n    [{backend_name}:{loader_name} -> {res_module}.{res_name}]'
+        log_str = f'{res_name} LOADED from "{uri}" in {end_time-start_time:.2f} seconds'
+        logger.info(log_str)
 
     return res
 
@@ -111,9 +111,9 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         backend_name = backend.__class__.__name__
         loader_name = loader.__class__.__name__
         data_module, data_name = _get_type_info(data)
-        logger.info(
-            f'{data_name} saved successfully to "{uri}" in {end_time-start_time:.2f} seconds   [{data_module}.{data_name} -> {backend_name}:{loader_name}]'
-        )
+        # log_str = f'{data_name} saved successfully to "{uri}" in {end_time-start_time:.2f} seconds\n    [{data_module}.{data_name} -> {backend_name}:{loader_name}]'
+        log_str = f'{data_name} saved successfully to "{uri}" in {end_time-start_time:.2f} seconds'
+        logger.info(log_str)
 
 
 def ls(uri: Union[str, Path]) -> list[str]:
