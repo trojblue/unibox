@@ -13,10 +13,10 @@
         "**/.ruff_cache": true,
         "**/__pycache__": true,
         "**/htmlcov": true,
-        "**/.coverage.310": true,
+        "**/.coverage.3*": true, // coverage files
 
         // unused configs
-        "**/config": true,
+        // "**/config": true,
 
         // Additional files to hide
         "**/.copier-answers.yml": true,
@@ -34,7 +34,7 @@
         // "**/README.md": true,
         "**/uv.lock": true,
         "**/site": true,
-        "**/tests": true,
+        // "**/tests": true,
         // "**/.github": true,
         // "**/scripts": true,
     }
