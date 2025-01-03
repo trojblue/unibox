@@ -1,0 +1,20 @@
+# Changes here will be overwritten by Copier
+_commit: 1.5.6
+_src_path: gh:pawamoy/copier-uv
+author_email: trojblue@gmail.com
+author_fullname: trojblue
+author_username: trojblue
+copyright_date: '2025'
+copyright_holder: trojblue
+copyright_holder_email: trojblue@gmail.com
+copyright_license: MIT License
+insiders: false
+project_description: unibox provides unified interface for common file operations
+project_name: unibox
+python_package_command_line_name: unibox
+python_package_distribution_name: unibox
+python_package_import_name: unibox
+repository_name: unibox
+repository_namespace: trojblue
+repository_provider: github.com
+
