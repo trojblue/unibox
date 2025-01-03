@@ -42,3 +42,29 @@ to get a coverage report, run:
 ```bash
 pytest --cov=src/unibox --cov-report=term-missing tests
 ```
+
+
+## Usage
+
+import the lib:
+
+```python
+import unibox as ub
+```
+
+
+## Using Huggingface Backend
+
+you can load and use a huggingface dataset directly with `hf://{username}/{daataset_repo}`:
+
+```python
+hf_dset = ub.loads("hf://incantor/aesthetic_eagle_5category_iter99")
+df = hf_dset.to_pandas()
+```
+
+and upload a processed dataframe back to huggingface:
+
+```python
+df["new_col"] = "new changes"
+ub.saves(df, "hf://datatmp/updated_repo")
+```
