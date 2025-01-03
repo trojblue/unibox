@@ -1,6 +1,6 @@
 # editors
 .idea/
-# .vscode/
+.vscode/
 
 # python
 *.egg-info/

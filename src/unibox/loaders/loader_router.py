@@ -6,6 +6,7 @@ from .image_loder import ImageLoader
 from .json_loader import JSONLoader
 from .jsonl_loader import JSONLLoader
 from .parquet_loader import ParquetLoader
+from .txt_loader import TxtLoader
 
 
 def get_loader_for_suffix(suffix: str):
@@ -20,5 +21,6 @@ def get_loader_for_suffix(suffix: str):
         return JSONLLoader()
     if suffix == ".parquet":
         return ParquetLoader()
-    # ...
+    if suffix == ".txt":
+        return TxtLoader()
     return None
