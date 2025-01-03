@@ -18,3 +18,7 @@ def is_url(path: str) -> bool:
         return all([result.scheme, result.netloc])
     except:
         return False
+    
+def is_hf_uri(uri: str) -> bool:
+    """Check if the URI is a Hugging Face URI."""
+    return uri.startswith('hf://')
