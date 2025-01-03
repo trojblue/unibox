@@ -2,57 +2,102 @@
 """
 
 # hf_backend.py
+import shutil
 from pathlib import Path
-import tempfile
-from typing import List, Optional, Union
+from typing import List, Optional, Any
+
+from datasets import Dataset
+from huggingface_hub import create_repo, upload_file  # or others as needed
+from datasets import load_dataset
+import pandas as pd
 
 from .base_backend import BaseBackend
 
-# Hugging Face libraries
-from datasets import load_dataset, Dataset
-# If you need huggingface_hub for private files:
-# from huggingface_hub import hf_hub_download
+HF_PREFIX = "hf://"
+
+def parse_hf_uri(uri: str):
+    """
+    Given 'hf://username/repo_name/subfolder/file.ext',
+    returns (repo_id='username/repo_name', subpath='subfolder/file.ext')
+    If there's nothing after repo_name, subpath is ''.
+    """
+    if not uri.startswith(HF_PREFIX):
+        raise ValueError(f"Not a HF URI: {uri}")
+    trimmed = uri[len(HF_PREFIX):]
+    parts = trimmed.split("/", maxsplit=1)
+    repo_id = parts[0]  # e.g. 'username/repo_name'
+    subpath = parts[1] if len(parts) > 1 else ""
+    return repo_id, subpath
 
 class HuggingFaceBackend(BaseBackend):
     """
-    A backend to handle URIs like: hf://some_repo  (or variants).
-    - If you want to load an entire dataset, we do load_dataset(...)
-    - If you want a single file, we might do something else.
+    A backend that can either:
+      - upload a DataFrame to HF as a dataset (if no file extension in the URI).
+      - upload a single file to HF if the URI includes a file path.
     """
 
     def download(self, uri: str) -> Path:
         """
-        1) If this is "hf://repo_name" with no file extension,
-           it may not make sense to "download" to a local path
-           if your final goal is a `datasets.Dataset`.
-           2) If we detect a file-based approach (e.g. 'hf://repo_name/some_file.parquet'),
-           we might do a direct HF Hub download of that single file, returning a local Path.
+        If you want to handle single-file downloads from a private or public HF repo,
+        you might use `huggingface_hub.hf_hub_download`.
+        For an entire dataset, you might skip local download and do `load_dataset`.
         """
-        # Minimal placeholder logic:
-        # Suppose 'hf://username/repo_name/data.parquet'
-        # you parse out "username/repo_name" and the file 'data.parquet'
-        
-        # If it's truly just "hf://username/repo_name" with no file extension,
-        # we might return a dummy path or skip the suffix-based loader.
-        
-        # For now, let's say:
-        raise NotImplementedError("Use load_dataset() instead of .download() for entire HF datasets.")
+        raise NotImplementedError("Download logic for HF single-file not implemented yet.")
 
-    def upload(self, local_path: Path, uri: str) -> None:
+    def upload(self, local_path: Path, uri: str, data: Any = None) -> None:
         """
-        If you want to push data to HF. This might involve:
-        - Converting local_path (like a CSV or Parquet) into a huggingface "Dataset.from_pandas(...)"
-        - Then calling push_to_hub(...).
-        Implementation depends on your flow.
+        Push data to a Hugging Face repo.
+
+        :param local_path: The local file that was saved by your 'loader.save()' logic
+                           (might be None or a temp file if the user saved something).
+        :param uri: The HF URI: 'hf://username/repo_name...' 
+        :param data: The original Python object (e.g. DataFrame) from user.
+                     We pass it in so we can do special logic if it's a DataFrame
+                     and there's no file extension in the HF URI.
         """
-        raise NotImplementedError("Push to HF not implemented yet.")
+        repo_id, subpath = parse_hf_uri(uri)
+
+        # 1) Check if there's a file extension in 'subpath'
+        #    If not, and data is a DataFrame, interpret as "Dataset push"
+        if not subpath:  # no subpath => no extension => entire dataset
+            # We only handle the "DataFrame => push dataset" scenario
+            if data is not None and hasattr(data, "to_pandas"):
+                # We assume it's a HF "Dataset" or a Pandas DF
+                if "pandas" in str(type(data)).lower():
+                    # Convert from Pandas to HF Dataset
+                    ds = Dataset.from_pandas(data)
+                else:
+                    # Possibly it's already a HF dataset?
+                    ds = data
+
+                # create the HF repo if it doesn't exist
+                create_repo(repo_id, private=True, exist_ok=True)
+
+                # push to hub
+                ds.push_to_hub(repo_id, private=True)
+            else:
+                raise NotImplementedError("Can't push non-DataFrame with no file extension URI.")
+        else:
+            # 2) If there's a file extension, treat as single-file upload
+            #    For example, 'hf://username/repo_name/myfile.parquet'
+            #    'local_path' is the local file from your temp directory.
+            #    We'll upload it into 'repo_id' at path 'subpath'.
+            create_repo(repo_id, private=True, exist_ok=True)
+
+            # Perform the file upload
+            upload_file(
+                path_or_fileobj=str(local_path),
+                repo_id=repo_id,
+                path_in_repo=subpath,
+                repo_type="dataset",  # or "model" if it's a model repo
+            )
 
     def ls(self, uri: str) -> List[str]:
         """
-        If you want to list "files" or "splits" in a HF dataset.
-        Possibly parse huggingface_hub metadata or an object store.
+        Possibly list sub-files or splits in the HF repo if you want.
+        For example, call huggingface_hub's repo_info or similar.
         """
-        raise NotImplementedError("List HF content not implemented yet.")
+        raise NotImplementedError("Listing HF content not implemented yet.")
 
     def load_dataset(self, repo_id: str, split: Optional[str] = "train") -> Dataset:
         """
@@ -60,3 +105,15 @@ class HuggingFaceBackend(BaseBackend):
         """
         ds = load_dataset(repo_id, split=split)
         return ds
+    
+    def df_to_hub(self, df: pd.DataFrame, uri: str):
+        """
+        Upload a DataFrame to HF as a dataset.
+        """
+        trimmed = uri[len(HF_PREFIX):]
+        print(f"Uploading DataFrame to HF repo {trimmed}")
+        dataset_combined = Dataset.from_pandas(df)
+        
+        push_msg = dataset_combined.push_to_hub(trimmed, private=True)
+        print(push_msg)
+        return None
