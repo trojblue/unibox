@@ -2,13 +2,15 @@
 from pathlib import Path
 from typing import Any, Union
 import pandas as pd
+import timeit
 
 from .backends.backend_router import get_backend_for_uri, LocalBackend
 from .backends.hf_backend import HuggingFaceBackend
 from .loaders.loader_router import get_loader_for_suffix
 
-def loads(uri: Union[str, Path]) -> Any:
+def loads(uri: Union[str, Path], debug_print:bool=True, **kwargs) -> Any:
     backend = get_backend_for_uri(str(uri))
+
 
     # For HF entire dataset approach:
     if isinstance(backend, HuggingFaceBackend):
