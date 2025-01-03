@@ -1,9 +1,10 @@
 # image_loader.py
 from pathlib import Path
+
 from PIL import Image
-from typing import Any
 
 from .base_loader import BaseLoader
+
 
 class ImageLoader(BaseLoader):
     """Load and (optionally) save images using PIL."""

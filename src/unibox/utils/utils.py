@@ -1,6 +1,8 @@
 import os
 from urllib.parse import urlparse
-def to_relaive_unix_path(absolute_path:str, root_dir:str, convert_slash=True):
+
+
+def to_relaive_unix_path(absolute_path: str, root_dir: str, convert_slash=True):
     relative_path = os.path.relpath(absolute_path, root_dir)
     if convert_slash:
         relative_path = relative_path.replace("\\", "/")
@@ -10,7 +12,8 @@ def to_relaive_unix_path(absolute_path:str, root_dir:str, convert_slash=True):
 def is_s3_uri(uri: str) -> bool:
     """Check if the URI is an S3 URI."""
     parsed = urlparse(uri)
-    return parsed.scheme == 's3'
+    return parsed.scheme == "s3"
+
 
 def is_url(path: str) -> bool:
     try:
@@ -18,7 +21,8 @@ def is_url(path: str) -> bool:
         return all([result.scheme, result.netloc])
     except:
         return False
-    
+
+
 def is_hf_uri(uri: str) -> bool:
     """Check if the URI is a Hugging Face URI."""
-    return uri.startswith('hf://')
+    return uri.startswith("hf://")

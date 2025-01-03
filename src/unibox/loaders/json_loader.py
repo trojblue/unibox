@@ -1,9 +1,11 @@
 # json_loader.py
 from pathlib import Path
-from typing import Any, List, Dict
+from typing import Any
+
 import orjson
 
 from .base_loader import BaseLoader
+
 
 class JSONLoader(BaseLoader):
     """Load and save JSON files."""

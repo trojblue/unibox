@@ -1,9 +1,12 @@
 # s3_backend.py
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from typing import List
+
+from unibox.utils.s3_client import S3Client
+
 from .base_backend import BaseBackend
-from unibox.utils.s3_client import S3Client, parse_s3_url
+
 
 class S3Backend(BaseBackend):
     def __init__(self):

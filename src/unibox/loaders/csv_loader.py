@@ -1,8 +1,10 @@
 # csv_loader.py
-import pandas as pd
 from pathlib import Path
-from typing import Any
+
+import pandas as pd
+
 from .base_loader import BaseLoader
+
 
 class CSVLoader(BaseLoader):
     def load(self, local_path: Path) -> pd.DataFrame:
