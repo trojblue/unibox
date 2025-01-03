@@ -1,24 +1,20 @@
+import logging
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
+from typing import Union
 from urllib.parse import urlparse
 
 import boto3
-from omegaconf import OmegaConf
-from tqdm.auto import tqdm
-import pandas as pd
-
-import logging
 import humanfriendly
 from botocore.exceptions import ClientError
-from typing import Union
+from omegaconf import OmegaConf
+from tqdm.auto import tqdm
 
 
 def parse_s3_url(url: str):
     parsed_url = urlparse(url)
     if parsed_url.scheme != "s3":
         raise ValueError(
-            "Expecting 's3' scheme, got: {} in {}.".format(parsed_url.scheme, url)
+            f"Expecting 's3' scheme, got: {parsed_url.scheme} in {url}.",
         )
     return parsed_url.netloc, parsed_url.path.lstrip("/")
 
@@ -59,11 +55,11 @@ class S3Client:
         try:
             self.s3.head_object(Bucket=bucket, Key=key)
             return True
-        except self.s3.exceptions.ClientError as e:
+        except self.s3.exceptions.ClientError:
             # The exception is thrown when the object does not exist
             return False
 
-    def walk(self, s3_uri:str):
+    def walk(self, s3_uri: str):
         bucket, key = parse_s3_url(s3_uri)
         paginator = self.s3.get_paginator("list_objects_v2")
         pages = paginator.paginate(Bucket=bucket, Prefix=key)
@@ -77,23 +73,21 @@ class S3Client:
                     "storage_class": obj["StorageClass"],
                 }
 
-    def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None, 
-                 relative_unix=False, debug_print=True):
-        """
-        Traverse through a s3 directory and return direct entries (folder or file) under the directory.
+    def traverse(self, s3_uri, include_extensions=None, exclude_extensions=None, relative_unix=False, debug_print=True):
+        """Traverse through a s3 directory and return direct entries (folder or file) under the directory.
 
         :param include_extensions: list of extensions to include (e.g. ['.jpg', '.png']), defaults to everything
         :param exclude_extensions: list of extensions to exclude (e.g. ['.txt', '.json']), defaults to nothing
-        :param relative_unix: whether to give a relative path (relative to bucket) or not 
+        :param relative_unix: whether to give a relative path (relative to bucket) or not
         :param debug_print: whether to print debug statuses (e.g., tqdm bar) or not
         """
         bucket, prefix = parse_s3_url(s3_uri)
 
-        if not prefix.endswith('/'):
-            prefix += '/'
+        if not prefix.endswith("/"):
+            prefix += "/"
 
         paginator = self.s3.get_paginator("list_objects_v2")
-        response_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter='/')
+        response_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="/")
 
         all_entries = []
 
@@ -102,28 +96,27 @@ class S3Client:
 
         for page in response_iterator:
             # Add subdirectories to the list
-            for d in page.get('CommonPrefixes', []):
-                dir_key = d['Prefix']
+            for d in page.get("CommonPrefixes", []):
+                dir_key = d["Prefix"]
                 dir_entry = dir_key if relative_unix else f"s3://{bucket}/{dir_key}"
                 all_entries.append(dir_entry)
 
             # Add files to the list, applying filters if specified
-            for obj in page.get('Contents', []):
+            for obj in page.get("Contents", []):
                 file_key = obj["Key"]
                 if file_key == prefix:  # Skip the input directory itself
                     continue
-                
-                if (include_extensions is None or any(file_key.endswith(ext) for ext in include_extensions)) and \
-                   (exclude_extensions is None or not any(file_key.endswith(ext) for ext in exclude_extensions)):
-                    file_entry = file_key[len(prefix):] if relative_unix else f"s3://{bucket}/{file_key}"
+
+                if (include_extensions is None or any(file_key.endswith(ext) for ext in include_extensions)) and (
+                    exclude_extensions is None or not any(file_key.endswith(ext) for ext in exclude_extensions)
+                ):
+                    file_entry = file_key[len(prefix) :] if relative_unix else f"s3://{bucket}/{file_key}"
                     all_entries.append(file_entry)
 
         return all_entries
 
-
     def generate_presigned_uri(self, s3_uri: str, expiration: Union[int, str] = "1d") -> str:
-        """
-        Generate a presigned URL from a given S3 URI.
+        """Generate a presigned URL from a given S3 URI.
 
         :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
         :param expiration: Time in seconds for the presigned URL to remain valid (default: 1 day).
@@ -137,22 +130,22 @@ class S3Client:
             try:
                 expiration = int(humanfriendly.parse_timespan(expiration))
             except Exception as e:
-                logging.error(f"Invalid time format: {expiration}. Error: {e}")
+                logging.exception(f"Invalid time format: {expiration}. Error: {e}")
                 return None
 
         try:
             response = self.s3.generate_presigned_url(
-                'get_object',
-                Params={'Bucket': bucket, 'Key': key},
-                ExpiresIn=expiration
+                "get_object",
+                Params={"Bucket": bucket, "Key": key},
+                ExpiresIn=expiration,
             )
             return response
         except ClientError as e:
-            logging.error(f"Failed to generate presigned URL for {s3_uri}: {e}")
+            logging.exception(f"Failed to generate presigned URL for {s3_uri}: {e}")
             return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     client = S3Client()
     # s3_uri = "s3://dataset-artstation-uw2/artists/_angelaramos_/"
     s3_uri = "s3://dataset-ingested/gallery-dl/_todo_lists/"

@@ -1,8 +1,9 @@
 # local_backend.py
 from pathlib import Path
 from typing import List
-import os
+
 from .base_backend import BaseBackend
+
 
 class LocalBackend(BaseBackend):
     def download(self, uri: str) -> Path:

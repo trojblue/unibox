@@ -1,10 +1,12 @@
 # jsonl_loader.py
 import re
-import orjson
 from pathlib import Path
 from typing import Any, List
 
+import orjson
+
 from .base_loader import BaseLoader
+
 
 class JSONLLoader(BaseLoader):
     """Load and save JSONL files."""
@@ -15,7 +17,7 @@ class JSONLLoader(BaseLoader):
             for line in f:
                 line_str = line.decode("utf-8", errors="replace")
                 if "NaN" in line_str:
-                    line_str = re.sub(r'\bNaN\b', 'null', line_str)
+                    line_str = re.sub(r"\bNaN\b", "null", line_str)
                 try:
                     data.append(orjson.loads(line_str))
                 except orjson.JSONDecodeError:

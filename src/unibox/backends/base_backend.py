@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import List
 
+
 class BaseBackend:
     """Interface for storage backends (local, S3, etc.)."""
 
