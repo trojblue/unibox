@@ -33,7 +33,7 @@ class HuggingFaceBackend(BaseBackend):
     - upload a single file to HF if the URI includes a file path.
     """
 
-    def download(self, uri: str) -> Path:
+    def download(self, uri: str, target_dir: str = None) -> Path:
         """If you want to handle single-file downloads from a private or public HF repo,
         you might use `huggingface_hub.hf_hub_download`.
         For an entire dataset, you might skip local download and do `load_dataset`.

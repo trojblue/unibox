@@ -68,3 +68,11 @@ and upload a processed dataframe back to huggingface:
 df["new_col"] = "new changes"
 ub.saves(df, "hf://datatmp/updated_repo")
 ```
+
+
+## Dev notes
+
+current concerns:
+
+1. loads(): temp files could accumulate on global dir, and take up all of /tmp/; also concurrency issues
+2. s3_backend: only one that takes a dir; should make others do the same
