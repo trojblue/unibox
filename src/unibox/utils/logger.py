@@ -7,7 +7,6 @@ from datetime import datetime
 import sys
 import colorama
 
-
 NOTICE = 25  # Value between WARNING (30) and INFO (20)
 logging.addLevelName(NOTICE, "NOTICE")
 
@@ -16,7 +15,7 @@ class UniLogger:
     """
     A logger that:
       1) Uses colorlog for console color.
-      2) Writes an optional log file.
+      2) Writes an optional log file without color.
       3) Shows the caller's class and method.
       4) Conditionally includes file paths for specific log levels.
       5) Detects if console supports color and allows disabling colors.
@@ -43,7 +42,7 @@ class UniLogger:
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
         # Prepare handlers
-        handlers = []
+        self.handlers = []
 
         # Optional file handler
         if self.write_log:
@@ -51,35 +50,33 @@ class UniLogger:
             output_path.mkdir(parents=True, exist_ok=True)
             log_file = output_path / f"{file_suffix}_{datetime.now().strftime('%Y%m%d')}.log"
             fh = logging.FileHandler(log_file, mode="a", encoding="utf-8")
-            handlers.append(fh)
+            self.handlers.append(fh)
 
         # Console handler
         ch = logging.StreamHandler(sys.stdout)
-        handlers.append(ch)
+        self.handlers.append(ch)
 
         # Add handlers to logger
         if not self.logger.hasHandlers():
-            for h in handlers:
+            for h in self.handlers:
                 self.logger.addHandler(h)
 
         self._setup_formatters()
 
     def _setup_formatters(self):
-        """
-        Sets colorlog for console and a simpler format for file logs.
-        """
         console_format = (
             "%(asctime)s [%(levelname)s] %(my_func)s: %(message)s%(extra_path)s"
         )
         date_format = "%Y-%m-%d %H:%M:%S"
 
+        # 1) If console supports color, use colorlog for the console handler:
         if self.supports_color:
-            color_formatter = colorlog.ColoredFormatter(
+            console_formatter = colorlog.ColoredFormatter(
                 "%(log_color)s" + console_format,
                 datefmt=date_format,
                 log_colors={
                     "DEBUG": "cyan",
-                    "INFO": "green",
+                    "INFO": "white",
                     "NOTICE": "bold_green",
                     "WARNING": "yellow",
                     "ERROR": "red",
@@ -87,20 +84,19 @@ class UniLogger:
                 },
             )
         else:
-            color_formatter = logging.Formatter(console_format, date_format)
+            console_formatter = logging.Formatter(console_format, date_format)
 
-        # Format for file logs
-        file_format = (
-            "%(asctime)s [%(levelname)s] %(my_func)s: %(message)s%(extra_path)s"
-        )
+        # 2) Plain-text formatter for the file handler:
+        file_format = "%(asctime)s [%(levelname)s] %(my_func)s: %(message)s%(extra_path)s"
         file_formatter = logging.Formatter(file_format, date_format)
 
-        # Apply to each handler
-        for handler in self.logger.handlers:
-            if isinstance(handler, logging.StreamHandler):
-                handler.setFormatter(color_formatter)
-            else:
+        # 3) Assign them:
+        for handler in self.handlers:
+            if isinstance(handler, logging.FileHandler):
                 handler.setFormatter(file_formatter)
+            else:
+                handler.setFormatter(console_formatter)
+
 
     def _shorten_path(self, path_str: str, levels: int = 2) -> str:
         """
