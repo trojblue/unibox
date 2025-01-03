@@ -14,4 +14,7 @@ class ImageLoader(BaseLoader):
             return img
 
     def save(self, file_path: Path, data: Image.Image) -> None:
+        # Ensure the image is loaded in memory
+        if data.fp is not None:
+            data.load()
         data.save(file_path)
