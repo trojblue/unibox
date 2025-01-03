@@ -1,24 +1,24 @@
-import logging
-import colorlog
 import inspect
+import logging
 import os
-from pathlib import Path
-from datetime import datetime
 import sys
+from datetime import datetime
+from pathlib import Path
+
 import colorama
+import colorlog
 
 NOTICE = 25  # Value between WARNING (30) and INFO (20)
 logging.addLevelName(NOTICE, "NOTICE")
 
 
 class UniLogger:
-    """
-    A logger that:
-      1) Uses colorlog for console color.
-      2) Writes an optional log file without color.
-      3) Shows the caller's class and method.
-      4) Conditionally includes file paths for specific log levels.
-      5) Detects if console supports color and allows disabling colors.
+    """A logger that:
+    1) Uses colorlog for console color.
+    2) Writes an optional log file without color.
+    3) Shows the caller's class and method.
+    4) Conditionally includes file paths for specific log levels.
+    5) Detects if console supports color and allows disabling colors.
     """
 
     def __init__(
@@ -64,9 +64,7 @@ class UniLogger:
         self._setup_formatters()
 
     def _setup_formatters(self):
-        console_format = (
-            "%(asctime)s [%(levelname)s] %(my_func)s: %(message)s%(extra_path)s"
-        )
+        console_format = "%(asctime)s [%(levelname)s] %(my_func)s: %(message)s%(extra_path)s"
         date_format = "%Y-%m-%d %H:%M:%S"
 
         # 1) If console supports color, use colorlog for the console handler:
@@ -97,18 +95,13 @@ class UniLogger:
             else:
                 handler.setFormatter(console_formatter)
 
-
     def _shorten_path(self, path_str: str, levels: int = 2) -> str:
-        """
-        Return a shortened path for display.
-        """
+        """Return a shortened path for display."""
         parts = path_str.strip("/").split("/")
         return "/" + "/".join(parts[-levels:]) if len(parts) > levels else "/" + "/".join(parts)
 
     def _detect_color_support(self) -> bool:
-        """
-        Detects if the console supports color.
-        """
+        """Detects if the console supports color."""
         # Check if running in Jupyter or IPython
         try:
             from IPython import get_ipython
@@ -129,9 +122,7 @@ class UniLogger:
         return False
 
     def log(self, level_name: str, message: str):
-        """
-        Log with custom formatting based on log level.
-        """
+        """Log with custom formatting based on log level."""
         level = getattr(logging, level_name.upper(), logging.INFO)
 
         # Skip frames to find real caller
