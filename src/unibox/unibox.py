@@ -4,13 +4,20 @@ from typing import Any, Union
 import pandas as pd
 import timeit
 
+from .utils.logger import UniLogger
 from .backends.backend_router import get_backend_for_uri, LocalBackend
 from .backends.hf_backend import HuggingFaceBackend
 from .loaders.loader_router import get_loader_for_suffix
 
-def loads(uri: Union[str, Path], debug_print:bool=True, **kwargs) -> Any:
-    backend = get_backend_for_uri(str(uri))
+logger = UniLogger()
 
+def _get_type_info(obj: Any) -> str:
+    obj_module, obj_name = type(obj).__module__, type(obj).__name__
+    return str(obj_module), str(obj_name)
+
+def loads(uri: Union[str, Path], debug_print:bool=True, **kwargs) -> Any:
+    start_time = timeit.default_timer()
+    backend = get_backend_for_uri(str(uri))
 
     # For HF entire dataset approach:
     if isinstance(backend, HuggingFaceBackend):
@@ -24,18 +31,31 @@ def loads(uri: Union[str, Path], debug_print:bool=True, **kwargs) -> Any:
         
         # 2) Possibly parse out a split if you want
         # For now, default "train"
-        ds = backend.load_dataset(repo_id, split="train")
-        return ds
+        loader = None # to work with debug print
+        res = backend.load_dataset(repo_id, split="train")
 
-    # Otherwise, do the normal "download + suffix-based loader" approach:
-    local_path = backend.download(str(uri))  # returns Path
-    suffix = local_path.suffix.lower()
-    loader = get_loader_for_suffix(suffix)
-    if loader is None:
-        raise ValueError(f"No loader found for {suffix}")
-    return loader.load(local_path)
+    else:
+        # Otherwise, do the normal "download + suffix-based loader" approach:
+        local_path = backend.download(str(uri))  # returns Path
+        suffix = local_path.suffix.lower()
+        loader = get_loader_for_suffix(suffix)
+        if loader is None:
+            raise ValueError(f"No loader found for {suffix}")
+        
+        # res = loader.load(local_path, **kwargs)
+        res = loader.load(local_path)
 
-def saves(data: Any, uri: Union[str, Path]) -> None:
+    end_time = timeit.default_timer()
+    if debug_print:
+        backend_name = backend.__class__.__name__
+        loader_name = loader.__class__.__name__ if loader else "None"
+        res_module, res_name = _get_type_info(res)
+        logger.info(f"{res_name} LOADED from \"{uri}\" in {end_time-start_time:.2f} seconds   [{backend_name}:{loader_name} -> {res_module}.{res_name}]")
+
+    return res
+
+def saves(data: Any, uri: Union[str, Path], debug_print:bool=True, **kwargs) -> None:
+    start_time = timeit.default_timer()
     backend = get_backend_for_uri(str(uri))
     suffix = Path(uri).suffix.lower()
     loader = get_loader_for_suffix(suffix)
@@ -51,7 +71,7 @@ def saves(data: Any, uri: Union[str, Path]) -> None:
     # We can skip the local file save and directly upload the dataset.
     # This is a special case for HF, but we can generalize it later.
     # For now, let's keep the logic consistent.
-    if isinstance(backend, HuggingFaceBackend) and suffix == "":
+    elif isinstance(backend, HuggingFaceBackend) and suffix == "":
         if isinstance(data, pd.DataFrame):
             # If it's a DataFrame, we can upload it directly to HF as a dataset
             # without saving it to a local file first.
@@ -78,6 +98,13 @@ def saves(data: Any, uri: Union[str, Path]) -> None:
             # Possibly the user is doing "hf://myuser/myrepo" with no extension => entire dataset
             # We can pass a dummy local_path or None
             backend.upload(None, str(uri), data=data)
+    
+    end_time = timeit.default_timer()
+    if debug_print:
+        backend_name = backend.__class__.__name__
+        loader_name = loader.__class__.__name__
+        data_module, data_name = _get_type_info(data)
+        logger.info(f"{data_name} saved successfully to \"{uri}\" in {end_time-start_time:.2f} seconds   [{data_module}.{data_name} -> {backend_name}:{loader_name}]")
 
 
 def ls(uri: Union[str, Path]) -> list[str]:
