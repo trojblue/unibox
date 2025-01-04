@@ -19,7 +19,7 @@ With [`uv`](https://docs.astral.sh/uv/):
 uv tool install unibox
 ```
 
-If you're not using python 3.13, it's also recommended to install pandas[performance]:
+If you're not using python 3.13, it's also recommended to install `pandas[performance]`:
 
 ```bash
 pip install "pandas[performance]"
@@ -66,11 +66,6 @@ ub.saves(df, "hf://datatmp/updated_repo")
 
 
 ## Dev notes
-
-current bugs:
-
-- save to s3: saves to a filename_as_dir/temp filename instead of actual filename
-
 
 current concerns:
 
