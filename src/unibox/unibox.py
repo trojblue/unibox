@@ -34,6 +34,23 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
         uri: The URI to load the data from. (local path, s3://some_path, or hf://username/repo_name)
         debug_print: Whether to print debug information or not.
         **kwargs: Additional keyword arguments to pass to the loader.
+
+    Returns:
+        The loaded data in the corresponding datatype.
+
+    Sample usage:
+        ```python
+        import unibox as ub
+
+        # Load a CSV file from a local path
+        df = ub.loads("/home/ubuntu/data.csv")
+
+        # Load a parquet file from an S3 bucket
+        df = ub.loads("s3://bucket-name/folder-name/data.parquet")
+
+        # Load a HF dataset
+        dataset = ub.loads("hf://username/repo_name")
+        ```
     """
     start_time = timeit.default_timer()
     backend = get_backend_for_uri(str(uri))
@@ -92,6 +109,23 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         uri: The URI to save the data to. (local path, s3://some_path, or hf://username/repo_name)
         debug_print: Whether to print debug information or not.
         **kwargs: Additional keyword arguments to pass to the loader.
+
+    Returns:
+        None (saves the data to the given URI).
+
+    Sample usage:
+        ```python
+        import unibox as ub
+
+        # Save a DataFrame to a local path as parquet
+        ub.saves(df, "/home/ubuntu/data.parquet")
+
+        # Save a dict to an S3 bucket as json
+        ub.saves(data_dict, "s3://bucket-name/folder-name/data.json")
+
+        # Save a DataFrame to Huggingface as dataset repository
+        ub.saves(dataset, "hf://username/repo_name")
+        ```
     """
     start_time = timeit.default_timer()
     backend = get_backend_for_uri(str(uri))
@@ -150,15 +184,15 @@ def ls(
     **kwargs,
 ) -> list[str]:
     """List files in a given URI (directory).
-    
+
     Args:
         uri: The URI to list files from. (local path, s3://some_path, or hf://username/repo_name)
         exts: List of file extensions to filter by. (e.g., ['.jpg', '.png'])
         relative_unix: Whether to return relative paths with Unix-style (defaults to return absolute paths).
-    
+
     Returns:
         List of file paths.
-    
+
     Sample usage:
         ```python
         import unibox as ub
@@ -167,7 +201,9 @@ def ls(
         files = ub.ls("/home/ubuntu/data")
 
         # List all .parquet files in the s3 directory, returning relative paths
-        jpg_files = ub.ls("s3://bucket-name/folder-name", exts=['.parquet'], relative_unix=True)
+        jpg_files = ub.ls(
+            "s3://bucket-name/folder-name", exts=[".parquet"], relative_unix=True
+        )
         ```
     """
     backend = get_backend_for_uri(str(uri))
@@ -189,8 +225,12 @@ def concurrent_loads(uris_list, num_workers=8, debug_print=True):
 
     Sample usage:
         ```python
-        selected_uris = [f"{base_s3_uri}/{i}.merged.parquet" for i in selected_ids]
-        dfs = concurrent_loads(selected_uris, num_workers)
+        import unibox as ub
+
+        # Load all parquet files concurrently from a given S3 folder,
+        # and then concatenate them into a single dataframe.
+        parquet_uris = ub.ls("s3://bucket-name/folder-name", exts=[".parquet"])
+        dfs = ub.concurrent_loads(parquet_uris, num_workers)
         df = pd.concat(dfs, ignore_index=True)
         ```
     """
@@ -233,7 +273,10 @@ def traverses(
     debug_print: bool = True,
     **kwargs,
 ) -> list[str]:
-    """Old name for `ls`, depreciated and kept for compatibility"""
+    """Old name for `ls`, depreciated and kept for compatibility.
+
+    Refer to `ls` for the latest implementation.
+    """
     warnings.warn(
         "`traverses()` is deprecated and WILL BE REMOVED by May.1 2025; use `ls` instead.",
         category=DeprecationWarning,
@@ -254,7 +297,7 @@ def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
         data: The data to peek into.
         n: The number of entries to peek into.
         console_print: Whether to print the peeked information to the console.
-    
+
     Returns:
         A dictionary containing the metadata and the preview of the data.
 
@@ -287,7 +330,7 @@ def gallery(
 
     Args:
         paths: List of paths to images to display. Can be local paths or URLs.
-        labels: List of labels for each image. Defaults to the filename if not provided.
+        labels: Optional list of labels for each image. Defaults to the filename if not provided.
         row_height: CSS height value to assign to all images.
         num_workers: Number of concurrent workers to load images.
         debug_print: Whether to print debug information or not.
@@ -300,13 +343,20 @@ def gallery(
         ```python
         import unibox as ub
 
-        # get a list of paths and labels to display
-        paths, labels = ["image1.jpg"] * 10, ["Label 1"] * 10
-        ub.gallery(paths, labels)
+        # get a list of paths under a s3 folder, and display them in a gallery
+        paths = ub.ls("s3://bucket-name/folder-with-image", exts=ub.IMG_FILES)
+
+        # get a gallery with default labels
+        ub.gallery(paths)
+
+        # OR: get a gallery with custom labels
+        # labels = ["Some label"] * 10
+        # ub.gallery(paths, labels)
         ```
     """
     try:
         from .nb_helpers.ipython_utils import _gallery
+
         _gallery(paths, labels, row_height, num_workers, debug_print, thumbnail_size)
     except (ImportError, ModuleNotFoundError):
         print("IPython is not available. Gallery function will not work.")
@@ -324,7 +374,7 @@ def label_gallery(
 
     Args:
         paths: List of paths to images to display. Can be local paths or URLs.
-        labels: List of labels for each image. Defaults to the filename if not provided.
+        labels: Optional list of labels for each image. Defaults to the filename if not provided.
         row_height: CSS height value to assign to all images.
         num_workers: Number of concurrent workers to load images.
         debug_print: Whether to print debug information or not.
@@ -337,13 +387,20 @@ def label_gallery(
         ```python
         import unibox as ub
 
-        # get a list of paths and labels to label for
-        paths, labels = ["image1.jpg"] * 10, ["Label 1"] * 10
-        ub.label_gallery(paths, labels)
+        # get a list of paths under a s3 folder, and display them in a gallery
+        paths = ub.ls("s3://bucket-name/folder-with-image", exts=ub.IMG_FILES)
+
+        # get a label gallery with default labels
+        ub.label_gallery(paths)
+
+        # OR: get a label gallery with custom labels
+        # labels = ["Some label"] * 10
+        # ub.label_gallery(paths, labels)
         ```
     """
     try:
         from .nb_helpers.ipython_utils import _label_gallery
+
         _label_gallery(paths, labels, row_height, num_workers, debug_print, thumbnail_size)
     except (ImportError, ModuleNotFoundError):
         print("IPython is not available. Gallery function will not work.")
