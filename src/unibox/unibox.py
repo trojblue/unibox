@@ -5,13 +5,14 @@ import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from tqdm.auto import tqdm
 
 from .backends.backend_router import LocalBackend, get_backend_for_uri
 from .backends.hf_backend import HuggingFaceBackend
 from .loaders.loader_router import get_loader_for_suffix
+from .nb_helpers.uni_peeker import UniPeeker
 from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
 
@@ -192,3 +193,52 @@ def traverses(
         stacklevel=2,
     )
     return ls(uri, exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
+
+
+# ===== Other handy tools =====
+
+
+def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
+    """Peeks into arbitrary data using UniPeeker.peeks() method.
+    :param data: The data to peek into.
+    :param n: The number of entries to peek into.
+    :param console_print: Whether to print the peeked information to the console.
+    :return: A dictionary containing the metadata and the preview of the data.
+
+    Example:
+    >>> json_dict = {"name": "John", "age": 30}
+    >>> peeked_dict = peeks(json_dict)
+    >>> json_dict_list = [{"name": "John", "age": 30}, {"name": "Doe", "age": 40}]
+    >>> peeked_dict_list = peeks(json_dict_list)
+    >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    >>> peeked_df = peeks(df)
+    """
+    peeker = UniPeeker(n, console_print)
+    return peeker.peeks(data)
+
+
+# from .utils.ipython_utils import gallery
+try:
+    from .nb_helpers.ipython_utils import gallery, label_gallery
+except (ImportError, ModuleNotFoundError):
+    print("IPython is not available. Gallery function will not work.")
+
+    def gallery(
+        paths: list[str],
+        labels: list[str] = [],
+        row_height="300px",
+        num_workers=32,
+        debug_print=True,
+        thumbnail_size: int = 512,
+    ):
+        print("IPython is not available. Gallery function will not work.")
+
+    def label_gallery(
+        paths: list[str],
+        labels: list[str] = [],
+        row_height="150px",
+        num_workers=32,
+        debug_print=True,
+        thumbnail_size: int = 512,
+    ):
+        print("IPython is not available. Gallery function will not work.")
