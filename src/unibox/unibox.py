@@ -1,8 +1,12 @@
 # ub.py
 import os
 import timeit
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Union
+
+from functools import partial
+from tqdm.auto import tqdm
 
 from .backends.backend_router import LocalBackend, get_backend_for_uri
 from .backends.hf_backend import HuggingFaceBackend
@@ -121,3 +125,44 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
 def ls(uri: Union[str, Path]) -> list[str]:
     backend = get_backend_for_uri(str(uri))
     return backend.ls(str(uri))
+
+
+def concurrent_loads(uris_list, num_workers=8, debug_print=True):
+    """Loads dataframes concurrently from a list of S3 URIs.
+
+    :param uris_list: list of S3 URIs (or local) to load
+    :param num_workers: int, number of concurrent workers
+    :param debug_print: bool, whether to print debug information or not
+    :return: list of loaded dataframes
+
+    >>> selected_uris = [f"{base_s3_uri}/{i}.merged.parquet" for i in selected_ids]
+    >>> dfs = concurrent_loads(selected_uris, num_workers)
+    >>> df = pd.concat(dfs, ignore_index=True)
+    """
+    results = [None] * len(uris_list)  # Initialize a list to store results in correct order
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        # Use partial to bind debug_print
+        partial_loads = partial(loads, debug_print=False)
+        future_to_index = {executor.submit(partial_loads, uri): idx for idx, uri in enumerate(uris_list)}
+
+        if debug_print:
+            futures_iter = tqdm(
+                as_completed(future_to_index), total=len(uris_list), desc="Loading batches", mininterval=3
+            )
+        else:
+            futures_iter = as_completed(future_to_index)
+
+        for future in futures_iter:
+            idx = future_to_index[future]
+            try:
+                results[idx] = future.result()
+            except Exception as e:
+                print(f"Exception for {uris_list[idx]}: {e}")
+
+    # Filter out any None values if there were exceptions
+    empty_count = results.count(None)
+    if empty_count > 0:
+        logger.warning(f"{empty_count} loadings FAILED and were returned as None")
+    # results = [res for res in results if res is not None]
+
+    return results

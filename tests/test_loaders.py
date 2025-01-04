@@ -13,7 +13,10 @@ import unibox as ub
         ("tests/test_files/sample.parquet", True, False),
         ("tests/test_files/sample.txt", True, False),
         pytest.param(
-            "tests/test_files/sample.jpg", False, True, marks=pytest.mark.filterwarnings("ignore::ResourceWarning")
+            "tests/test_files/sample.jpg",
+            False,
+            True,
+            marks=pytest.mark.filterwarnings("ignore::ResourceWarning"),
         ),
         ("tests/test_files/sample.jsonl", True, False),
         ("tests/test_files/sample.json", True, False),
