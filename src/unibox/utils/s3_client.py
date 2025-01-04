@@ -34,14 +34,12 @@ class S3Client:
         self.s3.download_file(bucket, key, path)
         return path
 
-    def upload(self, file_path: str, s3_dir: str) -> None:
+    def upload(self, file_path: str, s3_uri: str) -> None:
         """Upload a local file to S3.
         :param file_path: Local file path
-        :param s3_dir: S3 URI directory (e.g. s3://bucket/some/folder/)
+        :param s3_uri: S3 URI (e.g. s3://bucket/key)
         """
-        filename = os.path.basename(file_path)
-        s3_target = os.path.join(s3_dir, filename)
-        bucket, key = parse_s3_url(s3_target)
+        bucket, key = parse_s3_url(s3_uri)
         self.s3.upload_file(file_path, bucket, key)
 
     def exists(self, s3_uri: str) -> bool:

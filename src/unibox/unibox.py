@@ -1,15 +1,13 @@
 # ub.py
+import os
 import timeit
 from pathlib import Path
 from typing import Any, Union
 
-import os
-import pandas as pd
-
-from .utils.globals import GLOBAL_TMP_DIR
 from .backends.backend_router import LocalBackend, get_backend_for_uri
 from .backends.hf_backend import HuggingFaceBackend
 from .loaders.loader_router import get_loader_for_suffix
+from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
 
 logger = UniLogger()
@@ -85,14 +83,9 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
 
     # BYPASS: if it's saving dataframe to a HF dataset (hf://username/repo_name with no extension)
     # We can skip the local file save and directly upload the dataset.
-    # This is a special case for HF, but we can generalize it later.
-    # For now, let's keep the logic consistent.
+    # Internal logics are handled by the HF backend.
     elif isinstance(backend, HuggingFaceBackend) and suffix == "":
-        if isinstance(data, pd.DataFrame):
-            # If it's a DataFrame, we can upload it directly to HF as a dataset
-            # without saving it to a local file first.
-            # We can pass a dummy local_path or None
-            backend.df_to_hub(data, str(uri))
+        backend.data_to_hub(data, str(uri))
 
     else:
         # Non-local backend (S3, HF, etc.)
@@ -110,11 +103,10 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
             # Save data to local
             loader.save(temp_path, data)
             # Upload
-            backend.upload(temp_path, str(uri), data=data)
+            backend.upload(temp_path, str(uri))
+            os.remove(temp_path)
         else:
-            # Possibly the user is doing "hf://myuser/myrepo" with no extension => entire dataset
-            # We can pass a dummy local_path or None
-            backend.upload(None, str(uri), data=data)
+            raise ValueError(f"No loader found for {suffix}")
 
     end_time = timeit.default_timer()
     if debug_print:
