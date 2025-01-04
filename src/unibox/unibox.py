@@ -15,6 +15,9 @@ from .loaders.loader_router import get_loader_for_suffix
 from .nb_helpers.uni_peeker import UniPeeker
 from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
+from .utils.s3_client import S3Client
+
+s3_client = S3Client()
 
 logger = UniLogger()
 
@@ -242,3 +245,13 @@ except (ImportError, ModuleNotFoundError):
         thumbnail_size: int = 512,
     ):
         print("IPython is not available. Gallery function will not work.")
+
+
+def presigns(s3_uri: str, expiration: Union[int, str] = "1d") -> str:
+    """Generate a presigned URL from a given S3 URI.
+    :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
+        :param expiration: Time in seconds for the presigned URL to remain valid (default: 1 day).
+                        Accepts either an integer (seconds) or human-readable strings like "1d", "1mo", "1y".
+    :return: Presigned URL as string. If error, returns None.
+    """
+    return s3_client.generate_presigned_uri(s3_uri, expiration=expiration)
