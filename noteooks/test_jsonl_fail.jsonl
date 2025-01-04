@@ -1,6 +1,0 @@
-{"note": "testing for handling lines containing non-utf-8 character (id3), and NaN value (id4)"}
-{"id": 1, "name": "Alice"}
-{"id": 2, "name": "Bob"}
-{"id": 3, "name": "Ch\x96arlie"}
-{"id": 4, "name": NaN}
-{"id": 5, "name": "Eve"}
