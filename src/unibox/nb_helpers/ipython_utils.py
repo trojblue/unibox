@@ -20,7 +20,7 @@ def _src_from_data(data):
                 return f"data:{mimetype};base64,{b64value}"
 
 
-def gallery(
+def _gallery(
     paths: list[str],
     labels: list[str] = [],
     row_height="300px",
@@ -99,7 +99,7 @@ def gallery(
 import base64
 
 
-def label_gallery(
+def _label_gallery(
     paths: list[str],
     labels: list[str] = [],
     row_height="150px",
