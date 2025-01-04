@@ -1,25 +1,29 @@
 import os
+
 import pytest
 
 import unibox as ub
+
 
 @pytest.mark.parametrize(
     "uri, expected_non_empty, is_image",
     [
         # Local file tests
-        # ("tests/test_files/sample.csv", True, False),
-        # ("tests/test_files/sample.parquet", True, False),
-        # ("tests/test_files/sample.txt", True, False),
-        # pytest.param("tests/test_files/sample.jpg", False, True, marks=pytest.mark.filterwarnings("ignore::ResourceWarning")),
-        # ("tests/test_files/sample.jsonl", True, False),
-        # ("tests/test_files/sample.json", True, False),
+        ("tests/test_files/sample.csv", True, False),
+        ("tests/test_files/sample.parquet", True, False),
+        ("tests/test_files/sample.txt", True, False),
+        pytest.param(
+            "tests/test_files/sample.jpg", False, True, marks=pytest.mark.filterwarnings("ignore::ResourceWarning")
+        ),
+        ("tests/test_files/sample.jsonl", True, False),
+        ("tests/test_files/sample.json", True, False),
         # HuggingFace dataset scenario
-        # pytest.param(
-        #     "hf://incantor/aesthetic_eagle_5category_iter99",
-        #     True,
-        #     False,
-        #     id="HuggingFace Dataset",
-        # ),
+        pytest.param(
+            "hf://incantor/aesthetic_eagle_5category_iter99",
+            True,
+            False,
+            id="HuggingFace Dataset",
+        ),
         # S3 file scenario
         pytest.param(
             "s3://bucket-external/misc/yada_store/configs/clip_prompts_list_full_v2.txt",
