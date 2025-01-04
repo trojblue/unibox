@@ -38,11 +38,6 @@ uv remove requests
 make setup
 ```
 
-to get a coverage report, run:
-```bash
-pytest --cov=src/unibox --cov-report=term-missing tests
-```
-
 
 ## Usage
 
@@ -82,6 +77,10 @@ current concerns:
 1. loads(): temp files could accumulate on global dir, and take up all of /tmp/; also concurrency issues
 2. s3_backend: only one that takes a dir; should make others do the same
 
+to get a coverage report, run:
+```bash
+pytest --cov=src/unibox --cov-report=term-missing tests
+```
 
 To build the docs:
 

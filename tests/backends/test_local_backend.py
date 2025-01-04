@@ -1,7 +1,8 @@
-import os
-import pytest
-import unibox as ub
 from pathlib import Path
+
+import pytest
+
+import unibox as ub
 
 
 @pytest.fixture
@@ -28,9 +29,7 @@ def test_folder(tmp_path):
 
 @pytest.mark.parametrize("relative_unix, expected_relative", [(False, False), (True, True)])
 def test_ls_paths(test_folder, relative_unix, expected_relative):
-    """
-    Test that ls() returns the correct paths (absolute or relative based on `relative_unix`).
-    """
+    """Test that ls() returns the correct paths (absolute or relative based on `relative_unix`)."""
     files = ub.ls(test_folder, relative_unix=relative_unix)
 
     # Ensure all paths are valid and have the correct type (absolute/relative)
@@ -45,9 +44,7 @@ def test_ls_paths(test_folder, relative_unix, expected_relative):
 
 
 def test_ls_exts(test_folder):
-    """
-    Test that ls() filters files correctly by extensions.
-    """
+    """Test that ls() filters files correctly by extensions."""
     # Filter for jpg and json files
     files = ub.ls(test_folder, exts=["jpg", "json"])
 
@@ -61,9 +58,7 @@ def test_ls_exts(test_folder):
 
 
 def test_ls_backward_compatibility(test_folder):
-    """
-    Test that traverses() raises a DeprecationWarning and returns the same result as ls().
-    """
+    """Test that traverses() raises a DeprecationWarning and returns the same result as ls()."""
     with pytest.warns(DeprecationWarning):
         files_old = ub.traverses(test_folder, relative_unix=True)
 
@@ -74,9 +69,7 @@ def test_ls_backward_compatibility(test_folder):
 
 
 def test_ls_absolute_paths(test_folder):
-    """
-    Test that ls() returns absolute paths when relative_unix=False.
-    """
+    """Test that ls() returns absolute paths when relative_unix=False."""
     files = ub.ls(test_folder, relative_unix=False)
 
     # Ensure all paths are absolute
@@ -85,9 +78,7 @@ def test_ls_absolute_paths(test_folder):
 
 
 def test_ls_relative_unix(test_folder):
-    """
-    Test that ls() returns relative Unix-style paths when relative_unix=True.
-    """
+    """Test that ls() returns relative Unix-style paths when relative_unix=True."""
     files = ub.ls(test_folder, relative_unix=True)
 
     # Ensure all paths are relative and use Unix-style slashes
@@ -99,9 +90,7 @@ def test_ls_relative_unix(test_folder):
 
 
 def test_ls_with_exts(test_folder):
-    """
-    Test that ls() correctly filters by extensions.
-    """
+    """Test that ls() correctly filters by extensions."""
     # Filter only for jpg files
     files = ub.ls(test_folder, exts=["jpg"])
 

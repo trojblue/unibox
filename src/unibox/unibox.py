@@ -1,11 +1,11 @@
 # ub.py
 import os
 import timeit
+import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
 from typing import Any, List, Optional, Union
-import warnings
 
 from tqdm.auto import tqdm
 
@@ -185,8 +185,7 @@ def traverses(
     debug_print: bool = True,
     **kwargs,
 ) -> list[str]:
-    """old name for `ls`, depreciated and kept for compatibility
-    """
+    """Old name for `ls`, depreciated and kept for compatibility"""
     warnings.warn(
         "`traverses()` is deprecated and WILL BE REMOVED by May.1 2025; use `ls` instead.",
         category=DeprecationWarning,
