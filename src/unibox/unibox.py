@@ -143,7 +143,11 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
     # We can skip the local file save and directly upload the dataset.
     # Internal logics are handled by the HF backend.
     elif isinstance(backend, HuggingFaceBackend) and suffix == "":
-        backend.data_to_hub(data, str(uri))
+        datahub_kwargs = {}
+        if "private" in kwargs and kwargs["private"] is not None:
+            datahub_kwargs["private"] = kwargs["private"]
+        backend.data_to_hub(data, str(uri), **datahub_kwargs)
+
 
     else:
         # Non-local backend (S3, HF, etc.)

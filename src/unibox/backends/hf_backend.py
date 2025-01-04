@@ -9,6 +9,9 @@ from datasets import Dataset, load_dataset
 from huggingface_hub import create_repo, upload_file  # or others as needed
 
 from .base_backend import BaseBackend
+from ..utils.logger import UniLogger
+
+logger = UniLogger()
 
 HF_PREFIX = "hf://"
 
@@ -98,7 +101,7 @@ class HuggingFaceBackend(BaseBackend):
         ds = load_dataset(repo_id, split=split)
         return ds
 
-    def data_to_hub(self, data: pd.DataFrame | Dataset | Any, uri: str):
+    def data_to_hub(self, data: pd.DataFrame | Dataset | Any, uri: str, private: bool = True):
         """Upload a DataFrame to HF as a dataset."""
         trimmed = uri[len(HF_PREFIX) :]
         print(f"Uploading DataFrame to HF repo {trimmed}")
@@ -116,5 +119,8 @@ class HuggingFaceBackend(BaseBackend):
             except Exception as e:
                 raise ValueError(f"Can't convert data to DataFrame: {e}")
 
-        push_msg = dataset_combined.push_to_hub(trimmed, private=True)
+        if not private:
+            logger.warning(f"Uploading to a public repo: {trimmed}")
+        
+        push_msg = dataset_combined.push_to_hub(trimmed, private=private)
         print(push_msg)
