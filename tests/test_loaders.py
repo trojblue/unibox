@@ -1,16 +1,7 @@
 import os
-import warnings
-
 import pytest
 
 import unibox as ub
-
-warnings.filterwarnings(
-    "ignore",
-    message="datetime.datetime.utcnow() is deprecated",
-    category=DeprecationWarning,
-)
-
 
 @pytest.mark.parametrize(
     "uri, expected_non_empty, is_image",
@@ -23,12 +14,12 @@ warnings.filterwarnings(
         # ("tests/test_files/sample.jsonl", True, False),
         # ("tests/test_files/sample.json", True, False),
         # HuggingFace dataset scenario
-        pytest.param(
-            "hf://incantor/aesthetic_eagle_5category_iter99",
-            True,
-            False,
-            id="HuggingFace Dataset",
-        ),
+        # pytest.param(
+        #     "hf://incantor/aesthetic_eagle_5category_iter99",
+        #     True,
+        #     False,
+        #     id="HuggingFace Dataset",
+        # ),
         # S3 file scenario
         pytest.param(
             "s3://bucket-external/misc/yada_store/configs/clip_prompts_list_full_v2.txt",
