@@ -81,3 +81,13 @@ current concerns:
 
 1. loads(): temp files could accumulate on global dir, and take up all of /tmp/; also concurrency issues
 2. s3_backend: only one that takes a dir; should make others do the same
+
+
+To build the docs:
+
+```bash
+make docs host=0.0.0.0
+
+# or in debug mode:
+make check-docs
+```
