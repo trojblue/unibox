@@ -149,6 +149,27 @@ def ls(
     debug_print: bool = True,
     **kwargs,
 ) -> list[str]:
+    """List files in a given URI (directory).
+    
+    Args:
+        uri: The URI to list files from. (local path, s3://some_path, or hf://username/repo_name)
+        exts: List of file extensions to filter by. (e.g., ['.jpg', '.png'])
+        relative_unix: Whether to return relative paths with Unix-style (defaults to return absolute paths).
+    
+    Returns:
+        List of file paths.
+    
+    Sample usage:
+        ```python
+        import unibox as ub
+
+        # List all files in the local directory
+        files = ub.ls("/home/ubuntu/data")
+
+        # List all .parquet files in the s3 directory, returning relative paths
+        jpg_files = ub.ls("s3://bucket-name/folder-name", exts=['.parquet'], relative_unix=True)
+        ```
+    """
     backend = get_backend_for_uri(str(uri))
     return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
 
@@ -166,11 +187,12 @@ def concurrent_loads(uris_list, num_workers=8, debug_print=True):
     Returns:
         List of loaded data in corresponding datatypes.
 
-    ```python
-    selected_uris = [f"{base_s3_uri}/{i}.merged.parquet" for i in selected_ids]
-    dfs = concurrent_loads(selected_uris, num_workers)
-    df = pd.concat(dfs, ignore_index=True)
-    ```
+    Sample usage:
+        ```python
+        selected_uris = [f"{base_s3_uri}/{i}.merged.parquet" for i in selected_ids]
+        dfs = concurrent_loads(selected_uris, num_workers)
+        df = pd.concat(dfs, ignore_index=True)
+        ```
     """
     results = [None] * len(uris_list)  # Initialize a list to store results in correct order
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
@@ -224,48 +246,106 @@ def traverses(
 
 
 def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
-    """Peeks into arbitrary data using UniPeeker.peeks() method.
-    :param data: The data to peek into.
-    :param n: The number of entries to peek into.
-    :param console_print: Whether to print the peeked information to the console.
-    :return: A dictionary containing the metadata and the preview of the data.
+    """Get a preview of arbitrary data using UniPeeker.peeks() method.
 
-    Example:
-    >>> json_dict = {"name": "John", "age": 30}
-    >>> peeked_dict = peeks(json_dict)
-    >>> json_dict_list = [{"name": "John", "age": 30}, {"name": "Doe", "age": 40}]
-    >>> peeked_dict_list = peeks(json_dict_list)
-    >>> df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    >>> peeked_df = peeks(df)
+    In notebooks, call `peeks(data)` directly to get a preview of the data.
+
+    Args:
+        data: The data to peek into.
+        n: The number of entries to peek into.
+        console_print: Whether to print the peeked information to the console.
+    
+    Returns:
+        A dictionary containing the metadata and the preview of the data.
+
+    Sample usage:
+        ```python
+        import unibox as ub
+
+        # print previews to console, showing the first 3 entries
+        dict_data = {"name": "John", "age": 30}
+        print(ub.peeks(dict_data, 3))
+
+        # showing previews directly in a notebook cell
+        df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+        ub.peeks(df)
+        ```
     """
     peeker = UniPeeker(n, console_print)
     return peeker.peeks(data)
 
 
-# from .utils.ipython_utils import gallery
-try:
-    from .nb_helpers.ipython_utils import gallery, label_gallery
-except (ImportError, ModuleNotFoundError):
-    print("IPython is not available. Gallery function will not work.")
+def gallery(
+    paths: list[str],
+    labels: list[str] = [],
+    row_height="300px",
+    num_workers=32,
+    debug_print=True,
+    thumbnail_size: int = 512,
+):
+    """Shows a set of images in a gallery that flexes with the width of the notebook.
 
-    def gallery(
-        paths: list[str],
-        labels: list[str] = [],
-        row_height="300px",
-        num_workers=32,
-        debug_print=True,
-        thumbnail_size: int = 512,
-    ):
+    Args:
+        paths: List of paths to images to display. Can be local paths or URLs.
+        labels: List of labels for each image. Defaults to the filename if not provided.
+        row_height: CSS height value to assign to all images.
+        num_workers: Number of concurrent workers to load images.
+        debug_print: Whether to print debug information or not.
+        thumbnail_size: If provided, resize images to this size using PIL's thumbnail method.
+
+    Returns:
+        None (displays the gallery in the notebook).
+
+    Sample usage:
+        ```python
+        import unibox as ub
+
+        # get a list of paths and labels to display
+        paths, labels = ["image1.jpg"] * 10, ["Label 1"] * 10
+        ub.gallery(paths, labels)
+        ```
+    """
+    try:
+        from .nb_helpers.ipython_utils import _gallery
+        _gallery(paths, labels, row_height, num_workers, debug_print, thumbnail_size)
+    except (ImportError, ModuleNotFoundError):
         print("IPython is not available. Gallery function will not work.")
 
-    def label_gallery(
-        paths: list[str],
-        labels: list[str] = [],
-        row_height="150px",
-        num_workers=32,
-        debug_print=True,
-        thumbnail_size: int = 512,
-    ):
+
+def label_gallery(
+    paths: list[str],
+    labels: list[str] = [],
+    row_height="150px",
+    num_workers=32,
+    debug_print=True,
+    thumbnail_size: int = 512,
+):
+    """Displays images in a gallery with JavaScript-based selection.
+
+    Args:
+        paths: List of paths to images to display. Can be local paths or URLs.
+        labels: List of labels for each image. Defaults to the filename if not provided.
+        row_height: CSS height value to assign to all images.
+        num_workers: Number of concurrent workers to load images.
+        debug_print: Whether to print debug information or not.
+        thumbnail_size: If provided, resize images to this size using PIL's thumbnail method.
+
+    Returns:
+        None (displays the gallery in the notebook).
+
+    Sample usage:
+        ```python
+        import unibox as ub
+
+        # get a list of paths and labels to label for
+        paths, labels = ["image1.jpg"] * 10, ["Label 1"] * 10
+        ub.label_gallery(paths, labels)
+        ```
+    """
+    try:
+        from .nb_helpers.ipython_utils import _label_gallery
+        _label_gallery(paths, labels, row_height, num_workers, debug_print, thumbnail_size)
+    except (ImportError, ModuleNotFoundError):
         print("IPython is not available. Gallery function will not work.")
 
 
