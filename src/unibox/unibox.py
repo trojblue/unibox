@@ -4,7 +4,8 @@ import timeit
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, List, Optional, Union
+import warnings
 
 from tqdm.auto import tqdm
 
@@ -122,9 +123,15 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         logger.info(log_str)
 
 
-def ls(uri: Union[str, Path]) -> list[str]:
+def ls(
+    uri: Union[str, Path],
+    exts: Optional[List[str]] = None,
+    relative_unix: bool = False,
+    debug_print: bool = True,
+    **kwargs,
+) -> list[str]:
     backend = get_backend_for_uri(str(uri))
-    return backend.ls(str(uri))
+    return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
 
 
 def concurrent_loads(uris_list, num_workers=8, debug_print=True):
@@ -169,3 +176,20 @@ def concurrent_loads(uris_list, num_workers=8, debug_print=True):
     # results = [res for res in results if res is not None]
 
     return results
+
+
+def traverses(
+    uri: Union[str, Path],
+    exts: Optional[List[str]] = None,
+    relative_unix: bool = False,
+    debug_print: bool = True,
+    **kwargs,
+) -> list[str]:
+    """old name for `ls`, depreciated and kept for compatibility
+    """
+    warnings.warn(
+        "`traverses()` is deprecated and WILL BE REMOVED by May.1 2025; use `ls` instead.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+    return ls(uri, exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
