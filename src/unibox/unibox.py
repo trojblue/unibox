@@ -28,6 +28,13 @@ def _get_type_info(obj: Any) -> str:
 
 
 def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
+    """Loads data from a given URI.
+
+    Args:
+        uri: The URI to load the data from. (local path, s3://some_path, or hf://username/repo_name)
+        debug_print: Whether to print debug information or not.
+        **kwargs: Additional keyword arguments to pass to the loader.
+    """
     start_time = timeit.default_timer()
     backend = get_backend_for_uri(str(uri))
 
@@ -78,6 +85,14 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
 
 
 def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) -> None:
+    """Saves data to a given URI.
+
+    Args:
+        data: The data to save.
+        uri: The URI to save the data to. (local path, s3://some_path, or hf://username/repo_name)
+        debug_print: Whether to print debug information or not.
+        **kwargs: Additional keyword arguments to pass to the loader.
+    """
     start_time = timeit.default_timer()
     backend = get_backend_for_uri(str(uri))
     suffix = Path(uri).suffix.lower()
@@ -141,14 +156,21 @@ def ls(
 def concurrent_loads(uris_list, num_workers=8, debug_print=True):
     """Loads dataframes concurrently from a list of S3 URIs.
 
-    :param uris_list: list of S3 URIs (or local) to load
-    :param num_workers: int, number of concurrent workers
-    :param debug_print: bool, whether to print debug information or not
-    :return: list of loaded dataframes
+    Failed loadings will be returned as None.
 
-    >>> selected_uris = [f"{base_s3_uri}/{i}.merged.parquet" for i in selected_ids]
-    >>> dfs = concurrent_loads(selected_uris, num_workers)
-    >>> df = pd.concat(dfs, ignore_index=True)
+    Args:
+        urls_list: List of S3 URIs (or local) to load.
+        num_workers: Number of concurrent workers.
+        debug_print: Whether to print debug information or not.
+
+    Returns:
+        List of loaded data in corresponding datatypes.
+
+    ```python
+    selected_uris = [f"{base_s3_uri}/{i}.merged.parquet" for i in selected_ids]
+    dfs = concurrent_loads(selected_uris, num_workers)
+    df = pd.concat(dfs, ignore_index=True)
+    ```
     """
     results = [None] * len(uris_list)  # Initialize a list to store results in correct order
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
@@ -247,11 +269,12 @@ except (ImportError, ModuleNotFoundError):
         print("IPython is not available. Gallery function will not work.")
 
 
-def presigns(s3_uri: str, expiration: Union[int, str] = "1d") -> str:
+def presigns(s3_uri: str, expiration: int = 604800) -> str:
     """Generate a presigned URL from a given S3 URI.
+
     :param s3_uri: S3 URI (e.g., 's3://bucket-name/object-key')
-        :param expiration: Time in seconds for the presigned URL to remain valid (default: 1 day).
-                        Accepts either an integer (seconds) or human-readable strings like "1d", "1mo", "1y".
+    :param expiration: Time in seconds for the presigned URL to remain valid (default: 7 day).
+
     :return: Presigned URL as string. If error, returns None.
     """
     return s3_client.generate_presigned_uri(s3_uri, expiration=expiration)
