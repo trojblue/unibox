@@ -8,8 +8,8 @@ import pandas as pd
 from datasets import Dataset, load_dataset
 from huggingface_hub import create_repo, upload_file  # or others as needed
 
-from .base_backend import BaseBackend
 from ..utils.logger import UniLogger
+from .base_backend import BaseBackend
 
 logger = UniLogger()
 
@@ -121,6 +121,6 @@ class HuggingFaceBackend(BaseBackend):
 
         if not private:
             logger.warning(f"Uploading to a public repo: {trimmed}")
-        
+
         push_msg = dataset_combined.push_to_hub(trimmed, private=private)
         print(push_msg)
