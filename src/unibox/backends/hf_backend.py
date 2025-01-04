@@ -98,11 +98,23 @@ class HuggingFaceBackend(BaseBackend):
         ds = load_dataset(repo_id, split=split)
         return ds
 
-    def df_to_hub(self, df: pd.DataFrame, uri: str):
+    def data_to_hub(self, data: pd.DataFrame | Dataset | Any, uri: str):
         """Upload a DataFrame to HF as a dataset."""
         trimmed = uri[len(HF_PREFIX) :]
         print(f"Uploading DataFrame to HF repo {trimmed}")
-        dataset_combined = Dataset.from_pandas(df)
+
+        if isinstance(data, Dataset):
+            # Already a HF Dataset
+            dataset_combined = data
+        elif isinstance(data, pd.DataFrame):
+            # Convert to HF Dataset
+            dataset_combined = Dataset.from_pandas(data)
+        else:
+            try:
+                # Try to convert to HF Dataset
+                dataset_combined = pd.DataFrame(data)
+            except Exception as e:
+                raise ValueError(f"Can't convert data to DataFrame: {e}")
 
         push_msg = dataset_combined.push_to_hub(trimmed, private=True)
         print(push_msg)

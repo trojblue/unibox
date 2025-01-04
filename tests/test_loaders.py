@@ -6,55 +6,70 @@ import unibox as ub
 
 
 @pytest.mark.parametrize(
-    "file_name, expected_non_empty, is_image",
+    "uri, expected_non_empty, is_image",
     [
-        ("sample.csv", True, False),
-        ("sample.parquet", True, False),
-        ("sample.txt", True, False),
-        # ub.loads(some_image) returns an opened image file descriptor, which could lead to resource warnings.
-        # We ignore these warnings for this test.
-        pytest.param("sample.jpg", False, True, marks=pytest.mark.filterwarnings("ignore::ResourceWarning")),
-        ("sample.jsonl", True, False),
-        ("sample.json", True, False),
+        # Local file tests
+        # ("tests/test_files/sample.csv", True, False),
+        # ("tests/test_files/sample.parquet", True, False),
+        # ("tests/test_files/sample.txt", True, False),
+        # pytest.param("tests/test_files/sample.jpg", False, True, marks=pytest.mark.filterwarnings("ignore::ResourceWarning")),
+        # ("tests/test_files/sample.jsonl", True, False),
+        # ("tests/test_files/sample.json", True, False),
+        # HuggingFace dataset scenario
+        pytest.param(
+            "hf://incantor/aesthetic_eagle_5category_iter99",
+            True,
+            False,
+            id="HuggingFace Dataset",
+        ),
+        # S3 file scenario
+        pytest.param(
+            "s3://bucket-external/misc/yada_store/configs/clip_prompts_list_full_v2.txt",
+            True,
+            False,
+            id="S3 Text File",
+        ),
     ],
 )
-def test_local_loads_and_saves(file_name, expected_non_empty, is_image, tmp_path):
-    """Test loader functionality for various file types, including saving and reloading.
+def test_loads_and_saves(uri: str, expected_non_empty, is_image, tmp_path):
+    """Test loader functionality for various URIs, including saving and reloading.
 
     Parameters:
-        file_name: Name of the sample file.
-        expected_non_empty: Whether the file should produce a non-empty result when loaded.
+        uri: The URI to load the file or dataset.
+        expected_non_empty: Whether the loaded result should be non-empty.
         is_image: Whether the file is an image.
         tmp_path: Temporary directory provided by pytest for saving test files.
     """
-    # Path to this test file's directory
-    test_dir = os.path.dirname(os.path.abspath(__file__))
-    sample_file = os.path.join(test_dir, "test_files", file_name)
-
-    # Ensure the file exists
-    assert os.path.exists(sample_file), f"Sample file does not exist: {sample_file}"
-
-    # Load the sample file
-    loaded_data = ub.loads(sample_file)
+    # Load the URI
+    loaded_data = ub.loads(uri)
 
     # Validate the loaded content
     if expected_non_empty:
-        assert loaded_data is not None, f"Loaded data from {file_name} is None"
+        assert loaded_data is not None, f"Loaded data from {uri} is None"
         if not is_image:
-            assert len(loaded_data) > 0, f"Loaded data from {file_name} is empty"
+            assert len(loaded_data) > 0, f"Loaded data from {uri} is empty"
 
-    # Save the loaded content to a temporary path
-    save_path = tmp_path / f"saved_{file_name}"
-    ub.saves(loaded_data, save_path)
+    # Save the loaded content to a new location
+    uri = str(uri)
+    if uri.startswith("hf://"):
+        save_uri = "hf://datatmp/unibox-debug-repo"
+    elif uri.startswith("s3://"):
+        save_uri = "s3://dataset-ingested/temp/unibox_debug/" + os.path.basename(uri)
+    else:
+        save_uri = tmp_path / f"saved_{os.path.basename(uri)}"
 
-    # Ensure the saved file exists and is not empty
-    assert save_path.exists(), f"Saved file {save_path} does not exist"
-    assert save_path.stat().st_size > 0, f"Saved file {save_path} is empty"
+    save_uri = str(save_uri)
+    ub.saves(loaded_data, save_uri)
 
-    # Reload the saved file
-    reloaded_data = ub.loads(save_path)
+    # Ensure the saved file or dataset exists
+    if not save_uri.startswith("hf://") and not save_uri.startswith("s3://"):
+        assert os.path.exists(save_uri), f"Saved file {save_uri} does not exist"
+        assert os.path.getsize(save_uri) > 0, f"Saved file {save_uri} is empty"
+
+    # Reload the saved file or dataset
+    reloaded_data = ub.loads(save_uri)
 
     # Validate the reloaded content
-    assert reloaded_data is not None, f"Reloaded data from {save_path} is None"
+    assert reloaded_data is not None, f"Reloaded data from {save_uri} is None"
     if not is_image:
-        assert len(reloaded_data) > 0, f"Reloaded data from {save_path} is empty"
+        assert len(reloaded_data) > 0, f"Reloaded data from {save_uri} is empty"

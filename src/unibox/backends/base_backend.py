@@ -17,3 +17,7 @@ class BaseBackend:
     def ls(self, uri: str) -> List[str]:
         """List files/folders at `uri`."""
         raise NotImplementedError
+
+    # def cp(self, local_path: Path, uri: str) -> None:
+    #     """Copy local_path to the specified `uri`."""
+    #     raise NotImplementedError

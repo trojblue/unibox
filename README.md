@@ -72,6 +72,11 @@ ub.saves(df, "hf://datatmp/updated_repo")
 
 ## Dev notes
 
+current bugs:
+
+- save to s3: saves to a filename_as_dir/temp filename instead of actual filename
+
+
 current concerns:
 
 1. loads(): temp files could accumulate on global dir, and take up all of /tmp/; also concurrency issues
