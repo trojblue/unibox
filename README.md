@@ -91,3 +91,10 @@ make docs host=0.0.0.0
 # or in debug mode:
 make check-docs
 ```
+
+
+migrating from unibox 0.4
+
+no longer supported:
+
+- `ub.traverses()`: removed handlers and `exclude_extensions` (`include_extensions` still works but depreciated with `exts`)
