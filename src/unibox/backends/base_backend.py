@@ -1,10 +1,7 @@
 # base_backend.py
-from pathlib import Path
-from typing import List
-import os
 import warnings
-from typing import Optional
-from tqdm.auto import tqdm
+from pathlib import Path
+from typing import List, Optional
 
 
 class BaseBackend:
@@ -18,17 +15,15 @@ class BaseBackend:
         """Upload local_path to the specified `uri`."""
         raise NotImplementedError
 
-
     def ls(
         self,
         uri: str,
         exts: Optional[List[str]] = None,
         relative_unix: bool = False,
         debug_print: bool = True,
-        **kwargs
+        **kwargs,
     ) -> List[str]:
-        """
-        List files under `uri` with optional extension filtering.
+        """List files under `uri` with optional extension filtering.
 
         :param uri: A string representing a directory path or location.
         :param exts: A list of file extensions to include (['.txt', '.csv']).
@@ -43,7 +38,7 @@ class BaseBackend:
             warnings.warn(
                 "`include_extensions` is deprecated; use `exts` instead.",
                 category=DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             exts = include_extensions
 

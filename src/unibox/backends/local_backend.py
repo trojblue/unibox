@@ -1,10 +1,10 @@
 # local_backend.py
-from pathlib import Path
-from typing import List
 import os
-from typing import Optional
-from tqdm.auto import tqdm
 import warnings
+from pathlib import Path
+from typing import List, Optional
+
+from tqdm.auto import tqdm
 
 from .base_backend import BaseBackend
 
@@ -28,8 +28,7 @@ class LocalBackend(BaseBackend):
         relative_unix: bool = False,
         debug_print: bool = True,
     ) -> List[str]:
-        """
-        Traverses the local directory tree and returns a list of files matching the criteria.
+        """Traverses the local directory tree and returns a list of files matching the criteria.
 
         Args:
             root_dir (str): The root directory to traverse.
@@ -72,10 +71,9 @@ class LocalBackend(BaseBackend):
         exts: Optional[List[str]] = None,
         relative_unix: bool = False,
         debug_print: bool = True,
-        **kwargs
+        **kwargs,
     ) -> List[str]:
-        """
-        Lists files in the local directory with optional extension filtering.
+        """Lists files in the local directory with optional extension filtering.
 
         Args:
             uri (str): Directory URI to list.

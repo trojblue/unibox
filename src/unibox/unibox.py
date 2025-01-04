@@ -2,10 +2,10 @@
 import os
 import timeit
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from functools import partial
 from pathlib import Path
 from typing import Any, Union
 
-from functools import partial
 from tqdm.auto import tqdm
 
 from .backends.backend_router import LocalBackend, get_backend_for_uri
@@ -147,7 +147,10 @@ def concurrent_loads(uris_list, num_workers=8, debug_print=True):
 
         if debug_print:
             futures_iter = tqdm(
-                as_completed(future_to_index), total=len(uris_list), desc="Loading batches", mininterval=3
+                as_completed(future_to_index),
+                total=len(uris_list),
+                desc="Loading batches",
+                mininterval=3,
             )
         else:
             futures_iter = as_completed(future_to_index)
