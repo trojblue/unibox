@@ -1,8 +1,15 @@
 import os
+import warnings
 
 import pytest
 
 import unibox as ub
+
+warnings.filterwarnings(
+    "ignore",
+    message="datetime.datetime.utcnow() is deprecated",
+    category=DeprecationWarning,
+)
 
 
 @pytest.mark.parametrize(
