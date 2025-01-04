@@ -1,6 +1,4 @@
-"""
-basic loader class
-"""
+"""basic loader class"""
 
 # base_loader.py
 from pathlib import Path
