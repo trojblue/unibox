@@ -1,8 +1,9 @@
+import logging
 import os
 from urllib.parse import urlparse
 
-import logging
 logger = logging.getLogger(__name__)
+
 
 def to_relaive_unix_path(absolute_path: str, root_dir: str, convert_slash=True):
     relative_path = os.path.relpath(absolute_path, root_dir)
@@ -31,8 +32,7 @@ def is_hf_uri(uri: str) -> bool:
 
 
 def merge_dicts(*dicts):
-    """
-    Merge dictionaries, raising warnings for overlapping keys and data type mismatches.
+    """Merge dictionaries, raising warnings for overlapping keys and data type mismatches.
 
     Args:
         *dicts: Dictionaries to merge.
@@ -50,7 +50,7 @@ def merge_dicts(*dicts):
                 logger.warning(f"Overlapping key '{key}' detected. Existing value: {result[key]}, New value: {value}")
                 if type(result[key]) != type(value):
                     logger.warning(
-                        f"Data type mismatch for key '{key}': {type(result[key])} vs {type(value)}."
+                        f"Data type mismatch for key '{key}': {type(result[key])} vs {type(value)}.",
                     )
             result[key] = value
 
