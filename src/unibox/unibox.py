@@ -53,7 +53,11 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
         ```
     """
     start_time = timeit.default_timer()
-    backend = get_backend_for_uri(str(uri))
+    uri_str = str(uri)
+    if uri_str.startswith("hf://"):
+        backend = HuggingFaceBackend()
+    else:
+        backend = get_backend_for_uri(uri_str)
 
     # For HF entire dataset approach:
     if isinstance(backend, HuggingFaceBackend):
