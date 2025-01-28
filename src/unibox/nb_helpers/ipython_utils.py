@@ -64,7 +64,7 @@ def _gallery(
                 image.thumbnail((thumbnail_size, thumbnail_size))
 
             # Ensure image is in RGB mode for saving as JPEG
-            if image.mode in ("RGBA", "P"):
+            if image is not None and image.mode in ("RGBA", "P"):
                 image = image.convert("RGB")
 
             buffered = BytesIO()
@@ -87,13 +87,12 @@ def _gallery(
             </figure>
         """)
 
-    return HTML(
+    display(HTML(
         data=f"""
         <div style="display: flex; flex-flow: row wrap; text-align: center;">
         {''.join(figures)}
         </div>
-    """,
-    )
+    """))
 
 
 import base64
@@ -135,7 +134,7 @@ def _label_gallery(
 
     # convert to rgb if necessary
     for i, img in enumerate(images):
-        if img.mode in ("RGBA", "P"):
+        if img is not None and img.mode in ("RGBA", "P"):
             images[i] = img.convert("RGB")
 
     # Process images: resize and handle None
