@@ -28,11 +28,35 @@ def _get_type_info(obj: Any) -> str:
 
 
 def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
-    """Loads data from a given URI.
+    """Loads data from a given URI with automatic backend detection.
 
+    Features:
+    - Supports local files/S3 buckets/HuggingFace repos
+    - Automatic temp file management
+    - Detailed performance metrics
+    
     Args:
-        uri: The URI to load the data from. (local path, s3://some_path, or hf://username/repo_name)
-        debug_print: Whether to print debug information or not.
+        uri: The URI to load from (path, s3://path, or hf://repo_id)
+        debug_print: Show loading diagnostics (default: True)
+        **kwargs: Loader-specific parameters
+        
+    Returns:
+        The loaded data in its native format (DataFrame, Dataset, Image, etc.)
+        
+    Raises:
+        ValueError: For unsupported file types or URI schemes
+        
+    Example:
+        ```python
+        import unibox as ub
+        
+        # Load from Hugging Face
+        dataset = ub.loads("hf://username/dataset-name")
+        
+        # Load from S3
+        df = ub.loads("s3://my-bucket/data.csv")
+        ```
+    """
         **kwargs: Additional keyword arguments to pass to the loader.
 
     Returns:
@@ -53,7 +77,11 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
         ```
     """
     start_time = timeit.default_timer()
-    backend = get_backend_for_uri(str(uri))
+    uri_str = str(uri)
+    if uri_str.startswith("hf://"):
+        backend = HuggingFaceBackend()
+    else:
+        backend = get_backend_for_uri(uri_str)
 
     # For HF entire dataset approach:
     if isinstance(backend, HuggingFaceBackend):
