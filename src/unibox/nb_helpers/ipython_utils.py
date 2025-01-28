@@ -135,7 +135,7 @@ def _label_gallery(
 
     # convert to rgb if necessary
     for i, img in enumerate(images):
-        if img.mode in ("RGBA", "P"):
+        if img is not None and img.mode in ("RGBA", "P"):
             images[i] = img.convert("RGB")
 
     # Process images: resize and handle None
