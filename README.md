@@ -86,6 +86,14 @@ make docs host=0.0.0.0
 make check-docs
 ```
 
+to manual make a release:
+```bash
+# python -m pip install build twine
+python -m build
+twine check dist/*
+twine upload dist/*
+```
+
 
 migrating from unibox 0.4
 

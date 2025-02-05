@@ -87,12 +87,15 @@ def _gallery(
             </figure>
         """)
 
-    display(HTML(
-        data=f"""
+    display(
+        HTML(
+            data=f"""
         <div style="display: flex; flex-flow: row wrap; text-align: center;">
-        {''.join(figures)}
+        {"".join(figures)}
         </div>
-    """))
+    """,
+        ),
+    )
 
 
 import base64
@@ -182,7 +185,7 @@ def _label_gallery(
 
     html_content = f"""
     <div id="gallery" style="display: flex; flex-wrap: wrap; text-align: center;">
-    {''.join(figures)}
+    {"".join(figures)}
     </div>
     <button onclick="copySelection()" style="margin-top: 10px;">Copy Selection</button>
 
