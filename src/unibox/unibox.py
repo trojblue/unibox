@@ -34,29 +34,10 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
     - Supports local files/S3 buckets/HuggingFace repos
     - Automatic temp file management
     - Detailed performance metrics
-    
+
     Args:
         uri: The URI to load from (path, s3://path, or hf://repo_id)
         debug_print: Show loading diagnostics (default: True)
-        **kwargs: Loader-specific parameters
-        
-    Returns:
-        The loaded data in its native format (DataFrame, Dataset, Image, etc.)
-        
-    Raises:
-        ValueError: For unsupported file types or URI schemes
-        
-    Example:
-        ```python
-        import unibox as ub
-        
-        # Load from Hugging Face
-        dataset = ub.loads("hf://username/dataset-name")
-        
-        # Load from S3
-        df = ub.loads("s3://my-bucket/data.csv")
-        ```
-    """
         **kwargs: Additional keyword arguments to pass to the loader.
 
     Returns:
@@ -123,7 +104,7 @@ def loads(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> Any:
         loader_name = loader.__class__.__name__ if loader else "None"
         res_module, res_name = _get_type_info(res)
         # log_str = f'{res_name} LOADED from "{uri}" in {end_time-start_time:.2f} seconds\n    [{backend_name}:{loader_name} -> {res_module}.{res_name}]'
-        log_str = f'{res_name} LOADED from "{uri}" in {end_time-start_time:.2f} seconds'
+        log_str = f'{res_name} LOADED from "{uri}" in {end_time - start_time:.2f} seconds'
         logger.info(log_str)
 
     return res
@@ -203,7 +184,7 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         loader_name = loader.__class__.__name__
         data_module, data_name = _get_type_info(data)
         # log_str = f'{data_name} saved successfully to "{uri}" in {end_time-start_time:.2f} seconds\n    [{data_module}.{data_name} -> {backend_name}:{loader_name}]'
-        log_str = f'{data_name} saved successfully to "{uri}" in {end_time-start_time:.2f} seconds'
+        log_str = f'{data_name} saved successfully to "{uri}" in {end_time - start_time:.2f} seconds'
         logger.info(log_str)
 
 
