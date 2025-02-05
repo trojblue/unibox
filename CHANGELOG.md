@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.5.2](https://github.com/trojblue/unibox/releases/tag/0.5.2) - 2025-02-05
+
+### Features
+- Add LLM API utility ([b0bc83d](https://github.com/trojblue/unibox/commit/b0bc83d8ddab4e73e976fc357e811d2e1c4d6fed) by openhands-agent)
+
+### Bug Fixes
+- HuggingFace URI loading incorrectly ([ef8c9757f95](https://github.com/trojblue/unibox/commit/ef8c9757f95b00b9a9243cb114d5f4ff008e636a) by openhands-agent)
+- gallery() to handle None values and display images properly ([6f2cb39](https://github.com/trojblue/unibox/commit/6f2cb399b7f40de346f1e694810447469e1269ff) by openhands-agent)
+
+
+<small>[Compare with 0.5.1](https://github.com/trojblue/unibox/compare/0.5.1...0.5.2)</small>
+
 ## [0.5.1](https://github.com/trojblue/unibox/releases/tag/0.5.1) - 2025-01-28
 
 <small>[Compare with 0.5.0](https://github.com/trojblue/unibox/compare/0.5.0...0.5.1)</small>
