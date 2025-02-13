@@ -11,10 +11,10 @@ from tqdm.auto import tqdm
 
 from .backends.backend_router import get_backend_for_uri
 from .backends.local_backend import LocalBackend
+from .loaders.loader_router import get_loader_for_suffix
 from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
 from .utils.s3_client import S3Client
-from .loaders.loader_router import get_loader_for_suffix
 
 s3_client = S3Client()
 logger = UniLogger()
@@ -58,8 +58,7 @@ def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
 
 
 def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, **kwargs) -> Any:
-    """
-    Loads data from a given URI.
+    """Loads data from a given URI.
     If file=True, just returns the local path, no parsing.
     Otherwise:
       - If HF with no subpath => treat as entire dataset => .load_dataset()
@@ -80,8 +79,11 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
             # call backend.load_dataset
             # requires that the backend is our HF Router or old HFBackend
             # We'll assume it implements .load_dataset
-            res = backend.ds_backend.load_dataset(repo_id, split="train") \
-                if hasattr(backend, 'ds_backend') else backend.load_dataset(repo_id, split="train")
+            res = (
+                backend.ds_backend.load_dataset(repo_id, split="train")
+                if hasattr(backend, "ds_backend")
+                else backend.load_dataset(repo_id, split="train")
+            )
             # done
             end_time = timeit.default_timer()
             if debug_print:
@@ -121,10 +123,9 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
 
 
 def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) -> None:
-    """
-    Saves data to local or remote. Special-case:
-      - If HF with no extension => interpret as dataset push
-      - Otherwise, do suffix-based local or single-file approach
+    """Saves data to local or remote. Special-case:
+    - If HF with no extension => interpret as dataset push
+    - Otherwise, do suffix-based local or single-file approach
     """
     import tempfile
 
@@ -136,10 +137,10 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
     ### CHANGED - HF dataset push if suffix=="" ###
     if uri_str.startswith("hf://") and suffix == "":
         # Means something like "hf://owner/repo" => push entire dataset
-        if hasattr(backend, 'ds_backend'):
+        if hasattr(backend, "ds_backend"):
             # If router-based, do "backend.ds_backend.data_to_hub(data, repo_id, ...)"
             repo_id, _ = _parse_hf_uri(uri_str)
-            backend.ds_backend.data_to_hub(data, repo_id=repo_id, private=kwargs.get('private', True))
+            backend.ds_backend.data_to_hub(data, repo_id=repo_id, private=kwargs.get("private", True))
         else:
             # old style: "backend.data_to_hub(...)"
             backend.data_to_hub(data, uri_str, **kwargs)
@@ -182,10 +183,6 @@ def ls(
 
 
 def concurrent_loads(uris_list, num_workers=8, debug_print=True):
-    from concurrent.futures import ProcessPoolExecutor, as_completed
-    from functools import partial
-    from tqdm.auto import tqdm
-
     results = [None] * len(uris_list)
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         partial_load = partial(loads, debug_print=False)
@@ -228,27 +225,33 @@ def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
     return peeker.peeks(data)
 
 
-def gallery(paths: list[str],
-            labels: list[str] = [],
-            row_height="300px",
-            num_workers=32,
-            debug_print=True,
-            thumbnail_size: int = 512):
+def gallery(
+    paths: list[str],
+    labels: list[str] = [],
+    row_height="300px",
+    num_workers=32,
+    debug_print=True,
+    thumbnail_size: int = 512,
+):
     try:
         from .nb_helpers.ipython_utils import _gallery
+
         _gallery(paths, labels, row_height, num_workers, debug_print, thumbnail_size)
     except (ImportError, ModuleNotFoundError):
         print("IPython is not available. Gallery function cannot run.")
 
 
-def label_gallery(paths: list[str],
-                  labels: list[str] = [],
-                  row_height="150px",
-                  num_workers=32,
-                  debug_print=True,
-                  thumbnail_size: int = 512):
+def label_gallery(
+    paths: list[str],
+    labels: list[str] = [],
+    row_height="150px",
+    num_workers=32,
+    debug_print=True,
+    thumbnail_size: int = 512,
+):
     try:
         from .nb_helpers.ipython_utils import _label_gallery
+
         _label_gallery(paths, labels, row_height, num_workers, debug_print, thumbnail_size)
     except (ImportError, ModuleNotFoundError):
         print("IPython is not available. label_gallery function cannot run.")
