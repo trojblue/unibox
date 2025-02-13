@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.6.0](https://github.com/trojblue/unibox/releases/tag/0.6.0) - 2025-02-13
+
+<small>[Compare with 0.5.2](https://github.com/trojblue/unibox/compare/0.5.2...0.6.0)</small>
+
+### Features
+
+- adding improved huggingface dataset (with hfapi / hf datasets mixed backend) ([96486d2](https://github.com/trojblue/unibox/commit/96486d243c4a5e2aba2a6060e7b758a39c949e94) by yada).
+
 ## [0.5.2](https://github.com/trojblue/unibox/releases/tag/0.5.2) - 2025-02-05
 
 ### Features

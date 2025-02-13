@@ -1,5 +1,6 @@
 # local_backend.py
 import os
+import shutil
 import warnings
 from pathlib import Path
 from typing import List, Optional
@@ -15,11 +16,12 @@ class LocalBackend(BaseBackend):
         return Path(uri)
 
     def upload(self, local_path: Path, uri: str) -> None:
-        # If you want to handle "move/overwrite" logic, do it here
-        # Otherwise do nothing if local_path == uri
-        if Path(uri) != local_path:
-            # copy or rename
-            pass
+        """Ensure the final path has the saved file."""
+        dest = Path(uri)
+        if dest != local_path:
+            # Copy the temp file to the final path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(local_path), str(dest))
 
     def _traverse_local_dir(
         self,
