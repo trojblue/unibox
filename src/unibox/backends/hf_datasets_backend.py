@@ -6,8 +6,9 @@ from typing import Any, List, Optional
 import pandas as pd
 from datasets import Dataset, load_dataset
 from huggingface_hub import create_repo
-from .base_backend import BaseBackend
+
 from ..utils.logger import UniLogger
+from .base_backend import BaseBackend
 
 logger = UniLogger()
 
@@ -26,15 +27,13 @@ def parse_hf_uri(uri: str):
 
 
 class HuggingFaceDatasetsBackend(BaseBackend):
-    """
-    A backend that handles HF *datasets* usage:
-     - load_dataset() from a repo
-     - push entire Dataset to a repo
+    """A backend that handles HF *datasets* usage:
+    - load_dataset() from a repo
+    - push entire Dataset to a repo
     """
 
     def download(self, uri: str, target_dir: str = None) -> Path:
-        """
-        For a dataset-based approach, we usually don't do single-file 'download()'.
+        """For a dataset-based approach, we usually don't do single-file 'download()'.
         We'll raise NotImplemented if we ever get here for single-file usage.
         """
         raise NotImplementedError("HuggingFaceDatasetsBackend does not handle single-file download.")
@@ -43,8 +42,14 @@ class HuggingFaceDatasetsBackend(BaseBackend):
         """Expects the user is pushing a Dataset => must handle separately. Use data_to_hub()."""
         raise NotImplementedError("HuggingFaceDatasetsBackend expects entire dataset push (see data_to_hub).")
 
-    def ls(self, uri: str, exts: Optional[List[str]] = None, relative_unix: bool = False,
-           debug_print: bool = True, **kwargs) -> List[str]:
+    def ls(
+        self,
+        uri: str,
+        exts: Optional[List[str]] = None,
+        relative_unix: bool = False,
+        debug_print: bool = True,
+        **kwargs,
+    ) -> List[str]:
         """List sub-files or splits in a HF dataset repo? Currently not implemented."""
         raise NotImplementedError("Listing HF dataset contents is not implemented here.")
 
@@ -55,9 +60,7 @@ class HuggingFaceDatasetsBackend(BaseBackend):
 
     # -- Additional helper for pushing data frames or Datasets:
     def data_to_hub(self, data: pd.DataFrame | Dataset | Any, repo_id: str, private: bool = True):
-        """
-        Upload a DataFrame or HF Dataset to HF as a dataset repo.
-        """
+        """Upload a DataFrame or HF Dataset to HF as a dataset repo."""
         logger.info(f"Uploading dataset to HF repo {repo_id}")
         if isinstance(data, Dataset):
             ds = data

@@ -1,10 +1,11 @@
 # unibox/backends/backend_router.py
 
+from unibox.utils.utils import is_hf_uri, is_s3_uri, is_url
+
 from .base_backend import BaseBackend
+from .hf_router_backend import HuggingFaceRouterBackend
 from .local_backend import LocalBackend
 from .s3_backend import S3Backend
-from .hf_router_backend import HuggingFaceRouterBackend
-from unibox.utils.utils import is_hf_uri, is_s3_uri, is_url
 
 
 def get_backend_for_uri(uri: str) -> BaseBackend:
