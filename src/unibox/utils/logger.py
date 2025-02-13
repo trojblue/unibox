@@ -25,7 +25,7 @@ class UniLogger:
         self,
         output_dir: str = "logs",
         file_suffix: str = "log",
-        verbose: bool = True,
+        verbose: bool = False,
         logger_name: str = None,
         write_log: bool = True,
         shorten_levels: int = 2,  # how many path parts to show for debug logs
