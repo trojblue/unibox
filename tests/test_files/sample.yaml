@@ -1,0 +1,25 @@
+name: "Anime Rating System"
+version: 1.0
+categories:
+  - name: "Proportions"
+    description: "Evaluates the correctness of body proportions."
+    weight: 0.4
+  - name: "Pose Accuracy"
+    description: "Checks if the pose follows realistic constraints."
+    weight: 0.3
+  - name: "Structural Consistency"
+    description: "Ensures body parts are correctly connected."
+    weight: 0.3
+raters:
+  - id: 101
+    name: "RaterA"
+    availability: "high"
+    assigned_images: 2000
+  - id: 102
+    name: "RaterB"
+    availability: "medium"
+    assigned_images: 1000
+  - id: 103
+    name: "RaterC"
+    availability: "low"
+    assigned_images: 500
