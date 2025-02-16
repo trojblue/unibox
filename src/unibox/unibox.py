@@ -135,7 +135,8 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
     - Otherwise, do suffix-based local or single-file approach
 
     some kwargs:
-        hf_dataset_split: str = "train"
+        split: str = "train"  (for HF dataset push)
+        private: bool = True  (for HF dataset push)
     """
     import tempfile
 
@@ -150,12 +151,15 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         if hasattr(backend, "ds_backend"):
             # If router-based, do "backend.ds_backend.data_to_hub(data, repo_id, ...)"
             repo_id, _ = _parse_hf_uri(uri_str)
-            dataset_split = kwargs.get("hf_dataset_split", "train")
-            backend.ds_backend.data_to_hub(data, repo_id=repo_id, private=kwargs.get("private", True), 
-                                           split=dataset_split)
+            dataset_split = kwargs.get("split", "train")
+            backend.ds_backend.data_to_hub(data, repo_id=repo_id, 
+                                           private=kwargs.get("private", True), 
+                                           split=dataset_split
+                                           )
         else:
             # old style: "backend.data_to_hub(...)"
-            dataset_split = kwargs.get("hf_dataset_split", "train")
+            print("OLD STYLE HERE (canary print for debug)")
+            dataset_split = kwargs.get("split", "train")
             backend.data_to_hub(data, uri_str, split=dataset_split, **kwargs)
         end_time = timeit.default_timer()
         if debug_print:
