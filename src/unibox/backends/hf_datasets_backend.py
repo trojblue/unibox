@@ -59,16 +59,21 @@ class HuggingFaceDatasetsBackend(BaseBackend):
         return load_dataset(repo_id, split=split, revision=revision)
 
     # -- Additional helper for pushing data frames or Datasets:
-    def data_to_hub(self, data: pd.DataFrame | Dataset | Any, repo_id: str, private: bool = True):
-        """Upload a DataFrame or HF Dataset to HF as a dataset repo."""
+    def data_to_hub(self, data: pd.DataFrame | Dataset | Any, 
+                    repo_id: str, private: bool = True, **kwargs) -> None:
+        """Upload a DataFrame or HF Dataset to HF as a dataset repo.
+        
+        kwargs:
+            eg. `split` for Dataset.from_pandas()
+        """
         logger.info(f"Uploading dataset to HF repo {repo_id}")
         if isinstance(data, Dataset):
             ds = data
         elif isinstance(data, pd.DataFrame):
-            ds = Dataset.from_pandas(data)
+            ds = Dataset.from_pandas(data, **kwargs)
         else:
             # attempt to convert
-            ds = Dataset.from_pandas(pd.DataFrame(data))
+            ds = Dataset.from_pandas(pd.DataFrame(data), **kwargs)
 
-        create_repo(repo_id, private=private, exist_ok=True)
+        # create_repo(repo_id, private=private, exist_ok=True)
         ds.push_to_hub(repo_id, private=private)
