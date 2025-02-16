@@ -69,6 +69,10 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
     Otherwise:
       - If HF with no subpath => treat as entire dataset => .load_dataset()
       - Else do normal "download then suffix-based loader."
+
+    some kwargs:
+        split: str = "train"  (for HF dataset load)
+        streaming: bool = False  (for HF dataset load)
     """
     if file:
         return load_file(uri, debug_print=debug_print, **kwargs)
@@ -85,11 +89,11 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
             # call backend.load_dataset
             # requires that the backend is our HF Router or old HFBackend
             # We'll assume it implements .load_dataset            
-            dataset_split = kwargs.get("hf_dataset_split", "train")
+            # here: split, streaming is passed into load_dataset
             res = (
-                backend.ds_backend.load_dataset(repo_id, split=dataset_split)
+                backend.ds_backend.load_dataset(repo_id, , **kwargs)
                 if hasattr(backend, "ds_backend")
-                else backend.load_dataset(repo_id, split=dataset_split)
+                else backend.load_dataset(repo_id, , **kwargs)
             )
             # done
             end_time = timeit.default_timer()
