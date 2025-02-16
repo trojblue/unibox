@@ -27,12 +27,18 @@ def _get_type_info(obj: Any) -> str:
 
 ### CHANGED ###
 def _parse_hf_uri(uri: str):
-    """Returns (repo_id, subpath) from 'hf://owner/repo/...'. If no subpath, returns ('owner/repo','')."""
-    trimmed = uri.replace("hf://", "")
-    parts = trimmed.split("/", 1)
-    repo_id = parts[0]
-    subpath = parts[1] if len(parts) > 1 else ""
+    # likely duplicate of hf_datasets_backend.py impl
+    """Returns (repo_id, subpath) from 'hf://owner/repo/...'. If no subpath, returns ('owner/repo', '')."""
+    trimmed = uri.replace("hf://", "", 1)
+    parts = trimmed.split("/", 2)  # Split into at most three parts
+    if len(parts) < 2:
+        raise ValueError(f"Invalid Hugging Face URI format: {uri}")
+    
+    repo_id = f"{parts[0]}/{parts[1]}"  # First two parts make up the repo ID
+    subpath = parts[2] if len(parts) > 2 else ""  # Remaining part is the subpath
+
     return repo_id, subpath
+
 
 
 def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
@@ -78,11 +84,12 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
         if not subpath:
             # call backend.load_dataset
             # requires that the backend is our HF Router or old HFBackend
-            # We'll assume it implements .load_dataset
+            # We'll assume it implements .load_dataset            
+            dataset_split = kwargs.get("hf_dataset_split", "train")
             res = (
-                backend.ds_backend.load_dataset(repo_id, split="train")
+                backend.ds_backend.load_dataset(repo_id, split=dataset_split)
                 if hasattr(backend, "ds_backend")
-                else backend.load_dataset(repo_id, split="train")
+                else backend.load_dataset(repo_id, split=dataset_split)
             )
             # done
             end_time = timeit.default_timer()
@@ -126,6 +133,9 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
     """Saves data to local or remote. Special-case:
     - If HF with no extension => interpret as dataset push
     - Otherwise, do suffix-based local or single-file approach
+
+    some kwargs:
+        hf_dataset_split: str = "train"
     """
     import tempfile
 
@@ -140,10 +150,13 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         if hasattr(backend, "ds_backend"):
             # If router-based, do "backend.ds_backend.data_to_hub(data, repo_id, ...)"
             repo_id, _ = _parse_hf_uri(uri_str)
-            backend.ds_backend.data_to_hub(data, repo_id=repo_id, private=kwargs.get("private", True))
+            dataset_split = kwargs.get("hf_dataset_split", "train")
+            backend.ds_backend.data_to_hub(data, repo_id=repo_id, private=kwargs.get("private", True), 
+                                           split=dataset_split)
         else:
             # old style: "backend.data_to_hub(...)"
-            backend.data_to_hub(data, uri_str, **kwargs)
+            dataset_split = kwargs.get("hf_dataset_split", "train")
+            backend.data_to_hub(data, uri_str, split=dataset_split, **kwargs)
         end_time = timeit.default_timer()
         if debug_print:
             _, data_cls = _get_type_info(data)
