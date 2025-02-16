@@ -91,9 +91,9 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
             # We'll assume it implements .load_dataset            
             # here: split, streaming is passed into load_dataset
             res = (
-                backend.ds_backend.load_dataset(repo_id, , **kwargs)
+                backend.ds_backend.load_dataset(repo_id, **kwargs)
                 if hasattr(backend, "ds_backend")
-                else backend.load_dataset(repo_id, , **kwargs)
+                else backend.load_dataset(repo_id, **kwargs)
             )
             # done
             end_time = timeit.default_timer()
