@@ -26,6 +26,7 @@ class S3Backend(BaseBackend):
         uri = self._ensure_s3_uri(uri)
         if not target_dir:
             from unibox.utils.globals import GLOBAL_TMP_DIR
+
             target_dir = GLOBAL_TMP_DIR
 
         os.makedirs(target_dir, exist_ok=True)
@@ -45,8 +46,7 @@ class S3Backend(BaseBackend):
         debug_print: bool = True,
         **kwargs,
     ) -> List[str]:
-        """
-        List files in the S3 "directory" with optional extension filtering.
+        """List files in the S3 "directory" with optional extension filtering.
 
         Args:
             uri (str): S3 directory URI to list.

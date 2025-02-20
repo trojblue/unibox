@@ -6,8 +6,8 @@ from .image_loder import ImageLoader
 from .json_loader import JSONLoader
 from .jsonl_loader import JSONLLoader
 from .parquet_loader import ParquetLoader
-from .txt_loader import TxtLoader
 from .toml_loader import TOMLLoader
+from .txt_loader import TxtLoader
 from .yaml_loader import YAMLLoader
 
 
@@ -28,5 +28,5 @@ def get_loader_for_suffix(suffix: str):
     if suffix == ".toml":
         return TOMLLoader()
     if suffix == ".yaml" or suffix == ".yml":
-        return YAMLLoader()        
+        return YAMLLoader()
     return None
