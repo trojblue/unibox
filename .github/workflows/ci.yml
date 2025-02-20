@@ -146,4 +146,12 @@ jobs:
       run: make setup
 
     - name: Run the test suite
-      run: make test
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        TEST_TOKEN_EXPORTED: "true"
+      run: |
+        echo "TEST_TOKEN_EXPORTED: $TEST_TOKEN_EXPORTED"
+        make test
