@@ -29,7 +29,7 @@ import unibox as ub
         ),
         # S3 file scenario
         pytest.param(
-            "s3://bucket-external/misc/yada_store/configs/clip_prompts_list_full_v2.txt",
+            "s3://dataset-ingested/temp/unibox_debug/clip_prompts_list_full_v2.txt",
             True,
             False,
             id="S3 Text File",
