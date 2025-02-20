@@ -5,7 +5,9 @@
 [![pypi version](https://img.shields.io/pypi/v/unibox.svg)](https://pypi.org/project/unibox/)
 [![gitter](https://badges.gitter.im/join%20chat.svg)](https://app.gitter.im/#/room/#unibox:gitter.im)
 
-unibox provides unified interface for common file operations
+**A unified interface for seamless file operations across local, S3, and Hugging Face ecosystems.**
+
+`unibox` simplifies loading, saving, and exploring data—whether it's a local CSV, an S3-hosted image, or an entire Hugging Face dataset. With a single API, you can handle diverse file types and storage backends effortlessly.
 
 ## Installation
 
@@ -13,66 +15,70 @@ unibox provides unified interface for common file operations
 pip install unibox
 ```
 
-With [`uv`](https://docs.astral.sh/uv/):
+Or with `uv`:
 
 ```bash
 uv tool install unibox
 ```
 
-If you're not using python 3.13, it's also recommended to install `pandas[performance]`:
-
-```bash
-pip install "pandas[performance]"
-```
 
 
-to update or remove project dependencies:
+## Quick Start
 
-```bash
-
-uv add requests
-
-uv remove requests
-
-# after adding new package: rerun
-make setup
-```
-
-
-## Usage
-
-import the lib:
+Load anything, anywhere:
 
 ```python
 import unibox as ub
+
+# Local parquet file
+df = ub.loads("data/sample.parquet")
+
+# S3-hosted text file
+lines = ub.loads("s3://my-bucket/notes.txt")
+
+# Hugging Face dataset
+dataset = ub.loads("hf://user/repo")
 ```
 
-
-## Using Huggingface Backend
-
-you can load and use a huggingface dataset directly with `hf://{username}/{daataset_repo}`:
+Save with ease:
 
 ```python
-hf_dset = ub.loads("hf://incantor/aesthetic_eagle_5category_iter99")
-df = hf_dset.to_pandas()
+ub.saves(df, "s3://my-bucket/processed.parquet")
+ub.saves(dataset, "hf://my-org/new-dataset")
 ```
 
-and upload a processed dataframe back to huggingface:
+List files or peek at data:
 
 ```python
-df["new_col"] = "new changes"
-ub.saves(df, "hf://datatmp/updated_repo")
+# List all JPGs in an S3 folder
+images = ub.ls("s3://bucket/images", exts=[".jpg"])
+
+# Preview a dataset
+ub.peeks(dataset)
 ```
 
 
-## Dev notes
 
-current concerns:
+## Why unibox?
 
-1. loads(): temp files could accumulate on global dir, and take up all of /tmp/; also concurrency issues
-2. s3_backend: only one that takes a dir; should make others do the same
+- **Versatile**: Handles CSVs, images, datasets, and more—locally or remotely.
+- **Simple**: One function call to load or save, no matter the source.
+- **Transformative**: From quick data peeks to concurrent downloads, it scales with your needs.
 
-to get a coverage report, run:
+
+
+Explore the full power in our documentation.
+
+
+
+## Contributing
+
+Love unibox? Join us! Check out CONTRIBUTING.md to get started.
+
+## Dev Notes
+
+To get a coverage report, run:
+
 ```bash
 pytest --cov=src/unibox --cov-report=term-missing tests
 ```
@@ -86,17 +92,11 @@ make docs host=0.0.0.0
 make check-docs
 ```
 
-to manual make a release:
+To manually release a new version (instead of `make release`):
+
 ```bash
 # python -m pip install build twine
 python -m build
 twine check dist/*
 twine upload dist/*
 ```
-
-
-migrating from unibox 0.4
-
-no longer supported:
-
-- `ub.traverses()`: removed handlers and `exclude_extensions` (`include_extensions` still works but depreciated with `exts`)

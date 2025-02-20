@@ -1,0 +1,12 @@
+docs/
+logs/
+notebooks/
+CHANGELOG.md
+repomix-output.md
+
+**/.venv
+**/.venvs
+**/.pdm-build
+**/.ruff_cache
+**/__pycache__
+**/htmlcov
