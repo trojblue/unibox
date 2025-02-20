@@ -1,108 +1,149 @@
-# name: ci
+name: ci
 
-# on:
-#   push:
-#   pull_request:
-#     branches:
-#     - main
+on:
+  push:
+  pull_request:
+    branches:
+    - main
 
-# defaults:
-#   run:
-#     shell: bash
+defaults:
+  run:
+    shell: bash
 
-# env:
-#   LANG: en_US.utf-8
-#   LC_ALL: en_US.utf-8
-#   PYTHONIOENCODING: UTF-8
-#   PYTHON_VERSIONS: ""
+env:
+  LANG: en_US.utf-8
+  LC_ALL: en_US.utf-8
+  PYTHONIOENCODING: UTF-8
+  PYTHON_VERSIONS: ""
 
-# jobs:
+jobs:
 
-#   quality:
+  # https://github.com/squidfunk/mkdocs-material/blob/1357cd26af7cbbe9dd6e3b3a355feba8b5b2999d/docs/publishing-your-site.md
+  # see pyproject.toml for the exact documentation dependencies. 
+  # NOT installing project dependencies for faster build times
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV # (3)!
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
 
-#     runs-on: ubuntu-latest
+      - name: Install Documentation Dependencies
+        run: |
+          pip install mkdocs \
+            mkdocs-material>=9.5 \
+            mkdocs-coverage>=1.0 \
+            mkdocs-gen-files>=0.5 \
+            mkdocs-git-revision-date-localized-plugin>=1.2 \
+            mkdocs-literate-nav>=0.6 \
+            mkdocs-minify-plugin>=0.8 \
+            mkdocstrings[python]>=0.25 \
+            markdown-callouts>=0.4 \
+            markdown-exec>=1.8 \
+            black>=24.4 
 
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v4
-#       with:
-#         fetch-depth: 0
-#         fetch-tags: true
+      - name: Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force
 
-#     - name: Setup Python
-#       uses: actions/setup-python@v5
-#       with:
-#         python-version: "3.12"
+  # quality:
 
-#     - name: Setup uv
-#       uses: astral-sh/setup-uv@v3
-#       with:
-#         enable-cache: true
-#         cache-dependency-glob: pyproject.toml
+  #   runs-on: ubuntu-latest
 
-#     - name: Install dependencies
-#       run: make setup
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0
+  #       fetch-tags: true
 
-#     - name: Check if the documentation builds correctly
-#       run: make check-docs
+  #   - name: Setup Python
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: "3.12"
 
-#     - name: Check the code quality
-#       run: make check-quality
+  #   - name: Setup uv
+  #     uses: astral-sh/setup-uv@v3
+  #     with:
+  #       enable-cache: true
+  #       cache-dependency-glob: pyproject.toml
 
-#     - name: Check if the code is correctly typed
-#       run: make check-types
+  #   - name: Install dependencies
+  #     run: make setup
 
-#     - name: Check for breaking changes in the API
-#       run: make check-api
+  #   - name: Check if the documentation builds correctly
+  #     run: make check-docs
 
-#   tests:
+  #   - name: Check the code quality
+  #     run: make check-quality
 
-#     strategy:
-#       matrix:
-#         os:
-#         - ubuntu-latest
-#         - macos-latest
-#         - windows-latest
-#         python-version:
-#         - "3.10"
-#         - "3.11"
-#         - "3.12"
-#         - "3.13"
-#         resolution:
-#         - highest
-#         - lowest-direct
-#         exclude:
-#         - os: macos-latest
-#           resolution: lowest-direct
-#         - os: windows-latest
-#           resolution: lowest-direct
-#     runs-on: ${{ matrix.os }}
-#     continue-on-error: ${{ matrix.python-version == '3.14' }}
+  #   - name: Check if the code is correctly typed
+  #     run: make check-types
 
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v4
-#       with:
-#         fetch-depth: 0
-#         fetch-tags: true
+  #   - name: Check for breaking changes in the API
+  #     run: make check-api
 
-#     - name: Setup Python
-#       uses: actions/setup-python@v5
-#       with:
-#         python-version: ${{ matrix.python-version }}
-#         allow-prereleases: true
+  tests:
 
-#     - name: Setup uv
-#       uses: astral-sh/setup-uv@v3
-#       with:
-#         enable-cache: true
-#         cache-dependency-glob: pyproject.toml
-#         cache-suffix: py${{ matrix.python-version }}
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
+        python-version:
+        # - "3.9"
+        - "3.10"
+        # - "3.11"
+        # - "3.12"
+        # - "3.13"
+        # - "3.14"
+        resolution:
+        - highest
+        - lowest-direct
+        exclude:
+        - os: macos-latest
+          resolution: lowest-direct
+        - os: windows-latest
+          resolution: lowest-direct
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.python-version == '3.14' }}
 
-#     - name: Install dependencies
-#       env:
-#         UV_RESOLUTION: ${{ matrix.resolution }}
-#       run: make setup
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        fetch-tags: true
 
-#     - name: Run the test suite
-#       run: make test
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        allow-prereleases: true
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+        cache-dependency-glob: pyproject.toml
+        cache-suffix: py${{ matrix.python-version }}
+
+    - name: Install dependencies
+      env:
+        UV_RESOLUTION: ${{ matrix.resolution }}
+      run: make setup
+
+    - name: Run the test suite
+      run: make test
