@@ -33,12 +33,11 @@ def _parse_hf_uri(uri: str):
     parts = trimmed.split("/", 2)  # Split into at most three parts
     if len(parts) < 2:
         raise ValueError(f"Invalid Hugging Face URI format: {uri}")
-    
+
     repo_id = f"{parts[0]}/{parts[1]}"  # First two parts make up the repo ID
     subpath = parts[2] if len(parts) > 2 else ""  # Remaining part is the subpath
 
     return repo_id, subpath
-
 
 
 def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
@@ -88,7 +87,7 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
         if not subpath:
             # call backend.load_dataset
             # requires that the backend is our HF Router or old HFBackend
-            # We'll assume it implements .load_dataset            
+            # We'll assume it implements .load_dataset
             # here: split, streaming is passed into load_dataset
             res = (
                 backend.ds_backend.load_dataset(repo_id, **kwargs)
@@ -156,10 +155,12 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
             # If router-based, do "backend.ds_backend.data_to_hub(data, repo_id, ...)"
             repo_id, _ = _parse_hf_uri(uri_str)
             dataset_split = kwargs.get("split", "train")
-            backend.ds_backend.data_to_hub(data, repo_id=repo_id, 
-                                           private=kwargs.get("private", True), 
-                                           split=dataset_split
-                                           )
+            backend.ds_backend.data_to_hub(
+                data,
+                repo_id=repo_id,
+                private=kwargs.get("private", True),
+                split=dataset_split,
+            )
         else:
             # old style: "backend.data_to_hub(...)"
             print("OLD STYLE HERE (canary print for debug)")

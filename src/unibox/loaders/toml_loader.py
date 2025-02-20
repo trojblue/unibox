@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+
 import tomli
 import tomli_w
 
