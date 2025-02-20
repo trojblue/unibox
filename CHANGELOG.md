@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.7.0](https://github.com/trojblue/unibox/releases/tag/0.7.0) - 2025-02-20
+
+<small>[Compare with 0.6.0](https://github.com/trojblue/unibox/compare/0.6.0...0.7.0)</small>
+
+### Features
+
+- adding dataset split control when using ub.saves("hf://org/dataset_repo") ([20735f9](https://github.com/trojblue/unibox/commit/20735f9c04336544664bd6961b827bca70c15a9f) by yada).
+- adding toml / yaml loaders ([3955e49](https://github.com/trojblue/unibox/commit/3955e49ef5cbe09ad6207872ddde58f4a711384d) by yada).
+
+### Bug Fixes
+
+- missing type checks after update ([f001f15](https://github.com/trojblue/unibox/commit/f001f159086d627d50c02be64a01c312650eb9a0) by yada).
+- s3 backend: missing arguments for ls ([7c1d8e5](https://github.com/trojblue/unibox/commit/7c1d8e59bd90c768698525d0ab52bcb34c5a3f1f) by yada).
+- incorrect huggingface data upload behavior when using datasets ([bc5d773](https://github.com/trojblue/unibox/commit/bc5d77399fefca518e971e9f0da590e7875757ee) by yada).
+
 ## [0.6.0](https://github.com/trojblue/unibox/releases/tag/0.6.0) - 2025-02-13
 
 <small>[Compare with 0.5.2](https://github.com/trojblue/unibox/compare/0.5.2...0.6.0)</small>
