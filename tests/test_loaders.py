@@ -22,7 +22,7 @@ import unibox as ub
         ("tests/test_files/sample.json", True, False),
         # HuggingFace dataset scenario
         pytest.param(
-            "hf://incantor/aesthetic_eagle_5category_iter99",
+            "hf://trojblue/test-anime-rating-v3-partial",
             True,
             False,
             id="HuggingFace Dataset",
