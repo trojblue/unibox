@@ -1,3 +1,4 @@
+import pandas as pd
 import logging
 import os
 from urllib.parse import urlparse
@@ -41,13 +42,15 @@ def merge_dicts(*dicts):
     Returns:
         dict: Merged dictionary.
     """
-    assert all(isinstance(d, dict) for d in dicts), "All inputs must be dictionaries."
+    assert all(isinstance(d, dict)
+               for d in dicts), "All inputs must be dictionaries."
 
     result = {}
     for d in dicts:
         for key, value in d.items():
             if key in result:
-                logger.warning(f"Overlapping key '{key}' detected. Existing value: {result[key]}, New value: {value}")
+                logger.warning(
+                    f"Overlapping key '{key}' detected. Existing value: {result[key]}, New value: {value}")
                 if type(result[key]) != type(value):
                     logger.warning(
                         f"Data type mismatch for key '{key}': {type(result[key])} vs {type(value)}.",
