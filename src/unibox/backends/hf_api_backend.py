@@ -12,8 +12,8 @@ from huggingface_hub import HfApi, hf_hub_download
 from .base_backend import BaseBackend
 
 HF_PREFIX = "hf://"
-START_MARKER = "<!-- BEGIN hfbackend_autodoc -->"
-END_MARKER = "<!-- END hfbackend_autodoc -->"
+START_MARKER = "<!-- BEGIN unibox_hf_autodoc -->"
+END_MARKER = "<!-- END unibox_hf_autodoc -->"
 
 import logging
 
@@ -230,7 +230,7 @@ class HuggingFaceApiBackend(BaseBackend):
         # 3) Build the new block we want to insert/replace
         # ------------------------------------------------
         # For clarity, we create a single string that includes the markers and the user stats content
-        statistics_block = f"{START_MARKER}\n" f"{new_stats_content}\n" f"{END_MARKER}"
+        statistics_block = f"{START_MARKER}\n{new_stats_content}\n{END_MARKER}"
 
         # ------------------------------------------------
         # 4) Search in 'rest_of_file' for an existing block with those markers

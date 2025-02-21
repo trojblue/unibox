@@ -31,7 +31,7 @@ def column_memory_usage(dataframe: pd.DataFrame) -> pd.DataFrame:
             # Exclude Index
             "Readable Memory Usage": readable_memory_usage.values[1:],
             "Dtype": dtypes.values,
-        }
+        },
     )
     mem_df = mem_df.sort_values(by="Memory Usage", ascending=False)
     return mem_df
@@ -76,7 +76,7 @@ def get_random_df() -> pd.DataFrame:
             "weight": [random.randint(50, 150) for _ in range(1000)],
             "date": [datetime.now() for _ in range(1000)],
             "is_student": [random.choice([True, False]) for _ in range(1000)],
-        }
+        },
     )
     return df
 
@@ -108,25 +108,27 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str, backend):
     stats_df = pd.DataFrame(
         {
             "Column": data.columns,
-            "Missing Count": missing_count.values,
-            "Missing Rate": missing_rate.values,
             "Memory Usage": mem_df.set_index("Column")["Readable Memory Usage"],
             "Dtype": mem_df.set_index("Column")["Dtype"],
-        }
+            "Missing Count": missing_count.values,
+            "Missing Rate": missing_rate.values,
+        },
     ).reset_index(drop=True)
 
     # Add total row
     total_memory = human_readable_size(data.memory_usage(deep=True).sum())
     total_row = pd.DataFrame(
         [
+            # Add empty row
+            {"Column": "", "Memory Usage": "", "Dtype": "", "Missing Count": "", "Missing Rate": ""},
             {
-                "Column": "Total",
-                "Missing Count": missing_count.sum(),
-                "Missing Rate": f"{(missing_count.sum() / (len(data) * len(data.columns)) * 100):.2f}%",
+                "Column": "**TOTAL**",
                 "Memory Usage": total_memory,
                 "Dtype": "N/A",
-            }
-        ]
+                "Missing Count": missing_count.sum(),
+                "Missing Rate": f"{(missing_count.sum() / (len(data) * len(data.columns)) * 100):.2f}%",
+            },
+        ],
     )
 
     stats_df = pd.concat([stats_df, total_row], ignore_index=True)
@@ -137,31 +139,30 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str, backend):
     # Convert first 5 rows to markdown table
     head_table = data.head().to_markdown(index=False)
 
-    readme_text = f"""
-## Dataset Statistics
+    readme_text = f"""# {repo_id}
+(Auto-generated from last commit)
 
-(Auto-generated from last commit):
-
-{stats_table}
-
-## Sample Data
-
-{head_table}
-
-## Using Dataset
-
-Loading data:
+## Using Dataset:
 
 ```python
 import unibox as ub
 df = ub.loads("hf://{repo_id}").to_pandas()
-ub.peeks(df)
 ```
 
-Saving data:
+## Row samples:
 
-```python
-ub.saves(df, "hf://{repo_id}")
 ```
+{data.shape}
+{(data.columns.to_list())}
+```
+
+{head_table}
+
+## Column statistics: 
+
+{stats_table}
+
+
+(last updated: {pd.Timestamp.now()})
 """
     return readme_text
