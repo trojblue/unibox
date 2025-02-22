@@ -81,6 +81,7 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
     some kwargs:
         split: str = "train"  (for HF dataset load)
         streaming: bool = False  (for HF dataset load)
+        as_pandas: bool = False  (for HF dataset load)
     """
     if file:
         return load_file(uri, debug_print=debug_print, **kwargs)
@@ -98,11 +99,8 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
             # requires that the backend is our HF Router or old HFBackend
             # We'll assume it implements .load_dataset
             # here: split, streaming is passed into load_dataset
-            res = (
-                backend.ds_backend.load_dataset(repo_id, **kwargs)
-                if hasattr(backend, "ds_backend")
-                else backend.load_dataset(repo_id, **kwargs)
-            )
+            res = backend.ds_backend.load_dataset(repo_id, **kwargs)
+
             # done
             end_time = timeit.default_timer()
             if debug_print:
