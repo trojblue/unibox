@@ -12,6 +12,8 @@ from .base_backend import BaseBackend
 from .hf_api_backend import HuggingFaceApiBackend, parse_hf_uri
 from .hf_datasets_backend import HuggingFaceDatasetsBackend
 
+from datasets import load_dataset, Dataset, DatasetDict, IterableDatasetDict, IterableDataset
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +39,7 @@ class HuggingFaceRouterBackend(BaseBackend):
         """Determine if a path refers to a file (has extension) or dataset."""
         return "." in Path(path).name
 
-    def download(self, uri: str, target_dir: Optional[str] = None) -> Path:
+    def download(self, uri: str, target_dir: Optional[str] = None) -> Path|Dataset|DatasetDict|IterableDatasetDict | IterableDataset:
         """Download from HuggingFace, routing between file and dataset backends.
         
         Args:
@@ -53,34 +55,18 @@ class HuggingFaceRouterBackend(BaseBackend):
         target_dir_str = str(target_dir) if target_dir is not None else ""
         
         # Route based on whether it looks like a file path
-        if self._is_file_path(subpath):
+        if not self._is_file_path(subpath):
+            # For datasets, call load_dataset and return directly (download is handled by datasets lib)
+                    # We know this is meant to be a dataset
+            
+            # TODO: change later for splits or remove it
+            ds = load_dataset(repo_id, split="train")
+            logger.debug(f"Downloaded dataset {repo_id}")
+            return ds  # <-- Return in-memory
+        else:
             # For files, use the API backend
             return self.api_backend.download(uri, target_dir_str)
-        else:
-            # For datasets, download using datasets library and save to disk
-            try:
-                from datasets import load_dataset, Dataset, DatasetDict
-                from ..utils.globals import GLOBAL_TMP_DIR
-                import os
-                
-                # Create a unique temp directory for this dataset
-                safe_repo_id = repo_id.replace("/", "_")
-                dataset_dir = Path(GLOBAL_TMP_DIR) / f"hf_{safe_repo_id}"
-                os.makedirs(dataset_dir, exist_ok=True)
-                
-                # Load and save the dataset
-                dataset = load_dataset(repo_id)
-                if isinstance(dataset, (Dataset, DatasetDict)):
-                    dataset.save_to_disk(str(dataset_dir))
-                    logger.debug(f"Downloaded dataset {repo_id} to {dataset_dir}")
-                    return dataset_dir
-                else:
-                    raise ValueError(f"Expected Dataset or DatasetDict, got {type(dataset)}")
-                
-            except Exception as e:
-                # If dataset download fails, try file API as fallback
-                logger.warning(f"Dataset download failed: {e}, trying file API")
-                return self.api_backend.download(uri, target_dir_str)
+
 
     def upload(self, local_path: Path, uri: str) -> None:
         """Upload to HuggingFace, routing between file and dataset backends.
