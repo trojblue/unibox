@@ -100,7 +100,7 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         raise ValueError(f"No loader found for path: {uri}")
 
     # Save using the loader (it will handle both dataset and file cases)
-    loader.save(Path(uri), data, loader_config=kwargs)
+    loader.save(uri, data, loader_config=kwargs)
 
 
 def ls(

@@ -4,7 +4,11 @@ from typing import Any, Dict, Optional, Set, Union
 import pandas as pd
 from datasets import Dataset, load_dataset
 
+from unibox.utils.utils import parse_hf_uri
+from unibox.utils.df_utils import generate_dataset_readme
+
 from .base_loader import BaseLoader
+from ..backends.hf_api_backend import HuggingFaceApiBackend
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,6 +28,10 @@ class HFDatasetLoader(BaseLoader):
         "streaming",  # bool: Whether to stream the dataset
         "num_proc",  # int: Number of processes for loading
     }
+
+    def __init__(self):
+        super().__init__()
+        self.hf_api_backend = HuggingFaceApiBackend()
 
     def load(self, local_path: Union[str, Path], loader_config: Optional[Dict] = None) -> Any:
         """Load a dataset from a local path or cache.
@@ -80,7 +88,7 @@ class HFDatasetLoader(BaseLoader):
 
         return dataset
 
-    def save(self, local_path: Union[str, Path], data: Any, loader_config: Optional[Dict] = None) -> None:
+    def save(self, hf_uri: str, data: Any, loader_config: Optional[Dict] = None) -> None:
         """Save data as a HuggingFace dataset to a local path.
         
         Args:
@@ -88,16 +96,41 @@ class HFDatasetLoader(BaseLoader):
             data (Union[Dataset, pd.DataFrame]): Dataset to save
             loader_config (Optional[Dict]): Configuration options
         """
-        # Convert DataFrame to Dataset if needed
+        # Parse configs
+        repo_id, _ = parse_hf_uri(hf_uri)
+        if not loader_config:
+            loader_config = {}
+        
+        dataset_split = loader_config.get("split", "train")
+        is_private = loader_config.get("private", True)
+        
+        readme_text = None  # if not a dataframe, we don't generate a readme update
+
+        # Convert DataFrame to Dataset if needed        
         if isinstance(data, pd.DataFrame):
+            readme_text = generate_dataset_readme(data, repo_id)
             data = Dataset.from_pandas(data)
         elif not isinstance(data, Dataset):
             raise ValueError("Data must be either a pandas DataFrame or a HuggingFace Dataset")
 
-        # Save to local path
+        # Save to huggingface
         try:
-            data.save_to_disk(str(local_path))
-            logger.debug(f"Successfully saved dataset to {local_path}")
+            data.push_to_hub(
+                repo_id=repo_id,
+                private=is_private,
+                split=dataset_split,
+            )            
+            logger.debug(f"Successfully saved dataset to {hf_uri}")
+
         except Exception as e:
-            logger.error(f"Failed to save dataset to {local_path}: {e}")
+            logger.error(f"Failed to save dataset to {hf_uri}: {e}")
             raise
+    
+        # Update the README if needed
+        if readme_text:
+            try:
+                self.hf_api_backend.update_readme(repo_id, readme_text, repo_type="dataset")
+                logger.info(f"Successfully updated README for dataset {hf_uri}")
+            except Exception as e:
+                logger.error(f"Failed to update README for dataset {hf_uri}: {e}")
+                raise
