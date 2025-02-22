@@ -16,12 +16,11 @@ AUDIO_FILES = ["." + i.strip() for i in __all_audio_raw.split(" ")]
 BLACKLISTED_PATHS = {
     "/var",
     "/etc",
-    "/root/.ssh/",   # SSH keys (entire folder)
+    "/root/.ssh/",  # SSH keys (entire folder)
     "/root/.bashrc",
     "/root/.profile",
     "/root/.bash_history",  # Bash history (could contain sensitive commands)
-    "/root/.viminfo",       # Vim history (could contain credentials)
-    
+    "/root/.viminfo",  # Vim history (could contain credentials)
     # System binaries & libraries
     "/bin",
     "/usr/bin",
@@ -31,13 +30,11 @@ BLACKLISTED_PATHS = {
     "/usr/lib",
     "/lib64",
     "/usr/lib64",
-
     # Boot & system directories
     "/boot",
     "/dev",
     "/proc",
     "/sys",
-
     # Other credential files: huggingface, AWS, GCP, etc.
     "/root/.huggingface/",
     "/root/.aws/",
