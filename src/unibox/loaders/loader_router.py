@@ -128,8 +128,14 @@ def load_data(path: Union[str, Path], loader_config: Optional[dict] = None) -> A
     Raises:
         ValueError: If no appropriate loader is found
     """
-    loader = get_loader_for_path(path)
+    path_str = str(path)
+    loader = get_loader_for_path(path_str)
     if loader is None:
-        raise ValueError(f"No loader found for path: {path}")
+        raise ValueError(f"No loader found for path: {path_str}")
     
-    return loader.load(Path(path), loader_config=loader_config or {})
+    # Don't convert URIs to Path objects as it normalizes slashes
+    if "://" in path_str:
+        return loader.load(path_str, loader_config=loader_config or {})
+    
+    # For local files, use Path
+    return loader.load(Path(path_str), loader_config=loader_config or {})

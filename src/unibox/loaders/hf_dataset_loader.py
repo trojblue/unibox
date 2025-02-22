@@ -4,14 +4,14 @@ from typing import Any, Dict, Optional, Set, Union
 import pandas as pd
 from datasets import Dataset, load_dataset
 
-from ..backends.hf_router_backend import HuggingFaceRouterBackend
 from .base_loader import BaseLoader
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class HFDatasetLoader(BaseLoader):
-    """Loader for HuggingFace datasets and files.
-    Uses HuggingFaceRouterBackend to determine whether to use dataset or file API.
-    """
+    """Loader for HuggingFace datasets using the datasets library."""
 
     SUPPORTED_LOAD_CONFIG = {
         "split",  # str: Which split to load (e.g., 'train', 'test')
@@ -23,57 +23,33 @@ class HFDatasetLoader(BaseLoader):
         "num_proc",  # int: Number of processes for loading
     }
 
-    def __init__(self):
-        self.backend = HuggingFaceRouterBackend()
-
-    def load(self, path: Path, loader_config: Optional[dict] = None) -> Any:
-        """Load data from HuggingFace, using either dataset or file API.
+    def load(self, local_path: Union[str, Path], loader_config: Optional[Dict] = None) -> Any:
+        """Load a dataset from HuggingFace hub.
         
         Args:
-            path (Path): Path in format "hf://owner/repo" or "hf://owner/repo/path/to/file"
-            loader_config (Optional[dict]): Configuration like split, streaming, revision
+            local_path (Union[str, Path]): Path in format 'hf://owner/repo'
+            loader_config (Optional[Dict]): Configuration options for dataset loading
+                split (str): Which split to load (default: None, loads all splits)
+                revision (str): Git revision to use
+                to_pandas (bool): Whether to convert to pandas DataFrame
+                name (str): Dataset name/configuration
+                cache_dir (str): Where to cache the dataset
+                streaming (bool): Whether to stream the dataset
+                num_proc (int): Number of processes for loading
             
         Returns:
-            Any: Dataset or file contents depending on the path format
+            Union[Dataset, Dict[str, Dataset], pd.DataFrame]: The loaded dataset
+                If to_pandas=True, returns DataFrame
+                If split is specified, returns Dataset
+                Otherwise returns Dict[split_name, Dataset]
         """
-        config = loader_config or {}
-        uri = str(path)
-        
-        # Let the router backend handle the decision between dataset and file API
-        return self.backend.download(uri, **config)
-
-    def save(self, path: Path, data: Any, loader_config: Optional[dict] = None) -> None:
-        """Save data to HuggingFace, using either dataset or file API.
-        
-        Args:
-            path (Path): Target path in format "hf://owner/repo" or "hf://owner/repo/path/to/file"
-            data (Any): Data to save (Dataset, DataFrame, or file contents)
-            loader_config (Optional[dict]): Configuration like split, private, revision
-        """
-        config = loader_config or {}
-        uri = str(path)
-        
-        # Let the router backend handle the upload through appropriate API
-        self.backend.upload(path, uri, **config)
-
-    def load_from_hub(self, file_path: Path, loader_config: Optional[Dict] = None) -> Union[pd.DataFrame, Any]:
-        """Load a dataset from Hugging Face hub.
-
-        Args:
-            file_path (Path): Path-like string in format 'hf://dataset_id'
-                            e.g., 'hf://huggingface/datasets/squad'
-            loader_config (Optional[Dict]): Configuration options for dataset loading
-
-        Returns:
-            Union[pd.DataFrame, Any]: Dataset as DataFrame if to_pandas=True, otherwise
-                                    as HuggingFace Dataset object
-        """
-        if not str(file_path).startswith("hf://"):
+        uri = str(local_path)
+        if not uri.startswith("hf://"):
             raise ValueError("HFDatasetLoader requires path starting with 'hf://'")
 
-        # Extract dataset_id from path
-        dataset_id = str(file_path).replace("hf://", "")
-
+        # Extract dataset_id from path (remove hf:// prefix)
+        dataset_id = uri[5:].strip("/")
+        
         config = loader_config or {}
         used_keys: Set[str] = set()
 
@@ -85,27 +61,69 @@ class HFDatasetLoader(BaseLoader):
                 used_keys.add(key)
 
         # Load the dataset
-        dataset = load_dataset(dataset_id, **kwargs)
+        try:
+            dataset = load_dataset(dataset_id, **kwargs)
+            logger.debug(f"Successfully loaded dataset: {dataset_id}")
+        except Exception as e:
+            logger.error(f"Failed to load dataset {dataset_id}: {e}")
+            raise
 
         # Convert to pandas if requested
         if config.get("to_pandas", False):
             used_keys.add("to_pandas")
-            if isinstance(dataset, dict):
-                # If multiple splits, convert each to DataFrame
-                return {k: v.to_pandas() for k, v in dataset.items()}
-            return dataset.to_pandas()
+            try:
+                if isinstance(dataset, dict):
+                    # If multiple splits, convert each to DataFrame
+                    return {k: v.to_pandas() for k, v in dataset.items()}
+                return dataset.to_pandas()
+            except Exception as e:
+                logger.error(f"Failed to convert dataset to pandas: {e}")
+                raise
 
         # Warn about unused config options
         self._warn_unused_config(config, used_keys, "HFDatasetLoader")
 
         return dataset
 
-    def save_to_hub(self, file_path: Path, data: Any, loader_config: Optional[Dict] = None) -> None:
-        """Saving to Hugging Face hub is not supported through this interface.
-
-        For pushing datasets to the hub, please use the Dataset.push_to_hub() method directly.
+    def save(self, local_path: Union[str, Path], data: Any, loader_config: Optional[Dict] = None) -> None:
+        """Push a dataset to the HuggingFace hub.
+        
+        Args:
+            local_path (Union[str, Path]): Target path in format 'hf://owner/repo'
+            data (Union[Dataset, pd.DataFrame]): Dataset to push
+            loader_config (Optional[Dict]): Configuration options
+                private (bool): Whether to create a private repository
+                token (str): HuggingFace token for authentication
+                split (str): Dataset split name (default: 'train')
         """
-        raise NotImplementedError(
-            "Saving to Hugging Face hub is not supported through this interface. "
-            "Please use Dataset.push_to_hub() method directly.",
-        )
+        uri = str(local_path)
+        if not uri.startswith("hf://"):
+            raise ValueError("HFDatasetLoader requires path starting with 'hf://'")
+
+        # Extract repo_id from path (remove hf:// prefix)
+        repo_id = uri[5:].strip("/")
+        
+        config = loader_config or {}
+        
+        # Convert DataFrame to Dataset if needed
+        if isinstance(data, pd.DataFrame):
+            data = Dataset.from_pandas(data)
+        elif not isinstance(data, Dataset):
+            raise ValueError("Data must be either a pandas DataFrame or a HuggingFace Dataset")
+
+        # Push to hub
+        split = config.get("split", "train")
+        private = config.get("private", True)
+        token = config.get("token", None)
+        
+        try:
+            data.push_to_hub(
+                repo_id,
+                split=split,
+                private=private,
+                token=token,
+            )
+            logger.debug(f"Successfully pushed dataset to {repo_id}")
+        except Exception as e:
+            logger.error(f"Failed to push dataset to {repo_id}: {e}")
+            raise
