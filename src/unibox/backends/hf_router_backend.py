@@ -39,7 +39,7 @@ class HuggingFaceRouterBackend(BaseBackend):
         """Determine if a path refers to a file (has extension) or dataset."""
         return "." in Path(path).name
 
-    def download(self, uri: str, target_dir: Optional[str] = None) -> Path|Dataset|DatasetDict|IterableDatasetDict | IterableDataset:
+    def download(self, uri: str, target_dir: Optional[str] = None) -> Path|Dataset|DatasetDict|IterableDatasetDict | IterableDataset | str:
         """Download from HuggingFace, routing between file and dataset backends.
         
         Args:
@@ -60,9 +60,10 @@ class HuggingFaceRouterBackend(BaseBackend):
                     # We know this is meant to be a dataset
             
             # TODO: change later for splits or remove it
-            ds = load_dataset(repo_id, split="train")
-            logger.debug(f"Downloaded dataset {repo_id}")
-            return ds  # <-- Return in-memory
+            # ds = load_dataset(repo_id, split="train")
+            # logger.debug(f"Downloaded dataset {repo_id}")
+            # return ds  # <-- Return in-memory
+            return uri  # do nothing, let loader handle it (load dataset as hf://.../)
         else:
             # For files, use the API backend
             return self.api_backend.download(uri, target_dir_str)

@@ -53,38 +53,52 @@ class HFDatasetLoader(BaseLoader):
                 If split is specified, returns Dataset
                 Otherwise returns Dict[split_name, Dataset]
         """
-        config = loader_config or {}
-        used_keys: Set[str] = set()
 
-        # Extract supported arguments from config
-        kwargs = {}
-        for key in self.SUPPORTED_LOAD_CONFIG - {"to_pandas"}:  # Handle to_pandas separately
-            if key in config:
-                kwargs[key] = config[key]
-                used_keys.add(key)
+        if not loader_config:
+            loader_config = {}
+        
+        to_pandas = loader_config.get("to_pandas", False)
+        repo_id, subpath = parse_hf_uri(local_path)
+        split = loader_config.get("split", "train")
+        revision = loader_config.get("revision", "main")
 
-        # Load the dataset from local path
-        try:
-            dataset = Dataset.load_from_disk(str(local_path))
-            logger.debug(f"Successfully loaded dataset from: {local_path}")
-        except Exception as e:
-            logger.error(f"Failed to load dataset from {local_path}: {e}")
-            raise
 
-        # Convert to pandas if requested
-        if config.get("to_pandas", False):
-            used_keys.add("to_pandas")
-            try:
-                if isinstance(dataset, dict):
-                    # If multiple splits, convert each to DataFrame
-                    return {k: v.to_pandas() for k, v in dataset.items()}
-                return dataset.to_pandas()
-            except Exception as e:
-                logger.error(f"Failed to convert dataset to pandas: {e}")
-                raise
+        if to_pandas:
+            return load_dataset(repo_id, split=split, revision=revision).to_pandas()
+        return load_dataset(repo_id, split=split, revision=revision)
+    
+        # config = loader_config or {}
+        # used_keys: Set[str] = set()
 
-        # Warn about unused config options
-        self._warn_unused_config(config, used_keys, "HFDatasetLoader")
+        # # Extract supported arguments from config
+        # kwargs = {}
+        # for key in self.SUPPORTED_LOAD_CONFIG - {"to_pandas"}:  # Handle to_pandas separately
+        #     if key in config:
+        #         kwargs[key] = config[key]
+        #         used_keys.add(key)
+
+        # # Load the dataset from local path
+        # try:
+        #     dataset = Dataset.load_from_disk(str(local_path))
+        #     logger.debug(f"Successfully loaded dataset from: {local_path}")
+        # except Exception as e:
+        #     logger.error(f"Failed to load dataset from {local_path}: {e}")
+        #     raise
+
+        # # Convert to pandas if requested
+        # if config.get("to_pandas", False):
+        #     used_keys.add("to_pandas")
+        #     try:
+        #         if isinstance(dataset, dict):
+        #             # If multiple splits, convert each to DataFrame
+        #             return {k: v.to_pandas() for k, v in dataset.items()}
+        #         return dataset.to_pandas()
+        #     except Exception as e:
+        #         logger.error(f"Failed to convert dataset to pandas: {e}")
+        #         raise
+
+        # # Warn about unused config options
+        # self._warn_unused_config(config, used_keys, "HFDatasetLoader")
 
         return dataset
 

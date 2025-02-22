@@ -126,16 +126,13 @@ def load_data(path: Union[str, Path], loader_config: Optional[dict] = None) -> A
     if not backend:
         raise ValueError(f"No backend found for: {path_str}")
     
-    local_or_ds = backend.download(path_str)
-
-    # If loading from huggingface: download() will return a Dataset object directly
-    if isinstance(local_or_ds, (Dataset, DatasetDict, IterableDatasetDict, IterableDataset)):
-        return local_or_ds
-
     # 2. Download
     local_path = backend.download(path_str)
-    if not local_path.exists():
-        raise FileNotFoundError(f"Downloaded file/folder not found: {local_path}")
+    
+    # if it's huggingface, let loader load it instead of downloading at backend
+    if not str(local_path).startswith("hf://"):
+        if not local_path.exists():
+            raise FileNotFoundError(f"Downloaded file/folder not found: {local_path}")
 
     # Otherwise, extension-based logic
     loader = get_loader_for_path(local_path)
