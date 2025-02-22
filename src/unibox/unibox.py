@@ -6,14 +6,14 @@ import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import pandas as pd  # <--- you'll need this import if not present
 from tqdm.auto import tqdm
 
 from .backends.backend_router import get_backend_for_uri
 from .backends.local_backend import LocalBackend
-from .loaders.loader_router import get_loader_for_suffix
+from .loaders.loader_router import get_loader_for_path
 from .utils.df_utils import generate_dataset_readme
 from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
@@ -24,189 +24,100 @@ logger = UniLogger()
 
 
 def _get_type_info(obj: Any) -> str:
-    obj_module, obj_name = type(obj).__module__, type(obj).__name__
-    return str(obj_module), str(obj_name)
+    """Get type information for an object."""
+    return f"{type(obj).__name__} ({obj.__class__.__module__})"
 
 
-### CHANGED ###
-def _parse_hf_uri(uri: str):
-    # likely duplicate of hf_datasets_backend.py impl
-    """Args:
-        uri: A URI in the format 'hf://owner/repo/some_file', or 'hf://owner/repo' for a dataset.
-
-    Returns:
-        repo_id: The repo ID 'owner/repo' from 'hf://owner/repo/...'.
-        subpath: The remaining part ('' if None or some_file)
-    """
-    trimmed = uri.replace("hf://", "", 1)
-    parts = trimmed.split("/", 2)  # Split into at most three parts
-    if len(parts) < 2:
-        raise ValueError(f"Invalid Hugging Face URI format: {uri}")
-
-    repo_id = f"{parts[0]}/{parts[1]}"  # First two parts make up the repo ID
-    subpath = parts[2] if len(parts) > 2 else ""  # Remaining part is the subpath
-
-    return repo_id, subpath
+def _parse_hf_uri(uri: str) -> tuple[str, str]:
+    """Parse a Hugging Face URI into repo_id and path."""
+    if not uri.startswith("hf://"):
+        raise ValueError("URI must start with 'hf://'")
+    parts = uri[5:].split("/", 1)
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], parts[1]
 
 
 def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
-    """Return a local file path (downloading if needed) without parsing."""
-    import os
-    import timeit
-
-    start_time = timeit.default_timer()
-    uri_str = str(uri)
-    backend = get_backend_for_uri(uri_str)
-
-    if isinstance(backend, LocalBackend):
-        local_path = Path(uri_str).absolute()
-    else:
-        rand_dir = GLOBAL_TMP_DIR / str(os.getpid())
-        rand_dir.mkdir(parents=True, exist_ok=True)
-        local_path = backend.download(uri_str, target_dir=rand_dir)
-
-    end_time = timeit.default_timer()
+    """Load a file's contents as a string."""
     if debug_print:
-        logger.info(f'File available at "{local_path}" in {end_time - start_time:.2f}s')
-    return str(local_path)
+        logger.info(f"Loading file from {uri}")
+
+    # Get the appropriate backend
+    backend = get_backend_for_uri(str(uri))
+    if backend is None:
+        raise ValueError(f"No backend found for URI: {uri}")
+
+    # Download the file if needed
+    local_path = backend.download(str(uri), **kwargs)
+    if not local_path.exists():
+        raise FileNotFoundError(f"File not found: {local_path}")
+
+    # Load the file contents
+    with open(local_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, **kwargs) -> Any:
-    """Loads data from a given URI.
-    If file=True, just returns the local path, no parsing.
-    Otherwise:
-      - If HF with no subpath => treat as entire dataset => .load_dataset()
-      - Else do normal "download then suffix-based loader."
-
-    some kwargs:
-        split: str = "train"  (for HF dataset load)
-        streaming: bool = False  (for HF dataset load)
-        as_pandas: bool = False  (for HF dataset load)
-    """
-    if file:
-        return load_file(uri, debug_print=debug_print, **kwargs)
-
-    start_time = timeit.default_timer()
-    uri_str = str(uri)
-    backend = get_backend_for_uri(uri_str)
-
-    ### CHANGED - HuggingFace dataset logic ###
-    if uri_str.startswith("hf://"):
-        repo_id, subpath = _parse_hf_uri(uri_str)
-        # If there's no subpath, that means "hf://owner/repo" => dataset
-        if not subpath:
-            # call backend.load_dataset
-            # requires that the backend is our HF Router or old HFBackend
-            # We'll assume it implements .load_dataset
-            # here: split, streaming is passed into load_dataset
-            res = backend.ds_backend.load_dataset(repo_id, **kwargs)
-
-            # done
-            end_time = timeit.default_timer()
-            if debug_print:
-                mod, cls = _get_type_info(res)
-                logger.info(f'{cls} LOADED from "{uri_str}" in {end_time - start_time:.2f}s')
-            return res
-        # else we fall back to the normal "download + suffix loader" below
-
-    # Normal approach: download => loader => parse
-    rand_dir = GLOBAL_TMP_DIR / str(os.getpid())
-    rand_dir.mkdir(parents=True, exist_ok=True)
-    if isinstance(backend, LocalBackend):
-        local_path = Path(uri_str)
-    else:
-        local_path = backend.download(uri_str, target_dir=rand_dir)
-
-    suffix = local_path.suffix.lower()
-    loader = get_loader_for_suffix(suffix)
-    if loader is None:
-        raise ValueError(f"No loader found for suffix: {suffix}")
-
-    res = loader.load(local_path, **kwargs)
-
-    # if remote => remove temp
-    if not isinstance(backend, LocalBackend):
-        try:
-            os.remove(local_path)
-        except OSError:
-            pass
-
-    end_time = timeit.default_timer()
+    """Load data from a file or dataset."""
     if debug_print:
-        mod, cls = _get_type_info(res)
-        logger.info(f'{cls} LOADED from "{uri_str}" in {end_time - start_time:.2f}s')
+        logger.info(f"Loading from {uri}")
 
-    return res
+    # Get the appropriate backend
+    backend = get_backend_for_uri(str(uri))
+    if backend is None:
+        raise ValueError(f"No backend found for URI: {uri}")
+
+    # Download the file if needed
+    local_path = backend.download(str(uri), **kwargs)
+    if not local_path.exists():
+        raise FileNotFoundError(f"File not found: {local_path}")
+
+    # If file=True, just return the file path
+    if file:
+        return local_path
+
+    # Get the appropriate loader
+    loader = get_loader_for_path(local_path)
+    if loader is None:
+        raise ValueError(f"No loader found for file: {local_path}")
+
+    # Load the data
+    try:
+        return loader.load(local_path, loader_config=kwargs)
+    except Exception as e:
+        raise ValueError(f"Error loading {uri}: {str(e)}") from e
 
 
 def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) -> None:
-    """Saves data to local or remote. Special-case:
-    - If HF with no extension => interpret as dataset push
-    - Otherwise, do suffix-based local or single-file approach
+    """Save data to a file or dataset."""
+    if debug_print:
+        logger.info(f"Saving to {uri}")
 
-    some kwargs:
-        split: str = "train"  (for HF dataset push)
-        private: bool = True  (for HF dataset push)
-    """
-    start_time = timeit.default_timer()
-    uri_str = str(uri)
-    backend = get_backend_for_uri(uri_str)
-    suffix = Path(uri_str).suffix.lower()
+    # Get the appropriate backend
+    backend = get_backend_for_uri(str(uri))
+    if backend is None:
+        raise ValueError(f"No backend found for URI: {uri}")
 
-    # 1) The HF dataset push block
-    if uri_str.startswith("hf://") and suffix == "":
-        # Means something like "hf://owner/repo" => push entire dataset
-        repo_id, _ = _parse_hf_uri(uri_str)
-
-        # if hasattr(backend, "ds_backend"):
-        # If router-based, do: ds_backend.data_to_hub
-        dataset_split = kwargs.get("split", "train")
-        backend.ds_backend.data_to_hub(
-            data,
-            repo_id=repo_id,
-            private=kwargs.get("private", True),
-            split=dataset_split,
-        )
-        # else:
-        #     print("OLD STYLE; code removed; see version ~0.7")
-
-        # 2) (NEW) Update README in the HF repo, overwriting any existing version.
-        #    We'll assume the new method is on "api_backend" or the router has an "api_backend".
-        #    If your `backend` is a HuggingFaceRouterBackend, you have `backend.api_backend`.
-        #    Or you can just instantiate a new HuggingFaceApiBackend() directly here.
-        #    We'll do: backend.api_backend.update_readme(...).
-        #    Also, only do this if data is a DataFrame (so we can do len, columns, etc.)
-
-        if isinstance(data, pd.DataFrame):
-            readme_text = generate_dataset_readme(data, repo_id, backend)
-            backend.api_backend.update_readme(repo_id, readme_text, repo_type="dataset")
-
-        # End-of-process for HF dataset push
-        end_time = timeit.default_timer()
-        if debug_print:
-            _, data_cls = _get_type_info(data)
-            logger.info(f'{data_cls} saved (HF dataset) to "{uri_str}" in {end_time - start_time:.2f}s')
-        return
-
-    # Otherwise, the existing logic for normal single-file suffix-based saving:
-    loader = get_loader_for_suffix(suffix)
-    if loader is None:
-        raise ValueError(f"No loader found for extension {suffix}")
-
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmpf:
-        temp_path = Path(tmpf.name)
+    # Create a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uri).suffix) as tmp:
+        tmp_path = Path(tmp.name)
 
     try:
-        loader.save(temp_path, data)
-        backend.upload(temp_path, uri_str)
-    finally:
-        if temp_path.exists():
-            temp_path.unlink()
+        # Get the appropriate loader
+        loader = get_loader_for_path(tmp_path)
+        if loader is None:
+            raise ValueError(f"No loader found for file: {tmp_path}")
 
-    end_time = timeit.default_timer()
-    if debug_print:
-        _, data_cls = _get_type_info(data)
-        logger.info(f'{data_cls} saved to "{uri_str}" in {end_time - start_time:.2f}s')
+        # Save the data locally first
+        loader.save(tmp_path, data, loader_config=kwargs)
+
+        # Upload the file
+        backend.upload(tmp_path, str(uri), **kwargs)
+    finally:
+        # Clean up
+        if tmp_path.exists():
+            tmp_path.unlink()
 
 
 def ls(
@@ -216,8 +127,17 @@ def ls(
     debug_print: bool = True,
     **kwargs,
 ) -> list[str]:
+    """List files in a directory or dataset."""
+    if debug_print:
+        logger.info(f"Listing contents of {uri}")
+
+    # Get the appropriate backend
     backend = get_backend_for_uri(str(uri))
-    return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
+    if backend is None:
+        raise ValueError(f"No backend found for URI: {uri}")
+
+    # List the files
+    return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, **kwargs)
 
 
 def concurrent_loads(uris_list, num_workers=8, debug_print=True):
@@ -258,9 +178,33 @@ def traverses(
 from .nb_helpers.uni_peeker import UniPeeker
 
 
-def peeks(data: Any, n=3, console_print=False) -> Dict[str, Any]:
-    peeker = UniPeeker(n, console_print)
-    return peeker.peeks(data)
+def peeks(data: Any, n: int = 3, console_print: bool = False) -> Dict[str, Any]:
+    """Peek at the first n items of data in a structured way."""
+    result: Dict[str, Any] = {}
+    
+    if isinstance(data, pd.DataFrame):
+        result["type"] = "DataFrame"
+        result["shape"] = data.shape
+        result["columns"] = list(data.columns)
+        result["head"] = data.head(n).to_dict("records")
+    elif isinstance(data, (list, tuple)):
+        result["type"] = type(data).__name__
+        result["length"] = len(data)
+        result["head"] = data[:n]
+    elif isinstance(data, dict):
+        result["type"] = "dict"
+        result["length"] = len(data)
+        result["keys"] = list(data.keys())[:n]
+        result["head"] = dict(list(data.items())[:n])
+    else:
+        result["type"] = type(data).__name__
+        result["value"] = str(data)
+
+    if console_print:
+        import json
+        print(json.dumps(result, indent=2, default=str))
+
+    return result
 
 
 def gallery(

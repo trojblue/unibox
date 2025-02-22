@@ -54,7 +54,11 @@ class HuggingFaceDatasetsBackend(BaseBackend):
 
     # -- Additional helper for dataset loading:
     def load_dataset(
-        self, repo_id: str, split: Optional[str] = "train", revision: str = "main", to_pandas: bool = False
+        self,
+        repo_id: str,
+        split: Optional[str] = "train",
+        revision: str = "main",
+        to_pandas: bool = False,
     ) -> Dataset:
         """Load a dataset from the HF Hub and return a `datasets.Dataset`.
 
