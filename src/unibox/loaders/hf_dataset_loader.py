@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class HFDatasetLoader(BaseLoader):
-    """Loader for HuggingFace datasets using the datasets library."""
+    """Loader for HuggingFace datasets using the datasets library.
+    This loader handles only the data format conversion between DataFrame/Dataset objects
+    and local dataset files. Remote operations are handled by the HF backends."""
 
     SUPPORTED_LOAD_CONFIG = {
         "split",  # str: Which split to load (e.g., 'train', 'test')
@@ -24,10 +26,10 @@ class HFDatasetLoader(BaseLoader):
     }
 
     def load(self, local_path: Union[str, Path], loader_config: Optional[Dict] = None) -> Any:
-        """Load a dataset from HuggingFace hub.
+        """Load a dataset from a local path or cache.
         
         Args:
-            local_path (Union[str, Path]): Path in format 'hf://owner/repo'
+            local_path (Union[str, Path]): Local path to dataset files
             loader_config (Optional[Dict]): Configuration options for dataset loading
                 split (str): Which split to load (default: None, loads all splits)
                 revision (str): Git revision to use
@@ -43,13 +45,6 @@ class HFDatasetLoader(BaseLoader):
                 If split is specified, returns Dataset
                 Otherwise returns Dict[split_name, Dataset]
         """
-        uri = str(local_path)
-        if not uri.startswith("hf://"):
-            raise ValueError("HFDatasetLoader requires path starting with 'hf://'")
-
-        # Extract dataset_id from path (remove hf:// prefix)
-        dataset_id = uri[5:].strip("/")
-        
         config = loader_config or {}
         used_keys: Set[str] = set()
 
@@ -60,12 +55,12 @@ class HFDatasetLoader(BaseLoader):
                 kwargs[key] = config[key]
                 used_keys.add(key)
 
-        # Load the dataset
+        # Load the dataset from local path
         try:
-            dataset = load_dataset(dataset_id, **kwargs)
-            logger.debug(f"Successfully loaded dataset: {dataset_id}")
+            dataset = Dataset.load_from_disk(str(local_path))
+            logger.debug(f"Successfully loaded dataset from: {local_path}")
         except Exception as e:
-            logger.error(f"Failed to load dataset {dataset_id}: {e}")
+            logger.error(f"Failed to load dataset from {local_path}: {e}")
             raise
 
         # Convert to pandas if requested
@@ -86,44 +81,23 @@ class HFDatasetLoader(BaseLoader):
         return dataset
 
     def save(self, local_path: Union[str, Path], data: Any, loader_config: Optional[Dict] = None) -> None:
-        """Push a dataset to the HuggingFace hub.
+        """Save data as a HuggingFace dataset to a local path.
         
         Args:
-            local_path (Union[str, Path]): Target path in format 'hf://owner/repo'
-            data (Union[Dataset, pd.DataFrame]): Dataset to push
+            local_path (Union[str, Path]): Local path to save dataset
+            data (Union[Dataset, pd.DataFrame]): Dataset to save
             loader_config (Optional[Dict]): Configuration options
-                private (bool): Whether to create a private repository
-                token (str): HuggingFace token for authentication
-                split (str): Dataset split name (default: 'train')
         """
-        uri = str(local_path)
-        if not uri.startswith("hf://"):
-            raise ValueError("HFDatasetLoader requires path starting with 'hf://'")
-
-        # Extract repo_id from path (remove hf:// prefix)
-        repo_id = uri[5:].strip("/")
-        
-        config = loader_config or {}
-        
         # Convert DataFrame to Dataset if needed
         if isinstance(data, pd.DataFrame):
             data = Dataset.from_pandas(data)
         elif not isinstance(data, Dataset):
             raise ValueError("Data must be either a pandas DataFrame or a HuggingFace Dataset")
 
-        # Push to hub
-        split = config.get("split", "train")
-        private = config.get("private", True)
-        token = config.get("token", None)
-        
+        # Save to local path
         try:
-            data.push_to_hub(
-                repo_id,
-                split=split,
-                private=private,
-                token=token,
-            )
-            logger.debug(f"Successfully pushed dataset to {repo_id}")
+            data.save_to_disk(str(local_path))
+            logger.debug(f"Successfully saved dataset to {local_path}")
         except Exception as e:
-            logger.error(f"Failed to push dataset to {repo_id}: {e}")
+            logger.error(f"Failed to save dataset to {local_path}: {e}")
             raise
