@@ -1,4 +1,4 @@
-# unibox/backends/hf_api_backend.py
+# unibox/backends/hf_hybrid_backend.py
 
 import os
 import re
@@ -55,7 +55,6 @@ class HuggingfaceHybridBackend(BaseBackend):
       - download a single file (download)
       - upload a single file (upload)
       - list files in a repo (ls)
-    For dataset usage, see `HuggingFaceDatasetsBackend`.
     """
 
     def __init__(self):
@@ -135,7 +134,6 @@ class HuggingfaceHybridBackend(BaseBackend):
         except RepositoryNotFoundError:
             logger.info(f"{uri}: is not a model repo; trying to list as dataset...")
             files = self.api.list_repo_files(repo_id=repo_id, repo_type="dataset")
-
 
         # If path_in_repo is not empty, we can filter by that prefix
         if path_in_repo:
