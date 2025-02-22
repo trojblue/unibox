@@ -8,18 +8,29 @@ from typing import List, Optional
 from tqdm.auto import tqdm
 
 from .base_backend import BaseBackend
+from ..utils.constants import BLACKLISTED_PATHS
 
 
 class LocalBackend(BaseBackend):
-    def download(self, uri: str, target_dir: str = None) -> Path:
+
+    # Blacklisted directories and files
+    BLACKLISTED_PATHS = BLACKLISTED_PATHS
+
+    def download(self, uri: str, target_dir: str | None = None) -> Path:
         # local path is the URI itself, so just return Path(uri)
         return Path(uri)
 
     def upload(self, local_path: Path, uri: str) -> None:
-        """Ensure the final path has the saved file."""
-        dest = Path(uri)
+        """Safely uploads a file while preventing path traversal and restricted locations."""
+        dest = Path(uri).resolve()
+
+        # Prevent uploads to blacklisted paths or within system directories
+        for blocked in self.BLACKLISTED_PATHS:
+            if dest == Path(blocked) or dest.is_relative_to(Path(blocked)):
+                raise PermissionError(f"Upload blocked: {dest} is a restricted path.")
+
         if dest != local_path:
-            # Copy the temp file to the final path
+            # Ensure destination directory exists
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(str(local_path), str(dest))
 
