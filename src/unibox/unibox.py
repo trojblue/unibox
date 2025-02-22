@@ -1,7 +1,4 @@
 # unibox.py
-import os
-import tempfile
-import timeit
 import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
@@ -12,11 +9,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from .backends.backend_router import get_backend_for_uri
-from .backends.base_backend import BaseBackend
-from .backends.local_backend import LocalBackend
 from .loaders.loader_router import get_loader_for_path, load_data
-from .utils.df_utils import generate_dataset_readme
-from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
 from .utils.s3_client import S3Client
 
@@ -40,17 +33,17 @@ def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
         raise FileNotFoundError(f"File not found: {local_path}")
 
     # Load the file contents
-    with open(local_path, "r", encoding="utf-8") as f:
+    with open(local_path, encoding="utf-8") as f:
         return f.read()
 
 
 def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, **kwargs) -> Any:
     """Load data from a file or dataset.
-    
+
     For HuggingFace URIs:
     - hf://owner/repo => loads as dataset
     - hf://owner/repo/path/to/file.ext => loads as file
-    
+
     Args:
         uri: Path or URI to load from
         file: If True, return the local file path instead of parsing
@@ -78,11 +71,11 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
 
 def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) -> None:
     """Save data to a file or dataset.
-    
+
     For HuggingFace URIs:
     - hf://owner/repo => saves as dataset
     - hf://owner/repo/path/to/file.ext => saves as file
-    
+
     Args:
         data: Data to save
         uri: Path or URI to save to
@@ -162,7 +155,7 @@ def traverses(
 def peeks(data: Any, n: int = 3, console_print: bool = False) -> Dict[str, Any]:
     """Peek at the first n items of data in a structured way."""
     result: Dict[str, Any] = {}
-    
+
     if isinstance(data, pd.DataFrame):
         result["type"] = "DataFrame"
         result["shape"] = data.shape
@@ -183,6 +176,7 @@ def peeks(data: Any, n: int = 3, console_print: bool = False) -> Dict[str, Any]:
 
     if console_print:
         import json
+
         print(json.dumps(result, indent=2, default=str))
 
     return result

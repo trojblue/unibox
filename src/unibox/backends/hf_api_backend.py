@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub.errors import RepositoryNotFoundError
 
 from .base_backend import BaseBackend
 
@@ -60,7 +61,7 @@ class HuggingFaceApiBackend(BaseBackend):
     def __init__(self):
         self.api = HfApi()
 
-    def download(self, uri: str, target_dir: str = None) -> Path:
+    def download(self, uri: str, target_dir: str | None = None) -> Path:
         """Download a single file from a HF repo to `target_dir`.
         If the path_in_repo is actually a folder or there's no final file, we raise NotImplemented.
         """
@@ -76,7 +77,18 @@ class HuggingFaceApiBackend(BaseBackend):
 
         # Download
         revision = "main"  # or read from kwargs if you prefer
-        local_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
+
+        try:
+            local_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
+        except RepositoryNotFoundError:
+            logger.info(f"{uri}: is not a model repo; trying to download as dataset...")
+            try:
+                local_path = hf_hub_download(
+                    repo_id=repo_id, filename=path_in_repo, revision="main", repo_type="dataset"
+                )
+            except RepositoryNotFoundError:
+                raise ValueError(f"File not found in HF repo: {uri}")
+
         # Copy from HF cache to target_dir if needed
         filename_only = os.path.basename(path_in_repo)
         final_path = Path(target_dir) / filename_only

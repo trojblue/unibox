@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 from urllib.parse import urlparse
 
 import boto3
@@ -22,7 +23,7 @@ class S3Client:
         # pass them directly via environment variables or create a custom session.
         self.s3 = boto3.client("s3")
 
-    def download(self, s3_uri: str, target_dir: str) -> str:
+    def download(self, s3_uri: str, target_dir: str | Path) -> str:
         """Download a file from S3 to a local directory.
         :param s3_uri: S3 URI (e.g. s3://bucket/key)
         :param target_dir: Local directory path
