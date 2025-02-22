@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.8.0](https://github.com/trojblue/unibox/releases/tag/0.8.0) - 2025-02-22
+
+<small>[Compare with 0.7.0](https://github.com/trojblue/unibox/compare/0.7.0...0.8.0)</small>
+
+### Features
+
+- adding dataset-card generation tool ([a410353](https://github.com/trojblue/unibox/commit/a41035348046e828477676c59e16cb5647bcf82e) by yada).
+
+### Bug Fixes
+
+- modifying file protect config ([b26b632](https://github.com/trojblue/unibox/commit/b26b6326f2861365cdd98b96ca8469cf9b12176a) by yada).
+- local or s3 backends: prevent overwriting important system files ([39867dc](https://github.com/trojblue/unibox/commit/39867dc762a750f884679e742c96a0f2191808d6) by yada).
+- s3 backend: variable unbound when specifying path ([7e97559](https://github.com/trojblue/unibox/commit/7e975597c1771c9e257fa125b27acf2498735271) by yada).
+- ub.ls(): working on both huggingface model repo and datasets ([70b070e](https://github.com/trojblue/unibox/commit/70b070e73028d8e38bde4429e7fd94a7a74123ad) by yada).
+- huggingface dataset: using proper saves() to work (and update) huggingface repo ([7d382af](https://github.com/trojblue/unibox/commit/7d382afa95592f237665c4806d6c51b47422bed6) by yada).
+- huggingface dataset: shortcircuit to download directly instead of double save ([c0ef5e0](https://github.com/trojblue/unibox/commit/c0ef5e0b866504c78f05f4be92ae7dcf76644b37) by yada).
+- broken s3 loading | broken: huggingface loading after backend downloads ([36aaae2](https://github.com/trojblue/unibox/commit/36aaae27f473dd8b37a93ef9681e4ac7707a1336) by yada).
+- hf backends loading | broken: s3 loading ([fbf3240](https://github.com/trojblue/unibox/commit/fbf3240dbcae892bfa5d58ff4138f7b731e8f5ab) by yada).
+- use correct testing script ([1984a08](https://github.com/trojblue/unibox/commit/1984a088099e3d3782b0010636a1839d57197486) by yada).
+- missing credentials / dependencies for  test cases ([672330a](https://github.com/trojblue/unibox/commit/672330a0c5d6c5b9f0eb684153524de3223bb42b) by yada).
+
+### Code Refactoring
+
+- allow loading from huggingface datasets as a file ([aa3dc50](https://github.com/trojblue/unibox/commit/aa3dc50f369a1eb68d6c36b9341c0a49d824bfe8) by yada).
+- let loader handle huggingface loads ([400f7e1](https://github.com/trojblue/unibox/commit/400f7e1059fb5a43f1b29d031bef2a89e9acaa16) by yada).
+
 ## [0.7.0](https://github.com/trojblue/unibox/releases/tag/0.7.0) - 2025-02-20
 
 <small>[Compare with 0.6.0](https://github.com/trojblue/unibox/compare/0.6.0...0.7.0)</small>
