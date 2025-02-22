@@ -6,14 +6,15 @@ import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
-import pandas as pd  # <--- you'll need this import if not present
+import pandas as pd
 from tqdm.auto import tqdm
 
 from .backends.backend_router import get_backend_for_uri
+from .backends.base_backend import BaseBackend
 from .backends.local_backend import LocalBackend
-from .loaders.loader_router import get_loader_for_path
+from .loaders.loader_router import get_loader_for_path, load_data
 from .utils.df_utils import generate_dataset_readme
 from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
@@ -21,21 +22,6 @@ from .utils.s3_client import S3Client
 
 s3_client = S3Client()
 logger = UniLogger()
-
-
-def _get_type_info(obj: Any) -> str:
-    """Get type information for an object."""
-    return f"{type(obj).__name__} ({obj.__class__.__module__})"
-
-
-def _parse_hf_uri(uri: str) -> tuple[str, str]:
-    """Parse a Hugging Face URI into repo_id and path."""
-    if not uri.startswith("hf://"):
-        raise ValueError("URI must start with 'hf://'")
-    parts = uri[5:].split("/", 1)
-    if len(parts) == 1:
-        return parts[0], ""
-    return parts[0], parts[1]
 
 
 def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
@@ -59,65 +45,62 @@ def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
 
 
 def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, **kwargs) -> Any:
-    """Load data from a file or dataset."""
+    """Load data from a file or dataset.
+    
+    For HuggingFace URIs:
+    - hf://owner/repo => loads as dataset
+    - hf://owner/repo/path/to/file.ext => loads as file
+    
+    Args:
+        uri: Path or URI to load from
+        file: If True, return the local file path instead of parsing
+        debug_print: Whether to print debug info
+        **kwargs: Additional arguments passed to loader
+            For HF datasets: split, streaming, revision, etc.
+            For files: loader-specific arguments
+    """
     if debug_print:
         logger.info(f"Loading from {uri}")
 
-    # Get the appropriate backend
-    backend = get_backend_for_uri(str(uri))
-    if backend is None:
-        raise ValueError(f"No backend found for URI: {uri}")
-
-    # Download the file if needed
-    local_path = backend.download(str(uri), **kwargs)
-    if not local_path.exists():
-        raise FileNotFoundError(f"File not found: {local_path}")
-
-    # If file=True, just return the file path
+    # If file=True, just get the local path
     if file:
+        backend = get_backend_for_uri(str(uri))
+        if backend is None:
+            raise ValueError(f"No backend found for URI: {uri}")
+        local_path = backend.download(str(uri), **kwargs)
+        if not local_path.exists():
+            raise FileNotFoundError(f"File not found: {local_path}")
         return local_path
 
-    # Get the appropriate loader
-    loader = get_loader_for_path(local_path)
-    if loader is None:
-        raise ValueError(f"No loader found for file: {local_path}")
-
-    # Load the data
-    try:
-        return loader.load(local_path, loader_config=kwargs)
-    except Exception as e:
-        raise ValueError(f"Error loading {uri}: {str(e)}") from e
+    # Use the loader router to handle both dataset and file loading
+    return load_data(uri, loader_config=kwargs)
 
 
 def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) -> None:
-    """Save data to a file or dataset."""
+    """Save data to a file or dataset.
+    
+    For HuggingFace URIs:
+    - hf://owner/repo => saves as dataset
+    - hf://owner/repo/path/to/file.ext => saves as file
+    
+    Args:
+        data: Data to save
+        uri: Path or URI to save to
+        debug_print: Whether to print debug info
+        **kwargs: Additional arguments passed to loader
+            For HF datasets: split, private, etc.
+            For files: loader-specific arguments
+    """
     if debug_print:
         logger.info(f"Saving to {uri}")
 
-    # Get the appropriate backend
-    backend = get_backend_for_uri(str(uri))
-    if backend is None:
-        raise ValueError(f"No backend found for URI: {uri}")
+    # Get the appropriate loader
+    loader = get_loader_for_path(uri)
+    if loader is None:
+        raise ValueError(f"No loader found for path: {uri}")
 
-    # Create a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uri).suffix) as tmp:
-        tmp_path = Path(tmp.name)
-
-    try:
-        # Get the appropriate loader
-        loader = get_loader_for_path(tmp_path)
-        if loader is None:
-            raise ValueError(f"No loader found for file: {tmp_path}")
-
-        # Save the data locally first
-        loader.save(tmp_path, data, loader_config=kwargs)
-
-        # Upload the file
-        backend.upload(tmp_path, str(uri), **kwargs)
-    finally:
-        # Clean up
-        if tmp_path.exists():
-            tmp_path.unlink()
+    # Save using the loader (it will handle both dataset and file cases)
+    loader.save(Path(uri), data, loader_config=kwargs)
 
 
 def ls(
@@ -140,7 +123,8 @@ def ls(
     return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, **kwargs)
 
 
-def concurrent_loads(uris_list, num_workers=8, debug_print=True):
+def concurrent_loads(uris_list: List[str], num_workers: int = 8, debug_print: bool = True) -> List[Any]:
+    """Load multiple files concurrently."""
     results = [None] * len(uris_list)
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         partial_load = partial(loads, debug_print=False)
@@ -156,7 +140,7 @@ def concurrent_loads(uris_list, num_workers=8, debug_print=True):
             try:
                 results[idx] = future.result()
             except Exception as e:
-                print(f"Exception reading {uris_list[idx]}: {e}")
+                logger.error(f"Exception reading {uris_list[idx]}: {e}")
 
     missing = sum(r is None for r in results)
     if missing > 0:
@@ -173,9 +157,6 @@ def traverses(
 ) -> list[str]:
     warnings.warn("`traverses()` is deprecated; use `ls()` instead.", DeprecationWarning, stacklevel=2)
     return ls(uri, exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
-
-
-from .nb_helpers.uni_peeker import UniPeeker
 
 
 def peeks(data: Any, n: int = 3, console_print: bool = False) -> Dict[str, Any]:
@@ -240,4 +221,5 @@ def label_gallery(
 
 
 def presigns(s3_uri: str, expiration: int = 604800) -> str:
+    """Generate a presigned URL for an S3 URI."""
     return s3_client.generate_presigned_uri(s3_uri, expiration=expiration)

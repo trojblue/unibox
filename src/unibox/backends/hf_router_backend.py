@@ -1,7 +1,9 @@
 # unibox/backends/hf_router_backend.py
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Any, Union
+
+import pandas as pd
 
 from ..utils.logger import UniLogger
 from .base_backend import BaseBackend
@@ -20,64 +22,69 @@ def has_dot_in_final_segment(subpath: str) -> bool:
 
 
 class HuggingFaceRouterBackend(BaseBackend):
-    """A meta-backend that tries either dataset or single-file approach:
-      - If there's no subpath or the subpath doesn't have a dot => single-file first, fallback dataset
-      - If there's a dot => dataset first, fallback single-file
-    This matches the original “try one, fallback other” logic you requested.
+    """A meta-backend that routes operations between dataset and file APIs:
+    - If there's no subpath or no extension => use dataset API
+    - If there's a file extension => use file API
+    - For ambiguous cases, try dataset API first, then fall back to file API
     """
 
     def __init__(self):
         super().__init__()
-        self.api_backend = HuggingFaceApiBackend()  # single-file
-        self.ds_backend = HuggingFaceDatasetsBackend()  # dataset
+        self.api_backend = HuggingFaceApiBackend()  # single-file operations
+        self.ds_backend = HuggingFaceDatasetsBackend()  # dataset operations
 
-    def download(self, uri: str, target_dir: str = None) -> Path:
-        """We interpret “download” to mean “give me a local file”.
-        So if we suspect dataset => not implemented. If we suspect single-file => do it.
-        But we can do a fallback approach if that fails.
+    def download(self, uri: str, target_dir: Optional[str] = None, **kwargs) -> Path:
+        """Download from HuggingFace, using either dataset or file API.
+        
+        Args:
+            uri: HuggingFace URI (hf://owner/repo or hf://owner/repo/path/to/file)
+            target_dir: Local directory to download to
+            **kwargs: Additional arguments:
+                For datasets: split, streaming, revision, etc.
+                For files: revision, repo_type, etc.
+        
+        Returns:
+            Path: Local path to downloaded file or dataset
         """
         repo_id, subpath = parse_hf_uri(uri)
-        # no subpath => definitely can't do single-file => or subpath has no dot => single-file first
-        if not subpath:
-            # no subpath => can't single-file => we do dataset approach? Actually dataset approach
-            # doesn't produce a single local file. So “download a dataset” is a mismatch.
-            raise NotImplementedError(
-                "Cannot download entire dataset to single local file in this router. "
-                "Try using unibox.py loads() to load HF dataset, or handle multiple files.",
-            )
-        # If there's a dot => dataset first, fallback single-file
-        # OR if there's no dot => single-file first, fallback dataset
-        if has_dot_in_final_segment(subpath):
-            # dataset first
+        
+        # Ensure target_dir is a string if provided
+        target_dir_str = str(target_dir) if target_dir is not None else None
+        
+        # Case 1: No subpath or no extension => dataset
+        if not subpath or not has_dot_in_final_segment(subpath):
             try:
-                # But dataset approach's download() is not implemented => we must do something else
-                # We'll raise or fallback to single-file?
-                raise NotImplementedError("Downloading HF dataset as a single file is not possible in ds_backend.")
-            except Exception as e_ds:
-                logger.debug(f"Dataset approach failed: {e_ds}, falling back to single-file download.")
-                # fallback single-file
-                return self.api_backend.download(uri, target_dir)
-        else:
-            # single-file first
-            try:
-                return self.api_backend.download(uri, target_dir)
-            except Exception as e_file:
-                logger.debug(f"Single-file approach failed: {e_file}, trying dataset approach.")
-                raise NotImplementedError("No direct single-file => dataset fallback is feasible here.")
+                return self.ds_backend.download(uri, target_dir=target_dir_str, **kwargs)
+            except Exception as e:
+                logger.debug(f"Dataset download failed: {e}, trying file API")
+                return self.api_backend.download(uri, target_dir=target_dir_str, **kwargs)
+        
+        # Case 2: Has file extension => file API first
+        try:
+            return self.api_backend.download(uri, target_dir=target_dir_str, **kwargs)
+        except Exception as e:
+            logger.debug(f"File download failed: {e}, trying dataset API")
+            return self.ds_backend.download(uri, target_dir=target_dir_str, **kwargs)
 
-    def upload(self, local_path: Path, uri: str) -> None:
-        """If subpath has a dot => dataset push first, fallback single-file?
-        Or the opposite? Adjust the logic as you see fit.
-        In practice, you might check if `local_path` is a single file or if you have
-        a `datasets.Dataset` object.
+    def upload(self, local_path: Path, uri: str, **kwargs) -> None:
+        """Upload to HuggingFace, using either dataset or file API.
+        
+        Args:
+            local_path: Path to local file or dataset
+            uri: Target HuggingFace URI
+            **kwargs: Additional arguments:
+                For datasets: split, private, etc.
+                For files: repo_type, commit_message, etc.
         """
         repo_id, subpath = parse_hf_uri(uri)
+        
+        # Case 1: No subpath => dataset push
         if not subpath:
-            # Means “hf://owner/repo” no file => dataset approach
-            # We actually do “data_to_hub” in the ds backend
-            raise NotImplementedError("For dataset push, call ds_backend.data_to_hub(...) directly.")
-        # If there's a dot => likely single-file => let's do the api backend
-        self.api_backend.upload(local_path, uri)
+            self.ds_backend.upload(local_path, uri, **kwargs)
+            return
+            
+        # Case 2: Has subpath => file upload
+        self.api_backend.upload(local_path, uri, **kwargs)
 
     def ls(
         self,
@@ -87,8 +94,42 @@ class HuggingFaceRouterBackend(BaseBackend):
         debug_print: bool = True,
         **kwargs,
     ) -> List[str]:
-        """We can attempt listing from the API backend (which uses list_repo_files).
-        If you want to separate “dataset splits” listing from “files listing,”
-        you might do that with ds_backend, but here let's just rely on api_backend.
+        """List contents in HuggingFace repo.
+        
+        Args:
+            uri: HuggingFace URI to list
+            exts: Optional file extensions to filter by
+            relative_unix: Return paths with forward slashes
+            debug_print: Show progress
+            **kwargs: Additional backend-specific arguments
+        
+        Returns:
+            List[str]: List of URIs or paths
         """
-        return self.api_backend.ls(uri, exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
+        repo_id, subpath = parse_hf_uri(uri)
+        
+        # Try file API first as it's more reliable for listing
+        try:
+            return self.api_backend.ls(uri, exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
+        except Exception as e:
+            logger.debug(f"File API listing failed: {e}, trying dataset API")
+            return self.ds_backend.ls(uri, exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
+
+    def load_dataset(self, repo_id: str, **kwargs) -> Any:
+        """Load a dataset using the dataset API.
+        
+        Args:
+            repo_id: Repository ID ("owner/repo")
+            **kwargs: Dataset loading options (split, streaming, etc.)
+        """
+        return self.ds_backend.load_dataset(repo_id, **kwargs)
+
+    def data_to_hub(self, data: Union[Any, pd.DataFrame], repo_id: str, **kwargs) -> None:
+        """Push data to hub as a dataset.
+        
+        Args:
+            data: Data to push (DataFrame or Dataset)
+            repo_id: Target repository ID
+            **kwargs: Dataset push options (private, split, etc.)
+        """
+        self.ds_backend.data_to_hub(data, repo_id, **kwargs)
