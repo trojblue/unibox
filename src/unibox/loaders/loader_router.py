@@ -4,6 +4,10 @@ import warnings
 from pathlib import Path
 from typing import Optional, Union, Any
 
+from regex import P
+
+from datasets import load_dataset, Dataset, DatasetDict, IterableDatasetDict, IterableDataset
+
 from ..backends.backend_router import get_backend_for_uri
 from ..utils.constants import IMG_FILES
 from ..utils.logger import UniLogger as logger
@@ -51,6 +55,19 @@ def _parse_hf_uri(uri: str) -> tuple[str, str]:
     
     return repo_id, subpath
 
+def is_hf_dataset_dir(path_str: str) -> bool:
+    """Check if the given path is a Hugging Face dataset directory.
+    
+    Args:
+
+        path (Path): Path to check
+    """
+    path = Path(path_str)
+    if not path.is_dir():
+        return False
+    
+    hf_signature_files = ["dataset_dict.json", "dataset_info.json"]
+    return any((path / f).is_file() for f in hf_signature_files)
 
 def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
     """Get appropriate loader for a given path.
@@ -78,6 +95,10 @@ def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
         path_str = path_str.split("/")[-1]
         if not path_str:
             return None
+
+
+    if is_hf_dataset_dir(path_str):
+        return HFDatasetLoader()
 
     # Handle file extensions
     suffix = Path(path_str).suffix.lower()
@@ -130,19 +151,25 @@ def load_data(path: Union[str, Path], loader_config: Optional[dict] = None) -> A
         ValueError: If no appropriate loader is found
     """
     path_str = str(path)
-
-    # 1. Get the backend
+    # 1. Which backend?
     backend = get_backend_for_uri(path_str)
     if not backend:
         raise ValueError(f"No backend found for: {path_str}")
+    
+    local_or_ds = backend.download(path_str)
 
-    # 2. Download (or do a no-op if it is local)
+    # If loading from huggingface: download() will return a Dataset object directly
+    if isinstance(local_or_ds, (Dataset, DatasetDict, IterableDatasetDict, IterableDataset)):
+        return local_or_ds
+
+    # 2. Download
     local_path = backend.download(path_str)
     if not local_path.exists():
         raise FileNotFoundError(f"Downloaded file/folder not found: {local_path}")
 
-    # 3. Now pick the loader by extension (or by dataset folder detection, etc.)
+    # Otherwise, extension-based logic
     loader = get_loader_for_path(local_path)
+
     if not loader:
         raise ValueError(f"No loader found for path: {local_path}")
 
