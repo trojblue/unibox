@@ -53,8 +53,19 @@ class HuggingFaceDatasetsBackend(BaseBackend):
         raise NotImplementedError("Listing HF dataset contents is not implemented here.")
 
     # -- Additional helper for dataset loading:
-    def load_dataset(self, repo_id: str, split: Optional[str] = "train", revision: str = "main") -> Dataset:
-        """Load a dataset from the HF Hub and return a `datasets.Dataset`."""
+    def load_dataset(
+        self, repo_id: str, split: Optional[str] = "train", revision: str = "main", to_pandas: bool = False
+    ) -> Dataset:
+        """Load a dataset from the HF Hub and return a `datasets.Dataset`.
+
+        Args:
+            repo_id: Repository ID ("org/repo_name").
+            split: Split name to load (default: "train").
+            revision: Branch/tag name (default: "main").
+            to_pandas: Convert to pandas DataFrame before returning (default: False).
+        """
+        if to_pandas:
+            return load_dataset(repo_id, split=split, revision=revision).to_pandas()
         return load_dataset(repo_id, split=split, revision=revision)
 
     # -- Additional helper for pushing data frames or Datasets:
