@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.8.1](https://github.com/trojblue/unibox/releases/tag/0.8.1) - 2025-02-22
+
+<small>[Compare with 0.8.0](https://github.com/trojblue/unibox/compare/0.8.0...0.8.1)</small>
+
 ## [0.8.0](https://github.com/trojblue/unibox/releases/tag/0.8.0) - 2025-02-22
 
 <small>[Compare with 0.7.0](https://github.com/trojblue/unibox/compare/0.7.0...0.8.0)</small>
