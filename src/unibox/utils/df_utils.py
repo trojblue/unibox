@@ -140,7 +140,7 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str, backend):
     head_table = data.head().to_markdown(index=False)
 
     readme_text = f"""# {repo_id}
-(Auto-generated from last commit)
+(Auto-generated from latest commit)
 
 ## Using Dataset:
 
@@ -162,6 +162,12 @@ df = ub.loads("hf://{repo_id}").to_pandas()
 
 {stats_table}
 
+## Saving to dataset:
+
+```python
+import unibox as ub
+ub.saves(df, "hf://{repo_id}")
+```
 
 (last updated: {pd.Timestamp.now()})
 """
