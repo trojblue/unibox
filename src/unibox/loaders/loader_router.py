@@ -4,6 +4,7 @@ import warnings
 from pathlib import Path
 from typing import Optional, Union, Any
 
+from ..backends.backend_router import get_backend_for_uri
 from ..utils.constants import IMG_FILES
 from ..utils.logger import UniLogger as logger
 from .base_loader import BaseLoader
@@ -129,13 +130,21 @@ def load_data(path: Union[str, Path], loader_config: Optional[dict] = None) -> A
         ValueError: If no appropriate loader is found
     """
     path_str = str(path)
-    loader = get_loader_for_path(path_str)
-    if loader is None:
-        raise ValueError(f"No loader found for path: {path_str}")
-    
-    # Don't convert URIs to Path objects as it normalizes slashes
-    if "://" in path_str:
-        return loader.load(path_str, loader_config=loader_config or {})
-    
-    # For local files, use Path
-    return loader.load(Path(path_str), loader_config=loader_config or {})
+
+    # 1. Get the backend
+    backend = get_backend_for_uri(path_str)
+    if not backend:
+        raise ValueError(f"No backend found for: {path_str}")
+
+    # 2. Download (or do a no-op if it is local)
+    local_path = backend.download(path_str)
+    if not local_path.exists():
+        raise FileNotFoundError(f"Downloaded file/folder not found: {local_path}")
+
+    # 3. Now pick the loader by extension (or by dataset folder detection, etc.)
+    loader = get_loader_for_path(local_path)
+    if not loader:
+        raise ValueError(f"No loader found for path: {local_path}")
+
+    # 4. Let the loader parse
+    return loader.load(local_path, loader_config=loader_config or {})
