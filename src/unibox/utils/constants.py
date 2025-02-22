@@ -41,12 +41,10 @@ BLACKLISTED_PATHS = {
     "/root/.azure/",
     "/root/.docker/",
     "/root/.kube/",
-
     "/var/log",  # Logs (e.g., auth logs, security logs)
     "/var/run",  # PID files and UNIX domain sockets
     "/var/tmp",  # Persistent temp files (attackers sometimes abuse this)
-    "/var/lib",         # Database storage
-    "/var/mail",        # Email storage
-    "/var/spool/",      # Printing and mail spool
-
+    "/var/lib",  # Database storage
+    "/var/mail",  # Email storage
+    "/var/spool/",  # Printing and mail spool
 }
