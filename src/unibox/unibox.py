@@ -1,5 +1,6 @@
 # unibox.py
 import os
+import tempfile
 import timeit
 import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -7,11 +8,13 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+import pandas as pd  # <--- you'll need this import if not present
 from tqdm.auto import tqdm
 
 from .backends.backend_router import get_backend_for_uri
 from .backends.local_backend import LocalBackend
 from .loaders.loader_router import get_loader_for_suffix
+from .utils.df_utils import generate_dataset_readme
 from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
 from .utils.s3_client import S3Client
@@ -28,7 +31,13 @@ def _get_type_info(obj: Any) -> str:
 ### CHANGED ###
 def _parse_hf_uri(uri: str):
     # likely duplicate of hf_datasets_backend.py impl
-    """Returns (repo_id, subpath) from 'hf://owner/repo/...'. If no subpath, returns ('owner/repo', '')."""
+    """Args:
+        uri: A URI in the format 'hf://owner/repo/some_file', or 'hf://owner/repo' for a dataset.
+
+    Returns:
+        repo_id: The repo ID 'owner/repo' from 'hf://owner/repo/...'.
+        subpath: The remaining part ('' if None or some_file)
+    """
     trimmed = uri.replace("hf://", "", 1)
     parts = trimmed.split("/", 2)  # Split into at most three parts
     if len(parts) < 2:
@@ -141,38 +150,47 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         split: str = "train"  (for HF dataset push)
         private: bool = True  (for HF dataset push)
     """
-    import tempfile
-
     start_time = timeit.default_timer()
     uri_str = str(uri)
     backend = get_backend_for_uri(uri_str)
     suffix = Path(uri_str).suffix.lower()
 
-    ### CHANGED - HF dataset push if suffix=="" ###
+    # 1) The HF dataset push block
     if uri_str.startswith("hf://") and suffix == "":
         # Means something like "hf://owner/repo" => push entire dataset
-        if hasattr(backend, "ds_backend"):
-            # If router-based, do "backend.ds_backend.data_to_hub(data, repo_id, ...)"
-            repo_id, _ = _parse_hf_uri(uri_str)
-            dataset_split = kwargs.get("split", "train")
-            backend.ds_backend.data_to_hub(
-                data,
-                repo_id=repo_id,
-                private=kwargs.get("private", True),
-                split=dataset_split,
-            )
-        else:
-            # old style: "backend.data_to_hub(...)"
-            print("OLD STYLE HERE (canary print for debug)")
-            dataset_split = kwargs.get("split", "train")
-            backend.data_to_hub(data, uri_str, split=dataset_split, **kwargs)
+        repo_id, _ = _parse_hf_uri(uri_str)
+
+        # if hasattr(backend, "ds_backend"):
+        # If router-based, do: ds_backend.data_to_hub
+        dataset_split = kwargs.get("split", "train")
+        backend.ds_backend.data_to_hub(
+            data,
+            repo_id=repo_id,
+            private=kwargs.get("private", True),
+            split=dataset_split,
+        )
+        # else:
+        #     print("OLD STYLE; code removed; see version ~0.7")
+
+        # 2) (NEW) Update README in the HF repo, overwriting any existing version.
+        #    We'll assume the new method is on "api_backend" or the router has an "api_backend".
+        #    If your `backend` is a HuggingFaceRouterBackend, you have `backend.api_backend`.
+        #    Or you can just instantiate a new HuggingFaceApiBackend() directly here.
+        #    We'll do: backend.api_backend.update_readme(...).
+        #    Also, only do this if data is a DataFrame (so we can do len, columns, etc.)
+
+        if isinstance(data, pd.DataFrame):
+            readme_text = generate_dataset_readme(data, repo_id, backend)
+            backend.api_backend.update_readme(repo_id, readme_text, repo_type="dataset")
+
+        # End-of-process for HF dataset push
         end_time = timeit.default_timer()
         if debug_print:
             _, data_cls = _get_type_info(data)
             logger.info(f'{data_cls} saved (HF dataset) to "{uri_str}" in {end_time - start_time:.2f}s')
         return
 
-    # Otherwise normal suffix-based logic
+    # Otherwise, the existing logic for normal single-file suffix-based saving:
     loader = get_loader_for_suffix(suffix)
     if loader is None:
         raise ValueError(f"No loader found for extension {suffix}")
