@@ -7,7 +7,7 @@ from datasets import Dataset, load_dataset
 from unibox.utils.df_utils import generate_dataset_readme
 from unibox.utils.utils import parse_hf_uri
 
-from ..backends.hf_api_backend import HuggingFaceApiBackend
+from ..backends.hf_hybrid_backend import HuggingfaceHybridBackend
 from .base_loader import BaseLoader
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class HFDatasetLoader(BaseLoader):
 
     def __init__(self):
         super().__init__()
-        self.hf_api_backend = HuggingFaceApiBackend()
+        self.hf_api_backend = HuggingfaceHybridBackend()
 
     def load(self, local_path: str, loader_config: Optional[Dict] = None) -> Any:
         """Load a dataset from a local path or cache.
