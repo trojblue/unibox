@@ -31,32 +31,6 @@ def is_hf_uri(uri: str) -> bool:
     return uri.startswith("hf://")
 
 
-def merge_dicts(*dicts):
-    """Merge dictionaries, raising warnings for overlapping keys and data type mismatches.
-
-    Args:
-        *dicts: Dictionaries to merge.
-        logger: Logger instance for warnings (default: None).
-
-    Returns:
-        dict: Merged dictionary.
-    """
-    assert all(isinstance(d, dict) for d in dicts), "All inputs must be dictionaries."
-
-    result = {}
-    for d in dicts:
-        for key, value in d.items():
-            if key in result:
-                logger.warning(f"Overlapping key '{key}' detected. Existing value: {result[key]}, New value: {value}")
-                if type(result[key]) != type(value):
-                    logger.warning(
-                        f"Data type mismatch for key '{key}': {type(result[key])} vs {type(value)}.",
-                    )
-            result[key] = value
-
-    return result
-
-
 def parse_hf_uri(uri: str) -> tuple[str, str]:
     """Parse a Hugging Face URI into repo_id and path.
 
@@ -88,3 +62,29 @@ def parse_hf_uri(uri: str) -> tuple[str, str]:
     subpath = parts[2] if len(parts) > 2 else ""
 
     return repo_id, subpath
+
+
+def merge_dicts(*dicts):
+    """Merge dictionaries, raising warnings for overlapping keys and data type mismatches.
+
+    Args:
+        *dicts: Dictionaries to merge.
+        logger: Logger instance for warnings (default: None).
+
+    Returns:
+        dict: Merged dictionary.
+    """
+    assert all(isinstance(d, dict) for d in dicts), "All inputs must be dictionaries."
+
+    result = {}
+    for d in dicts:
+        for key, value in d.items():
+            if key in result:
+                logger.warning(f"Overlapping key '{key}' detected. Existing value: {result[key]}, New value: {value}")
+                if type(result[key]) != type(value):
+                    logger.warning(
+                        f"Data type mismatch for key '{key}': {type(result[key])} vs {type(value)}.",
+                    )
+            result[key] = value
+
+    return result
