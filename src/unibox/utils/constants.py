@@ -69,4 +69,12 @@ BLACKLISTED_PATHS = {
     "/home/",           # User home directories
     "/var/mail",        # Email storage
     "/var/spool/",      # Printing and mail spool
+
+    # Other credential files: huggingface, AWS, GCP, etc.
+    "/root/.huggingface/",
+    "/root/.aws/",
+    "/root/.gcp/",
+    "/root/.azure/",
+    "/root/.docker/",
+    "/root/.kube/",
 }
