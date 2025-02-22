@@ -14,7 +14,6 @@ AUDIO_FILES = ["." + i.strip() for i in __all_audio_raw.split(" ")]
 
 # Blacklisted directories and files for uploads to prevent injections
 BLACKLISTED_PATHS = {
-    "/var",
     "/etc",
     "/root/.ssh/",  # SSH keys (entire folder)
     "/root/.bashrc",
@@ -42,4 +41,12 @@ BLACKLISTED_PATHS = {
     "/root/.azure/",
     "/root/.docker/",
     "/root/.kube/",
+
+    "/var/log",  # Logs (e.g., auth logs, security logs)
+    "/var/run",  # PID files and UNIX domain sockets
+    "/var/tmp",  # Persistent temp files (attackers sometimes abuse this)
+    "/var/lib",         # Database storage
+    "/var/mail",        # Email storage
+    "/var/spool/",      # Printing and mail spool
+
 }

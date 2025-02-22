@@ -10,7 +10,7 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = []
-# version="0.5.2"  # Remove local suffix
+# version="0.8.1"  # Remove local suffix
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 4 - Beta",
