@@ -2,15 +2,15 @@
 
 # base_loader.py
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 
 class BaseLoader:
-    def load(self, local_path: Path, loader_config: Optional[Dict] = None) -> Any:
+    def load(self, local_path: Union[str, Path], loader_config: Optional[Dict] = None) -> Any:
         """Load data from the given path with optional loader-specific configuration.
 
         Args:
-            local_path (Path): Path to the file to load
+            local_path (Union[str, Path]): Path or URI to load from
             loader_config (Optional[Dict]): Loader-specific configuration options
 
         Returns:
@@ -18,11 +18,11 @@ class BaseLoader:
         """
         raise NotImplementedError
 
-    def save(self, local_path: Path, data: Any, loader_config: Optional[Dict] = None) -> None:
+    def save(self, local_path: Union[str, Path], data: Any, loader_config: Optional[Dict] = None) -> None:
         """Save data to the given path with optional loader-specific configuration.
 
         Args:
-            local_path (Path): Path where to save the data
+            local_path (Union[str, Path]): Path or URI where to save the data
             data (Any): Data to save
             loader_config (Optional[Dict]): Loader-specific configuration options
         """
