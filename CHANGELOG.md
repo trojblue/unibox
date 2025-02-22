@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.8.2](https://github.com/trojblue/unibox/releases/tag/0.8.2) - 2025-02-22
+
+<small>[Compare with 0.8.1](https://github.com/trojblue/unibox/compare/0.8.1...0.8.2)</small>
+
+### Bug Fixes
+
+- blocking var breaks mac compatability ([cb38b48](https://github.com/trojblue/unibox/commit/cb38b480ace2af8010afeb77c34ce77786f77e72) by yada).
+
 ## [0.8.1](https://github.com/trojblue/unibox/releases/tag/0.8.1) - 2025-02-22
 
 <small>[Compare with 0.8.0](https://github.com/trojblue/unibox/compare/0.8.0...0.8.1)</small>
