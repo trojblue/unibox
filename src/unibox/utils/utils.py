@@ -31,6 +31,39 @@ def is_hf_uri(uri: str) -> bool:
     return uri.startswith("hf://")
 
 
+def parse_hf_uri(uri: str) -> tuple[str, str]:
+    """Parse a Hugging Face URI into repo_id and path.
+
+    Args:
+        uri: A URI in format 'hf://owner/repo/path/to/nested/file.ext'
+             or 'hf://owner/repo' for a dataset
+
+    Returns:
+        tuple[str, str]: (repo_id, subpath) where:
+            - repo_id is 'owner/repo'
+            - subpath is the full remaining path after repo (may contain multiple '/')
+            - subpath is '' if no path specified (dataset case)
+    """
+    if not uri.startswith("hf://"):
+        raise ValueError("URI must start with 'hf://'")
+
+    # Remove prefix and normalize slashes
+    # This handles both hf://owner/repo and hf:///owner/repo
+    trimmed = uri[5:].strip("/")
+    parts = trimmed.split("/", 2)  # Split into owner, repo, and rest
+
+    if len(parts) < 2:
+        raise ValueError(f"Invalid Hugging Face URI format: {uri}. Must contain at least owner/repo.")
+
+    # First two parts form the repo_id
+    repo_id = f"{parts[0]}/{parts[1]}"
+
+    # Everything after owner/repo is the subpath (may contain multiple '/')
+    subpath = parts[2] if len(parts) > 2 else ""
+
+    return repo_id, subpath
+
+
 def merge_dicts(*dicts):
     """Merge dictionaries, raising warnings for overlapping keys and data type mismatches.
 

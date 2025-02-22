@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub.errors import RepositoryNotFoundError
 
 from .base_backend import BaseBackend
 
@@ -47,7 +48,7 @@ def parse_hf_uri(hf_uri: str):
     return repo_id, subpath
 
 
-class HuggingFaceApiBackend(BaseBackend):
+class HuggingfaceHybridBackend(BaseBackend):
     """A backend that uses low-level HfApi to handle single-file or folder usage in HF repos.
 
     It can:
@@ -60,7 +61,7 @@ class HuggingFaceApiBackend(BaseBackend):
     def __init__(self):
         self.api = HfApi()
 
-    def download(self, uri: str, target_dir: str = None) -> Path:
+    def download(self, uri: str, target_dir: str | None = None) -> Path | str:
         """Download a single file from a HF repo to `target_dir`.
         If the path_in_repo is actually a folder or there's no final file, we raise NotImplemented.
         """
@@ -68,7 +69,9 @@ class HuggingFaceApiBackend(BaseBackend):
             raise ValueError(f"Invalid HF URI: {uri}")
         repo_id, path_in_repo = parse_hf_uri(uri)
         if not path_in_repo:
-            raise ValueError(f"No subpath found in URI: {uri} (cannot do single-file download).")
+            # do nothing, let loader handle it (load dataset as hf://.../)
+            logger.info(f"{uri}: is a Huggingface dataset; skipping download.")
+            return uri
 
         if not target_dir:
             target_dir = tempfile.gettempdir()
@@ -76,7 +79,21 @@ class HuggingFaceApiBackend(BaseBackend):
 
         # Download
         revision = "main"  # or read from kwargs if you prefer
-        local_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
+
+        try:
+            local_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
+        except RepositoryNotFoundError:
+            logger.info(f"{uri}: is not a model repo; trying to download as dataset...")
+            try:
+                local_path = hf_hub_download(
+                    repo_id=repo_id,
+                    filename=path_in_repo,
+                    revision="main",
+                    repo_type="dataset",
+                )
+            except RepositoryNotFoundError:
+                raise ValueError(f"File not found in HF repo: {uri}")
+
         # Copy from HF cache to target_dir if needed
         filename_only = os.path.basename(path_in_repo)
         final_path = Path(target_dir) / filename_only
@@ -113,7 +130,13 @@ class HuggingFaceApiBackend(BaseBackend):
         For extension filtering or subpath filtering, you'd manually do it. Here we do a simple approach.
         """
         repo_id, path_in_repo = parse_hf_uri(uri)
-        files = self.api.list_repo_files(repo_id=repo_id)
+        try:
+            files = self.api.list_repo_files(repo_id=repo_id)
+        except RepositoryNotFoundError:
+            logger.info(f"{uri}: is not a model repo; trying to list as dataset...")
+            files = self.api.list_repo_files(repo_id=repo_id, repo_type="dataset")
+
+
         # If path_in_repo is not empty, we can filter by that prefix
         if path_in_repo:
             path_in_repo = path_in_repo.rstrip("/")
