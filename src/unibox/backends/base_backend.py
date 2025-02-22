@@ -9,11 +9,11 @@ class BaseBackend:
 
     def download(self, uri: str, target_dir: Optional[str] = None) -> Path:
         """Download the resource identified by `uri` to a local temp path.
-        
+
         Args:
             uri: URI of the resource to download
             target_dir: Optional directory to download to. If None, uses a temp directory.
-            
+
         Returns:
             Path: Local path to the downloaded resource
         """
@@ -39,7 +39,7 @@ class BaseBackend:
             relative_unix: Return relative paths with forward slashes if True.
             debug_print: Show progress bar.
             **kwargs: Additional arguments for compatibility (ignored by default).
-            
+
         Returns:
             List[str]: A list of file paths.
         """

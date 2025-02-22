@@ -2,16 +2,11 @@
 # ... etc
 import warnings
 from pathlib import Path
-from typing import Optional, Union, Any
-
-from regex import P
-
-from datasets import load_dataset, Dataset, DatasetDict, IterableDatasetDict, IterableDataset
+from typing import Any, Optional, Union
 
 from ..backends.backend_router import get_backend_for_uri
-from ..utils.utils import parse_hf_uri
 from ..utils.constants import IMG_FILES
-from ..utils.logger import UniLogger as logger
+from ..utils.utils import parse_hf_uri
 from .base_loader import BaseLoader
 from .csv_loader import CSVLoader
 from .hf_dataset_loader import HFDatasetLoader
@@ -24,20 +19,19 @@ from .txt_loader import TxtLoader
 from .yaml_loader import YAMLLoader
 
 
-
 def is_hf_dataset_dir(path_str: str) -> bool:
     """Check if the given path is a Hugging Face dataset directory.
-    
-    Args:
 
+    Args:
         path (Path): Path to check
     """
     path = Path(path_str)
     if not path.is_dir():
         return False
-    
+
     hf_signature_files = ["dataset_dict.json", "dataset_info.json"]
     return any((path / f).is_file() for f in hf_signature_files)
+
 
 def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
     """Get appropriate loader for a given path.
@@ -66,7 +60,6 @@ def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
         if not path_str:
             return None
 
-
     if is_hf_dataset_dir(path_str):
         return HFDatasetLoader()
 
@@ -94,14 +87,14 @@ def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
 
 def get_loader_for_suffix(suffix: str) -> Optional[BaseLoader]:
     """DEPRECATED: Use get_loader_for_path instead.
-    
+
     This function is kept for backward compatibility and will be removed in a future version.
     """
     warnings.warn(
         "get_loader_for_suffix is deprecated and will be removed in a future version. "
         "Use get_loader_for_path instead.",
         DeprecationWarning,
-        stacklevel=2
+        stacklevel=2,
     )
     # Create a fake path with the given suffix to reuse the logic
     return get_loader_for_path(f"file{suffix}")
@@ -109,14 +102,14 @@ def get_loader_for_suffix(suffix: str) -> Optional[BaseLoader]:
 
 def load_data(path: Union[str, Path], loader_config: Optional[dict] = None) -> Any:
     """High-level function to load data using the appropriate loader.
-    
+
     Args:
         path (Union[str, Path]): Path to the file or dataset to load
         loader_config (Optional[dict]): Configuration options for the loader
-        
+
     Returns:
         Any: The loaded data
-        
+
     Raises:
         ValueError: If no appropriate loader is found
     """
@@ -125,10 +118,10 @@ def load_data(path: Union[str, Path], loader_config: Optional[dict] = None) -> A
     backend = get_backend_for_uri(path_str)
     if not backend:
         raise ValueError(f"No backend found for: {path_str}")
-    
+
     # 2. Download
     local_path = backend.download(path_str)
-    
+
     # if it's huggingface, let loader load it instead of downloading at backend
     if not str(local_path).startswith("hf://"):
         if not local_path.exists():
