@@ -1,7 +1,7 @@
 # unibox/backends/hf_router_backend.py
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from .base_backend import BaseBackend
 from .hf_api_backend import HuggingFaceApiBackend
@@ -28,7 +28,8 @@ class HuggingFaceRouterBackend(BaseBackend):
         if self._is_file_path(uri):
             return self.api_backend.download(uri, target_dir)
 
-        return uri  # do nothing, let loader handle it (load dataset as hf://.../)
+        # do nothing, let loader handle it (load dataset as hf://.../)
+        return uri  
 
     def upload(self, local_path: Path, uri: str) -> None:
         """Upload to HuggingFace, routing between file and dataset backends.
@@ -37,4 +38,18 @@ class HuggingFaceRouterBackend(BaseBackend):
             local_path: Path to local file or dataset directory
             uri: Target HuggingFace URI
         """
-        raise NotImplementedError("Upload not supported for HuggingFace URIs")
+        if self._is_file_path(uri):
+            return self.api_backend.upload(local_path, uri)
+        
+        else:
+            raise NotImplementedError("Upload not supported for HuggingFace URIs")
+
+    def ls(
+        self,
+        uri: str,
+        exts: Optional[List[str]] = None,
+        relative_unix: bool = False,
+        debug_print: bool = True,
+        **kwargs,
+    ) -> List[str]:
+        return self.api_backend.ls(uri, exts, relative_unix, debug_print, **kwargs)
