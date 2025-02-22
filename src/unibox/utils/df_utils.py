@@ -81,7 +81,7 @@ def get_random_df() -> pd.DataFrame:
     return df
 
 
-def generate_dataset_readme(data: pd.DataFrame, repo_id: str, backend):
+def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
     """Generate a README markdown text for the dataset.
 
     Args:
