@@ -1,19 +1,18 @@
 # s3_backend.py
 import os
+import re
 import warnings
 from pathlib import Path
 from typing import List, Optional
-import re
 from urllib.parse import urlparse
 
 from unibox.utils.s3_client import S3Client
 
-from .base_backend import BaseBackend
 from ..utils.constants import BLACKLISTED_PATHS
+from .base_backend import BaseBackend
 
 
 class S3Backend(BaseBackend):
-
     # Blacklisted directories and files
     BLACKLISTED_PATHS = BLACKLISTED_PATHS
 

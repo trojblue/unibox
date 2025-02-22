@@ -7,12 +7,11 @@ from typing import List, Optional
 
 from tqdm.auto import tqdm
 
-from .base_backend import BaseBackend
 from ..utils.constants import BLACKLISTED_PATHS
+from .base_backend import BaseBackend
 
 
 class LocalBackend(BaseBackend):
-
     # Blacklisted directories and files
     BLACKLISTED_PATHS = BLACKLISTED_PATHS
 
