@@ -19,7 +19,7 @@ class S3Backend(BaseBackend):
             raise ValueError(f"Not an S3 URI: {uri}")
         return uri
 
-    def download(self, uri: str, target_dir: str = None) -> Path:
+    def download(self, uri: str, target_dir: str | None = None) -> Path:
         """Download the file from S3. If target_dir is given, place it there,
         else use your global or stable temp directory.
         """
@@ -27,10 +27,10 @@ class S3Backend(BaseBackend):
         if not target_dir:
             from unibox.utils.globals import GLOBAL_TMP_DIR
 
-            target_dir = GLOBAL_TMP_DIR
+            _target_dir = GLOBAL_TMP_DIR
 
-        os.makedirs(target_dir, exist_ok=True)
-        local_path = self._client.download(uri, target_dir)
+        os.makedirs(_target_dir, exist_ok=True)
+        local_path = self._client.download(uri, _target_dir)
         return Path(local_path)
 
     def upload(self, local_path: Path, uri: str) -> None:

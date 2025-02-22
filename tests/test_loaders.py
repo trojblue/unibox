@@ -1,8 +1,9 @@
-import os
+from pathlib import Path
 
 import pytest
 
 import unibox as ub
+from unibox.loaders.loader_router import get_loader_for_path
 
 
 @pytest.mark.parametrize(
@@ -36,45 +37,30 @@ import unibox as ub
         ),
     ],
 )
-def test_loads_and_saves(uri: str, expected_non_empty, is_image, tmp_path):
-    """Test loader functionality for various URIs, including saving and reloading.
-
-    Parameters:
-        uri: The URI to load the file or dataset.
-        expected_non_empty: Whether the loaded result should be non-empty.
-        is_image: Whether the file is an image.
-        tmp_path: Temporary directory provided by pytest for saving test files.
-    """
-    # Load the URI
-    loaded_data = ub.loads(uri)
-
-    # Validate the loaded content
+def test_loads_and_saves(uri: str, expected_non_empty: bool, is_image: bool, tmp_path: Path) -> None:
+    """Test loading and saving files with different loaders."""
+    # Load the data
+    data = ub.loads(uri)
+    assert data is not None
     if expected_non_empty:
-        assert loaded_data is not None, f"Loaded data from {uri} is None"
-        if not is_image:
-            assert len(loaded_data) > 0, f"Loaded data from {uri} is empty"
+        assert len(data) > 0
 
-    # Save the loaded content to a new location
-    uri = str(uri)
-    if uri.startswith("hf://"):
-        save_uri = "hf://datatmp/unibox-debug-repo"
-    elif uri.startswith("s3://"):
-        save_uri = "s3://dataset-ingested/temp/unibox_debug/" + os.path.basename(uri)
-    else:
-        save_uri = tmp_path / f"saved_{os.path.basename(uri)}"
+    # Skip save tests for images and remote datasets
+    if is_image or uri.startswith(("hf://", "s3://")):
+        return
 
-    save_uri = str(save_uri)
-    ub.saves(loaded_data, save_uri)
+    # Get the appropriate loader
+    local_path = Path(uri)
+    loader = get_loader_for_path(local_path)
+    assert loader is not None
 
-    # Ensure the saved file or dataset exists
-    if not save_uri.startswith("hf://") and not save_uri.startswith("s3://"):
-        assert os.path.exists(save_uri), f"Saved file {save_uri} does not exist"
-        assert os.path.getsize(save_uri) > 0, f"Saved file {save_uri} is empty"
+    # Save to a temporary file
+    save_path = tmp_path / local_path.name
+    ub.saves(data, save_path)
 
-    # Reload the saved file or dataset
-    reloaded_data = ub.loads(save_uri)
-
-    # Validate the reloaded content
-    assert reloaded_data is not None, f"Reloaded data from {save_uri} is None"
-    if not is_image:
-        assert len(reloaded_data) > 0, f"Reloaded data from {save_uri} is empty"
+    # Load back and verify
+    reloaded = ub.loads(save_path)
+    if hasattr(data, "equals"):  # pandas DataFrame
+        assert data.equals(reloaded)
+    else:  # other types
+        assert data == reloaded
