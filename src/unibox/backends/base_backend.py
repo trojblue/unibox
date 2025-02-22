@@ -7,8 +7,16 @@ from typing import List, Optional
 class BaseBackend:
     """Interface for storage backends (local, S3, etc.)."""
 
-    def download(self, uri: str, target_dir: str = None) -> Path:
-        """Download the resource identified by `uri` to a local temp path. Return local Path."""
+    def download(self, uri: str, target_dir: Optional[str] = None) -> Path:
+        """Download the resource identified by `uri` to a local temp path.
+        
+        Args:
+            uri: URI of the resource to download
+            target_dir: Optional directory to download to. If None, uses a temp directory.
+            
+        Returns:
+            Path: Local path to the downloaded resource
+        """
         raise NotImplementedError
 
     def upload(self, local_path: Path, uri: str) -> None:
@@ -25,13 +33,15 @@ class BaseBackend:
     ) -> List[str]:
         """List files under `uri` with optional extension filtering.
 
-        :param uri: A string representing a directory path or location.
-        :param exts: A list of file extensions to include (['.txt', '.csv']).
-        :param include_extensions: (DEPRECATED) old name for exts, raises a warning if used.
-        :param relative_unix: Return relative paths with forward slashes if True.
-        :param debug_print: Show progress bar.
-        :param kwargs: Additional arguments for compatibility (ignored by default).
-        :return: A list of file paths.
+        Args:
+            uri: A string representing a directory path or location.
+            exts: A list of file extensions to include (['.txt', '.csv']).
+            relative_unix: Return relative paths with forward slashes if True.
+            debug_print: Show progress bar.
+            **kwargs: Additional arguments for compatibility (ignored by default).
+            
+        Returns:
+            List[str]: A list of file paths.
         """
         include_extensions = kwargs.pop("include_extensions", None)
         if include_extensions is not None:

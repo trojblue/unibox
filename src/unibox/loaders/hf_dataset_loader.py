@@ -2,13 +2,16 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Set, Union
 
 import pandas as pd
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 
+from ..backends.hf_router_backend import HuggingFaceRouterBackend
 from .base_loader import BaseLoader
 
 
 class HFDatasetLoader(BaseLoader):
-    """Load datasets from Hugging Face hub."""
+    """Loader for HuggingFace datasets and files.
+    Uses HuggingFaceRouterBackend to determine whether to use dataset or file API.
+    """
 
     SUPPORTED_LOAD_CONFIG = {
         "split",  # str: Which split to load (e.g., 'train', 'test')
@@ -20,7 +23,40 @@ class HFDatasetLoader(BaseLoader):
         "num_proc",  # int: Number of processes for loading
     }
 
-    def load(self, file_path: Path, loader_config: Optional[Dict] = None) -> Union[pd.DataFrame, Any]:
+    def __init__(self):
+        self.backend = HuggingFaceRouterBackend()
+
+    def load(self, path: Path, loader_config: Optional[dict] = None) -> Any:
+        """Load data from HuggingFace, using either dataset or file API.
+        
+        Args:
+            path (Path): Path in format "hf://owner/repo" or "hf://owner/repo/path/to/file"
+            loader_config (Optional[dict]): Configuration like split, streaming, revision
+            
+        Returns:
+            Any: Dataset or file contents depending on the path format
+        """
+        config = loader_config or {}
+        uri = str(path)
+        
+        # Let the router backend handle the decision between dataset and file API
+        return self.backend.download(uri, **config)
+
+    def save(self, path: Path, data: Any, loader_config: Optional[dict] = None) -> None:
+        """Save data to HuggingFace, using either dataset or file API.
+        
+        Args:
+            path (Path): Target path in format "hf://owner/repo" or "hf://owner/repo/path/to/file"
+            data (Any): Data to save (Dataset, DataFrame, or file contents)
+            loader_config (Optional[dict]): Configuration like split, private, revision
+        """
+        config = loader_config or {}
+        uri = str(path)
+        
+        # Let the router backend handle the upload through appropriate API
+        self.backend.upload(path, uri, **config)
+
+    def load_from_hub(self, file_path: Path, loader_config: Optional[Dict] = None) -> Union[pd.DataFrame, Any]:
         """Load a dataset from Hugging Face hub.
 
         Args:
@@ -64,7 +100,7 @@ class HFDatasetLoader(BaseLoader):
 
         return dataset
 
-    def save(self, file_path: Path, data: Any, loader_config: Optional[Dict] = None) -> None:
+    def save_to_hub(self, file_path: Path, data: Any, loader_config: Optional[Dict] = None) -> None:
         """Saving to Hugging Face hub is not supported through this interface.
 
         For pushing datasets to the hub, please use the Dataset.push_to_hub() method directly.
