@@ -24,13 +24,12 @@ class S3Backend(BaseBackend):
         else use your global or stable temp directory.
         """
         uri = self._ensure_s3_uri(uri)
-        if not target_dir:
-            from unibox.utils.globals import GLOBAL_TMP_DIR
+        from unibox.utils.globals import GLOBAL_TMP_DIR
 
-            _target_dir = GLOBAL_TMP_DIR
-
+        _target_dir = target_dir or GLOBAL_TMP_DIR
         os.makedirs(_target_dir, exist_ok=True)
         local_path = self._client.download(uri, _target_dir)
+
         return Path(local_path)
 
     def upload(self, local_path: Path, uri: str) -> None:
