@@ -81,17 +81,16 @@ def get_random_df() -> pd.DataFrame:
     return df
 
 
+def truncate_text(text, max_length=200):
+    """Truncate text if it exceeds max_length, adding an ellipsis."""
+    if isinstance(text, str):
+        if len(text) > max_length:
+            return text[:max_length] + "..."
+        return text.replace("\n", " ")  # Remove excessive newlines
+    return text
+
 def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
-    """Generate a README markdown text for the dataset.
-
-    Args:
-        data: Dataset object (df).
-        repo_id: Repository ID ("org/repo_name").
-        backend: Backend object.
-
-    Returns:
-        str: README markdown text.
-    """
+    """Generate a README markdown text for the dataset with truncated values."""
     if not isinstance(data, pd.DataFrame):
         return None
 
@@ -103,6 +102,11 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
     missing_rate = (missing_count / len(data) * 100).round(2).astype(str) + "%"
     duplicate_count = data.duplicated().sum()
     duplicate_rate = f"{(duplicate_count / len(data) * 100):.2f}%"
+
+    # Truncate long string values for preview
+    preview_data = data.copy()
+    for col in preview_data.select_dtypes(include=["object"]):
+        preview_data[col] = preview_data[col].apply(lambda x: truncate_text(x))
 
     # Combine all stats
     stats_df = pd.DataFrame(
@@ -119,7 +123,6 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
     total_memory = human_readable_size(data.memory_usage(deep=True).sum())
     total_row = pd.DataFrame(
         [
-            # Add empty row
             {"Column": "", "Memory Usage": "", "Dtype": "", "Missing Count": "", "Missing Rate": ""},
             {
                 "Column": "**TOTAL**",
@@ -136,8 +139,8 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
     # Convert stats to markdown table
     stats_table = stats_df.to_markdown(index=False)
 
-    # Convert first 5 rows to markdown table
-    head_table = data.head().to_markdown(index=False)
+    # Convert first 5 rows to markdown table (truncated for readability)
+    head_table = preview_data.head().to_markdown(index=False)
 
     readme_text = f"""# {repo_id}
 (Auto-generated from latest commit)
@@ -153,7 +156,7 @@ df = ub.loads("hf://{repo_id}").to_pandas()
 
 ```
 {data.shape}
-{(data.columns.to_list())}
+{data.columns.to_list()}
 ```
 
 {head_table}
