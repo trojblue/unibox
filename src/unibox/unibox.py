@@ -214,6 +214,9 @@ def label_gallery(
         print("IPython is not available. label_gallery function cannot run.")
 
 
-def presigns(s3_uri: str, expiration: int = 604800) -> str:
+def presigns(s3_uri: str | list[str], expiration: int = 604800) -> str:
     """Generate a presigned URL for an S3 URI."""
+    if isinstance(s3_uri, list):
+        return [s3_client.generate_presigned_uri(uri, expiration=expiration) for uri in s3_uri]
+    
     return s3_client.generate_presigned_uri(s3_uri, expiration=expiration)

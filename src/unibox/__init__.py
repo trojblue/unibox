@@ -20,9 +20,10 @@ __all__: list[str] = [
     "peeks",
     "saves",
     "traverses",
+    "presigns",
 ]
 
-from .unibox import concurrent_loads, gallery, label_gallery, loads, ls, peeks, saves, traverses
+from .unibox import concurrent_loads, gallery, label_gallery, loads, ls, peeks, saves, traverses, presigns
 from .utils.constants import IMAGE_FILES, IMG_FILES, VIDEO_FILES
 from .utils.globals import GLOBAL_TMP_DIR
 from .utils.logger import UniLogger
