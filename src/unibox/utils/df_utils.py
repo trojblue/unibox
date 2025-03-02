@@ -90,23 +90,46 @@ def truncate_text(text, max_length=200):
     return text
 
 def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
-    """Generate a README markdown text for the dataset with truncated values."""
+    """Generate a README markdown text for the dataset with truncated values.
+    Handles mixed types and unhashable objects safely.
+    """
     if not isinstance(data, pd.DataFrame):
         return None
 
     # Get column memory usage separately
     mem_df = column_memory_usage(data)
 
-    # Compute missing and duplicate stats
+    # Compute missing stats
     missing_count = data.isnull().sum()
     missing_rate = (missing_count / len(data) * 100).round(2).astype(str) + "%"
-    duplicate_count = data.duplicated().sum()
-    duplicate_rate = f"{(duplicate_count / len(data) * 100):.2f}%"
+    
+    # Handle duplicates safely - convert unhashable types to strings first
+    safe_df = data.copy()
+    
+    # Convert potentially unhashable columns to string representation
+    for col in safe_df.columns:
+        col_dtype = safe_df[col].dtype
+        if col_dtype == 'object' or str(col_dtype) == 'category':
+            # Convert each value in the column to its string representation
+            safe_df[col] = safe_df[col].astype(str)
+    
+    # Now safely compute duplicates
+    try:
+        duplicate_count = safe_df.duplicated().sum()
+        duplicate_rate = f"{(duplicate_count / len(safe_df) * 100):.2f}%"
+    except Exception:
+        # Fallback if duplicated still fails
+        duplicate_count = "N/A"
+        duplicate_rate = "N/A"
 
     # Truncate long string values for preview
     preview_data = data.copy()
     for col in preview_data.select_dtypes(include=["object"]):
-        preview_data[col] = preview_data[col].apply(lambda x: truncate_text(x))
+        try:
+            preview_data[col] = preview_data[col].apply(lambda x: truncate_text(x) if x is not None else None)
+        except Exception:
+            # If truncation fails, convert to string and then truncate
+            preview_data[col] = preview_data[col].astype(str).apply(lambda x: truncate_text(x) if x is not None else None)
 
     # Combine all stats
     stats_df = pd.DataFrame(
@@ -136,11 +159,25 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
 
     stats_df = pd.concat([stats_df, total_row], ignore_index=True)
 
-    # Convert stats to markdown table
-    stats_table = stats_df.to_markdown(index=False)
+    # Safely convert to markdown by handling possible errors
+    try:
+        stats_table = stats_df.to_markdown(index=False)
+    except Exception:
+        # Fallback if to_markdown fails
+        stats_table = "Error generating stats table"
+    
+    try:
+        # Safely generate head table, handling potential errors
+        head_table = preview_data.head().to_markdown(index=False)
+    except Exception:
+        # Create a simpler fallback version if to_markdown fails
+        head_table = "Error generating preview table"
 
-    # Convert first 5 rows to markdown table (truncated for readability)
-    head_table = preview_data.head().to_markdown(index=False)
+    # Include safe column list representation
+    try:
+        columns_list = str(data.columns.tolist())
+    except Exception:
+        columns_list = "Error generating columns list"
 
     readme_text = f"""# {repo_id}
 (Auto-generated from latest commit)
@@ -156,7 +193,7 @@ df = ub.loads("hf://{repo_id}").to_pandas()
 
 ```
 {data.shape}
-{data.columns.to_list()}
+{columns_list}
 ```
 
 {head_table}
