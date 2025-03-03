@@ -89,6 +89,7 @@ def truncate_text(text, max_length=200):
         return text.replace("\n", " ")  # Remove excessive newlines
     return text
 
+
 def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
     """Generate a README markdown text for the dataset with truncated values.
     Handles mixed types and unhashable objects safely.
@@ -102,17 +103,17 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
     # Compute missing stats
     missing_count = data.isnull().sum()
     missing_rate = (missing_count / len(data) * 100).round(2).astype(str) + "%"
-    
+
     # Handle duplicates safely - convert unhashable types to strings first
     safe_df = data.copy()
-    
+
     # Convert potentially unhashable columns to string representation
     for col in safe_df.columns:
         col_dtype = safe_df[col].dtype
-        if col_dtype == 'object' or str(col_dtype) == 'category':
+        if col_dtype == "object" or str(col_dtype) == "category":
             # Convert each value in the column to its string representation
             safe_df[col] = safe_df[col].astype(str)
-    
+
     # Now safely compute duplicates
     try:
         duplicate_count = safe_df.duplicated().sum()
@@ -129,7 +130,9 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
             preview_data[col] = preview_data[col].apply(lambda x: truncate_text(x) if x is not None else None)
         except Exception:
             # If truncation fails, convert to string and then truncate
-            preview_data[col] = preview_data[col].astype(str).apply(lambda x: truncate_text(x) if x is not None else None)
+            preview_data[col] = (
+                preview_data[col].astype(str).apply(lambda x: truncate_text(x) if x is not None else None)
+            )
 
     # Combine all stats
     stats_df = pd.DataFrame(
@@ -165,7 +168,7 @@ def generate_dataset_readme(data: pd.DataFrame, repo_id: str):
     except Exception:
         # Fallback if to_markdown fails
         stats_table = "Error generating stats table"
-    
+
     try:
         # Safely generate head table, handling potential errors
         head_table = preview_data.head().to_markdown(index=False)
