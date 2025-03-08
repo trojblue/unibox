@@ -60,10 +60,11 @@ class HFDatasetLoader(BaseLoader):
         repo_id, subpath = parse_hf_uri(local_path)
         split = loader_config.get("split", "train")
         revision = loader_config.get("revision", "main")
+        num_proc = loader_config.get("num_proc", 8)
 
         if to_pandas:
-            return load_dataset(repo_id, split=split, revision=revision, num_proc=8).to_pandas()
-        return load_dataset(repo_id, split=split, revision=revision)
+            return load_dataset(repo_id, split=split, revision=revision, num_proc=num_proc).to_pandas()
+        return load_dataset(repo_id, split=split, revision=revision, num_proc=num_proc)
 
     def save(self, hf_uri: str, data: Any, loader_config: Optional[Dict] = None) -> None:
         """Save data as a HuggingFace dataset to a local path.
