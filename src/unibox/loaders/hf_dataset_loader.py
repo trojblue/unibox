@@ -62,7 +62,7 @@ class HFDatasetLoader(BaseLoader):
         revision = loader_config.get("revision", "main")
 
         if to_pandas:
-            return load_dataset(repo_id, split=split, revision=revision).to_pandas()
+            return load_dataset(repo_id, split=split, revision=revision, num_proc=8).to_pandas()
         return load_dataset(repo_id, split=split, revision=revision)
 
     def save(self, hf_uri: str, data: Any, loader_config: Optional[Dict] = None) -> None:
