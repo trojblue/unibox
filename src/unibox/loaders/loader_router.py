@@ -75,7 +75,7 @@ def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
         return JSONLLoader()
     if suffix == ".parquet":
         return ParquetLoader()
-    if suffix == ".txt":
+    if suffix in [".txt", ".md", ".markdown"]: 
         return TxtLoader()
     if suffix == ".toml":
         return TOMLLoader()
