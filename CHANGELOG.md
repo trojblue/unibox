@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.8.3](https://github.com/trojblue/unibox/releases/tag/0.8.3) - 2025-04-14
+
+<small>[Compare with 0.8.2](https://github.com/trojblue/unibox/compare/0.8.2...0.8.3)</small>
+
+### Bug Fixes
+
+- adding presigns() to init ([b4764e6](https://github.com/trojblue/unibox/commit/b4764e6be937811644d00e183831e0d85e2f5985) by yada).
+- adding more robust readme handling ([61d0cd4](https://github.com/trojblue/unibox/commit/61d0cd452e547148600eef427c36b441cd79312e) by yada).
+- openai generation broken ([5e3cece](https://github.com/trojblue/unibox/commit/5e3cecee6761b43073e2a27af03d316014b3915a) by yada).
+
 ## [0.8.2](https://github.com/trojblue/unibox/releases/tag/0.8.2) - 2025-02-22
 
 <small>[Compare with 0.8.1](https://github.com/trojblue/unibox/compare/0.8.1...0.8.2)</small>
