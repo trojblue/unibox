@@ -61,7 +61,7 @@ class HFDatasetLoader(BaseLoader):
         split = loader_config.get("split", "train")
         revision = loader_config.get("revision", "main")
         # num_proc = loader_config.get("num_proc", 8)
-        num_proc=8
+        num_proc = 8
 
         if to_pandas:
             return load_dataset(repo_id, split=split, revision=revision, num_proc=num_proc).to_pandas()
