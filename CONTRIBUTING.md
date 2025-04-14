@@ -35,6 +35,19 @@ You can run the application with `make run unibox [ARGS...]`.
 
 Run `make help` to see all the available actions!
 
+## Common Workflow
+
+A typical workflow for publishing a new version would be:
+
+```bash
+make setup   # one-time
+make format  # auto-format
+make test
+make check
+make changelog
+make release
+```
+
 ## Tasks
 
 The entry-point to run commands and tasks is the `make` Python script,

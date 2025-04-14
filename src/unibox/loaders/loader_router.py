@@ -75,7 +75,7 @@ def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
         return JSONLLoader()
     if suffix == ".parquet":
         return ParquetLoader()
-    if suffix in [".txt", ".md", ".markdown"]: 
+    if suffix in [".txt", ".md", ".markdown"]:
         return TxtLoader()
     if suffix == ".toml":
         return TOMLLoader()
@@ -91,8 +91,7 @@ def get_loader_for_suffix(suffix: str) -> Optional[BaseLoader]:
     This function is kept for backward compatibility and will be removed in a future version.
     """
     warnings.warn(
-        "get_loader_for_suffix is deprecated and will be removed in a future version. "
-        "Use get_loader_for_path instead.",
+        "get_loader_for_suffix is deprecated and will be removed in a future version. Use get_loader_for_path instead.",
         DeprecationWarning,
         stacklevel=2,
     )
