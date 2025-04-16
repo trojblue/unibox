@@ -3,6 +3,9 @@
 import logging
 
 import pandas as pd
+import numpy as np
+import collections.abc
+
 
 logger = logging.getLogger(__name__)
 
@@ -215,3 +218,99 @@ ub.saves(df, "hf://{repo_id}")
 (last updated: {pd.Timestamp.now()})
 """
     return readme_text
+
+
+import pandas as pd
+import numpy as np
+import collections.abc
+
+def summarize_dataframe(df: pd.DataFrame, repo_id: str,
+                        sample_rows: int = 3, max_unique_for_freq: int = 20) -> str:
+    sample_rows = int(sample_rows)  # Ensure it's an integer
+    max_unique_for_freq = int(max_unique_for_freq)
+
+    lines = []
+    lines.append(f"🧱 DataFrame Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+
+    # Column types
+    dtype_counts = df.dtypes.value_counts()
+    lines.append("\n📦 Column Types:")
+    for dtype, count in dtype_counts.items():
+        lines.append(f"  - {dtype}: {count}")
+
+    # Missing values
+    missing = df.isnull().sum()
+    missing = missing[missing > 0]
+    if not missing.empty:
+        lines.append("\n⚠️ Missing Values:")
+        for col, count in missing.items():
+            percent = count / len(df) * 100
+            lines.append(f"  - {col}: {count} missing ({percent:.2f}%)")
+    else:
+        lines.append("\n✅ No missing values")
+
+    # Column-wise summaries
+    lines.append("\n## Column Summaries:")
+    for col in df.columns:
+        col_data = df[col]
+        dtype = col_data.dtype
+        lines.append(f"\n→ {col} ({dtype})")
+
+        if pd.api.types.is_numeric_dtype(col_data):
+            desc = col_data.describe()
+            parts = []
+            for key in ['min', 'max', 'mean', 'std']:
+                if key in desc:
+                    val = desc[key]
+                    if pd.notna(val):
+                        parts.append(f"{key.capitalize()}: {val:.3f}" if isinstance(val, float) else f"{key.capitalize()}: {val}")
+            if parts:
+                lines.append("  - " + ", ".join(parts))
+            else:
+                lines.append("  - No valid numeric summary available")
+
+        elif pd.api.types.is_object_dtype(dtype) or pd.api.types.is_bool_dtype(dtype):
+            sample_val = col_data.dropna().iloc[0] if not col_data.dropna().empty else None
+            if isinstance(sample_val, (collections.abc.Sequence, np.ndarray, bytes)) and not isinstance(sample_val, str):
+                example_type = type(sample_val).__name__
+                lines.append(f"  - Contains unhashable type: {example_type}")
+                if isinstance(sample_val, (list, np.ndarray)):
+                    # inside the list/array-like handling block:
+                    lengths = col_data.dropna().map(lambda x: len(x) if isinstance(x, (list, np.ndarray)) else None)
+                    lengths = pd.to_numeric(lengths, errors='coerce')  # Convert to numbers, force invalid to NaN
+                    lengths = lengths.dropna()  # Remove invalid entries
+                    if not lengths.empty:
+                        lines.append(f"    - Typical length: mean={lengths.mean():.2f}, min={lengths.min()}, max={lengths.max()}")
+                    else:
+                        lines.append(f"    - Could not determine typical length (non-numeric or empty)")
+
+                continue
+
+            unique_vals = col_data.dropna().unique()
+            nunique = len(unique_vals)
+            lines.append(f"  - Unique values: {nunique}")
+            if nunique <= max_unique_for_freq:
+                freqs = col_data.value_counts(dropna=False).head(max_unique_for_freq)
+                for val, count in freqs.items():
+                    percent = count / len(df) * 100
+                    lines.append(f"    - {repr(val)}: {count} ({percent:.2f}%)")
+
+        elif pd.api.types.is_datetime64_any_dtype(dtype):
+            min_date = col_data.min()
+            max_date = col_data.max()
+            if pd.notna(min_date) and pd.notna(max_date):
+                lines.append(f"  - Range: {min_date} → {max_date}")
+            else:
+                lines.append("  - Date range unavailable (contains all NaT)")
+
+        else:
+            lines.append("  - Unhandled dtype")
+
+    if sample_rows > 0:
+        lines.append(f"\n🧪 Sample Rows (first {sample_rows}):")
+        try:
+            lines.append(df.head(sample_rows).to_string(index=False))
+        except Exception as e:
+            lines.append(f"  [Error printing sample rows: {e}]")
+
+    return "\n".join(lines)
