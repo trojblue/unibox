@@ -18,6 +18,7 @@ import sys
 from typing import Any
 
 from unibox import debug
+from unibox.utils.credentials_manager import apply_credentials as _apply_credentials
 
 
 class _DebugInfo(argparse.Action):
@@ -29,15 +30,34 @@ class _DebugInfo(argparse.Action):
         sys.exit(0)
 
 
-def get_parser() -> argparse.ArgumentParser:
-    """Return the CLI argument parser.
+def apply_credentials(*services: str) -> None:
+    """Apply credentials for AWS and Hugging Face.
 
-    Returns:
-        An argparse parser.
+    This function is called when the program starts.
+    It hides the credentials for AWS and Hugging Face in a hidden directory.
     """
+    if not services:
+        services = ["aws", "huggingface"]
+    try:
+        print(f"Applying credentials: {services}")
+        _apply_credentials(*services)
+    except Exception as e:
+        print(f"Error applying credentials: {e}")
+        sys.exit(1)
+
+
+def get_parser() -> argparse.ArgumentParser:
+    """Return the CLI argument parser."""
     parser = argparse.ArgumentParser(prog="unibox")
     parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {debug.get_version()}")
     parser.add_argument("--debug-info", action=_DebugInfo, help="Print debug information.")
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Add `apply-cred` command
+    subparsers.add_parser("apply-cred", help="Apply credentials for AWS and Hugging Face. Hides them if not hidden")
+    subparsers.add_parser("ac", help="Alias for apply-cred")
+
     return parser
 
 
@@ -54,5 +74,10 @@ def main(args: list[str] | None = None) -> int:
     """
     parser = get_parser()
     opts = parser.parse_args(args=args)
-    print(opts)
-    return 0
+
+    if opts.command in ("apply-cred", "ac"):
+        apply_credentials()
+        return 0
+
+    parser.print_help()
+    return 1

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Define a fixed name for the temporary directory
 _default_tmp_dir = Path(tempfile.gettempdir()) / "unibox_temp"
 GLOBAL_TMP_DIR = Path(os.environ.get("UNIBOX_TEMP_DIR", _default_tmp_dir))
-print(f"Using global temporary directory: {GLOBAL_TMP_DIR}")
+# print(f"Using global temporary directory: {GLOBAL_TMP_DIR}")
 
 # cleanup previous runs
 # shutil.rmtree(GLOBAL_TMP_DIR, ignore_errors=True)
