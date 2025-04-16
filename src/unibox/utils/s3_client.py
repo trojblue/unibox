@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
-import boto3
 from botocore.exceptions import ClientError
 from tqdm.auto import tqdm
 
@@ -19,9 +18,11 @@ def parse_s3_url(url: str):
 
 class S3Client:
     def __init__(self) -> None:
+        import boto3
         # Simple S3 client init; if you need custom credentials or region,
         # pass them directly via environment variables or create a custom session.
-        self.s3 = boto3.client("s3")
+        session = boto3.Session()
+        self.s3 = session.client("s3")
 
     def download(self, s3_uri: str, target_dir: str | Path) -> str:
         """Download a file from S3 to a local directory.

@@ -13,7 +13,7 @@ from .loaders.loader_router import get_loader_for_path, load_data
 from .utils.logger import UniLogger
 from .utils.s3_client import S3Client
 
-s3_client = S3Client()
+s3_client = None
 logger = UniLogger()
 
 
@@ -216,6 +216,11 @@ def label_gallery(
 
 def presigns(s3_uri: str | list[str], expiration: int = 604800) -> str:
     """Generate a presigned URL for an S3 URI."""
+    global s3_client
+    if s3_client is None:
+        s3_client = S3Client()
+    
+    
     if isinstance(s3_uri, list):
         return [s3_client.generate_presigned_uri(uri, expiration=expiration) for uri in s3_uri]
 

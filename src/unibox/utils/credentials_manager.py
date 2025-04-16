@@ -5,7 +5,6 @@ Utility functions for execlib, including AWS and Hugging Face credential managem
 
 import os
 import shutil
-import boto3
 import uuid
 import hashlib
 from pathlib import Path
@@ -73,6 +72,7 @@ class CredentialManager:
         os.environ["AWS_CONFIG_FILE"] = str(config_file)
 
         try:
+            import boto3
             session = boto3.Session(profile_name='default')
             creds = session.get_credentials()
 
