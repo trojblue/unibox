@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import pandas as pd
 from datasets import Dataset, load_dataset
 
-from unibox.utils.df_utils import generate_dataset_readme
+from unibox.utils.df_utils import generate_dataset_readme, summarize_dataframe
 from unibox.utils.utils import parse_hf_uri
 
 from ..backends.hf_hybrid_backend import HuggingfaceHybridBackend
@@ -87,7 +87,8 @@ class HFDatasetLoader(BaseLoader):
 
         # Convert DataFrame to Dataset if needed
         if isinstance(data, pd.DataFrame):
-            readme_text = generate_dataset_readme(data, repo_id)
+            # readme_text = generate_dataset_readme(data, repo_id)
+            readme_text = summarize_dataframe(data, repo_id)
             data = Dataset.from_pandas(data)
         elif not isinstance(data, Dataset):
             raise ValueError("Data must be either a pandas DataFrame or a HuggingFace Dataset")
