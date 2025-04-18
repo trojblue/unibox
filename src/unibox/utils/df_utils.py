@@ -180,84 +180,81 @@ def generate_dataset_summary(
     # -------------------------------------------------------------
     # 2) Build robust column summaries
     # -------------------------------------------------------------
-    def build_robust_column_summaries(df: pd.DataFrame) -> str:
+    import pandas as pd
+    import numpy as np
+    import collections.abc
+
+    def build_robust_column_summaries(df: pd.DataFrame, max_unique_for_freq=10) -> str:
         lines = []
         lines.append("## Column Summaries:")
 
         for col in df.columns:
-            col_data = df[col]
-            dtype = col_data.dtype
-            lines.append(f"\n→ {col} ({dtype})")
+            lines.append(f"\n→ {col} ({df[col].dtype})")
+            try:
+                col_data = df[col]
+                dtype = col_data.dtype
 
-            # Numeric
-            if pd.api.types.is_numeric_dtype(col_data) and not pd.api.types.is_bool_dtype(col_data):
-                desc = col_data.describe()
-                parts = []
-                for key in ["min", "max", "mean", "std"]:
-                    if key in desc:
-                        val = desc[key]
-                        if pd.notna(val):
-                            parts.append(
-                                f"{key.capitalize()}: {val:.3f}" 
-                                if isinstance(val, float) else f"{key.capitalize()}: {val}"
-                            )
-                if parts:
-                    lines.append("  - " + ", ".join(parts))
+                if pd.api.types.is_numeric_dtype(col_data) and not pd.api.types.is_bool_dtype(col_data):
+                    desc = col_data.describe()
+                    parts = []
+                    for key in ["min", "max", "mean", "std"]:
+                        if key in desc and pd.notna(desc[key]):
+                            val = desc[key]
+                            parts.append(f"{key.capitalize()}: {val:.3f}" if isinstance(val, float) else f"{key.capitalize()}: {val}")
+                    lines.append("  - " + ", ".join(parts) if parts else "  - No valid numeric summary available")
+
+                elif pd.api.types.is_bool_dtype(col_data):
+                    total = len(col_data)
+                    true_count = (col_data == True).sum()
+                    false_count = (col_data == False).sum()
+                    na_count = col_data.isna().sum()
+                    lines.append(f"  - True: {true_count} ({true_count/total:.2%}), False: {false_count} ({false_count/total:.2%})")
+                    if na_count > 0:
+                        lines.append(f"  - Missing: {na_count} ({na_count/total:.2%})")
+
+                elif pd.api.types.is_datetime64_any_dtype(dtype):
+                    min_date = col_data.min()
+                    max_date = col_data.max()
+                    if pd.notna(min_date) and pd.notna(max_date):
+                        lines.append(f"  - Range: {min_date} → {max_date}")
+                    else:
+                        lines.append("  - Date range unavailable (all NaT?)")
+
                 else:
-                    lines.append("  - No valid numeric summary available")
+                    non_null = col_data.dropna()
+                    sample_val = non_null.iloc[0] if not non_null.empty else None
 
-            # Booleans
-            elif pd.api.types.is_bool_dtype(col_data):
-                total = len(col_data)
-                true_count = (col_data == True).sum()
-                false_count = (col_data == False).sum()
-                na_count = col_data.isna().sum()
-
-                lines.append(f"  - True: {true_count} ({true_count/total:.2%}), "
-                             f"False: {false_count} ({false_count/total:.2%})")
-                if na_count > 0:
-                    lines.append(f"  - Missing: {na_count} ({na_count/total:.2%})")
-
-            # Datetime
-            elif pd.api.types.is_datetime64_any_dtype(dtype):
-                min_date = col_data.min()
-                max_date = col_data.max()
-                if pd.notna(min_date) and pd.notna(max_date):
-                    lines.append(f"  - Range: {min_date} → {max_date}")
-                else:
-                    lines.append("  - Date range unavailable (all NaT?)")
-
-            # Object or fallback
-            else:
-                # Check if first non-null entry is unhashable
-                sample_val = col_data.dropna().iloc[0] if not col_data.dropna().empty else None
-                if (isinstance(sample_val, (collections.abc.Sequence, np.ndarray, bytes))
-                        and not isinstance(sample_val, str)):
-                    # It's an unhashable sequence-like
-                    example_type = type(sample_val).__name__
-                    lines.append(f"  - Contains unhashable type: {example_type}")
-                    if isinstance(sample_val, (list, np.ndarray)):
-                        lengths = col_data.dropna().map(
-                            lambda x: len(x) if isinstance(x, (list, np.ndarray)) else None
-                        )
-                        lengths = pd.to_numeric(lengths, errors='coerce').dropna()
-                        if not lengths.empty:
-                            lines.append(
-                                f"    - Typical length: mean={lengths.mean():.2f}, "
-                                f"min={lengths.min()}, max={lengths.max()}"
-                            )
+                    if isinstance(sample_val, set):
+                        lines.append("  - Contains unhashable type: set")
+                        set_lengths = non_null.map(lambda x: len(x) if isinstance(x, set) else None)
+                        set_lengths = pd.to_numeric(set_lengths, errors="coerce").dropna()
+                        if not set_lengths.empty:
+                            lines.append(f"    - Typical set length: mean={set_lengths.mean():.2f}, min={set_lengths.min()}, max={set_lengths.max()}")
                         else:
-                            lines.append("    - Could not determine typical length (non-numeric or empty)")
-                else:
-                    # Normal object dtype
-                    unique_vals = col_data.dropna().unique()
-                    nunique = len(unique_vals)
-                    lines.append(f"  - Unique values: {nunique}")
-                    if nunique <= max_unique_for_freq:
-                        freqs = col_data.value_counts(dropna=False).head(max_unique_for_freq)
-                        for val, count in freqs.items():
-                            percent = count / len(df) * 100
-                            lines.append(f"    - {repr(val)}: {count} ({percent:.2f}%)")
+                            lines.append("    - Could not determine typical set length")
+
+                    elif isinstance(sample_val, (list, tuple, np.ndarray, collections.abc.Sequence)) and not isinstance(sample_val, str):
+                        val_type = type(sample_val).__name__
+                        lines.append(f"  - Contains unhashable sequence: {val_type}")
+                        lengths = non_null.map(lambda x: len(x) if isinstance(x, collections.abc.Sized) else None)
+                        lengths = pd.to_numeric(lengths, errors="coerce").dropna()
+                        if not lengths.empty:
+                            lines.append(f"    - Typical length: mean={lengths.mean():.2f}, min={lengths.min()}, max={lengths.max()}")
+                        else:
+                            lines.append("    - Could not determine typical length")
+
+                    else:
+                        unique_vals = non_null.unique()
+                        nunique = len(unique_vals)
+                        lines.append(f"  - Unique values: {nunique}")
+                        if nunique <= max_unique_for_freq:
+                            freqs = col_data.value_counts(dropna=False).head(max_unique_for_freq)
+                            for val, count in freqs.items():
+                                percent = count / len(df) * 100
+                                lines.append(f"    - {repr(val)}: {count} ({percent:.2f}%)")
+
+            except Exception as e:
+                lines.append(f"  - Summary failed: {type(e).__name__} – {str(e)}")
 
         return "\n".join(lines)
 
@@ -313,7 +310,10 @@ def generate_dataset_summary(
     # -------------------------------------------------------------
     # 4) Build column summaries
     # -------------------------------------------------------------
-    column_summaries_text = build_robust_column_summaries(df)
+    try:
+        column_summaries_text = build_robust_column_summaries(df)
+    except Exception as e:
+        column_summaries_text = f"Error generating column summaries: {e}"
 
     # -------------------------------------------------------------
     # 5) Build a safe sample preview
