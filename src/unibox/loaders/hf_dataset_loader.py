@@ -88,7 +88,11 @@ class HFDatasetLoader(BaseLoader):
         # Convert DataFrame to Dataset if needed
         if isinstance(data, pd.DataFrame):
             # readme_text = generate_dataset_readme(data, repo_id)
-            readme_text = generate_dataset_summary(data, repo_id)
+            try:
+                readme_text = generate_dataset_summary(data, repo_id)
+            except Exception as e:
+                logger.warning(f"Failed to generate dataset summary for {hf_uri}: {e}")
+                readme_text = None
             data = Dataset.from_pandas(data)
         elif not isinstance(data, Dataset):
             raise ValueError("Data must be either a pandas DataFrame or a HuggingFace Dataset")
