@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 import collections.abc
 
-
 logger = logging.getLogger(__name__)
 
 # ===== Sanitize Dataframes =====
@@ -176,13 +175,6 @@ def generate_dataset_summary(
             duplicate_rate = "N/A"
 
         return duplicate_count, duplicate_rate
-
-    # -------------------------------------------------------------
-    # 2) Build robust column summaries
-    # -------------------------------------------------------------
-    import pandas as pd
-    import numpy as np
-    import collections.abc
 
     def build_robust_column_summaries(df: pd.DataFrame, max_unique_for_freq=10) -> str:
         lines = []
