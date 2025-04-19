@@ -87,6 +87,10 @@ class HFDatasetLoader(BaseLoader):
 
         # Convert DataFrame to Dataset if needed
         if isinstance(data, pd.DataFrame):
+
+            if "__index_level_0__" in data.columns:
+                data.drop(columns=["__index_level_0__"], inplace=True)
+
             # readme_text = generate_dataset_readme(data, repo_id)
             try:
                 readme_text = generate_dataset_summary(data, repo_id)
