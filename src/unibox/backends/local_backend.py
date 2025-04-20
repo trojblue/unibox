@@ -56,6 +56,9 @@ class LocalBackend(BaseBackend):
 
         # Precompute extensions as a tuple for faster filtering
         exts = tuple(exts) if exts else None
+        if exts:
+            # Convert extensions to lowercase for case-insensitive comparison
+            exts_lower = tuple(ext.lower() for ext in exts)
 
         # Initialize tqdm progress bar
         pbar = tqdm(desc="Listing local files", leave=False, unit="files", disable=not debug_print)
@@ -63,7 +66,7 @@ class LocalBackend(BaseBackend):
         for dirpath, _, filenames in os.walk(abs_root):
             for file_name in filenames:
                 # Filter files based on extensions
-                if exts is None or file_name.endswith(exts):
+                if exts is None or file_name.lower().endswith(exts_lower):
                     full_path = Path(dirpath) / file_name
 
                     if relative_unix:
