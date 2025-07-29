@@ -52,7 +52,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {debug.get_version()}")
     parser.add_argument("--debug-info", action=_DebugInfo, help="Print debug information.")
 
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     # Add `apply-cred` command
     subparsers.add_parser("apply-cred", help="Apply credentials for AWS and Hugging Face. Hides them if not hidden")
@@ -78,6 +78,11 @@ def main(args: list[str] | None = None) -> int:
     if opts.command in ("apply-cred", "ac"):
         apply_credentials()
         return 0
+    elif opts.command is None:
+        # No command provided - show help and return 0 (expected by test)
+        parser.print_help()
+        return 0
 
+    # Unknown command
     parser.print_help()
     return 1
