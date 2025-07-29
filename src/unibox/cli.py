@@ -78,7 +78,7 @@ def main(args: list[str] | None = None) -> int:
     if opts.command in ("apply-cred", "ac"):
         apply_credentials()
         return 0
-    elif opts.command is None:
+    if opts.command is None:
         # No command provided - show help and return 0 (expected by test)
         parser.print_help()
         return 0

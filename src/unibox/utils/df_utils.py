@@ -1,10 +1,10 @@
 # pandas related code
 
+import collections.abc
 import logging
 
-import pandas as pd
 import numpy as np
-import collections.abc
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -93,24 +93,18 @@ def truncate_text(text, max_length=200):
 
 
 import pandas as pd
-import numpy as np
-import collections.abc
 
-import pandas as pd
-import numpy as np
-import collections.abc
 
 def generate_dataset_summary(
     df: pd.DataFrame,
     repo_id: str,
     sample_rows: int = 3,
-    max_unique_for_freq: int = 20
+    max_unique_for_freq: int = 20,
 ) -> str:
-    """
-    Generate a combined dataset summary markdown text that merges:
-      - robust column-wise checks (numeric, datetime, object, bool) and missing values
-      - memory usage, duplicates, and table displays
-      - sample row previews
+    """Generate a combined dataset summary markdown text that merges:
+    - robust column-wise checks (numeric, datetime, object, bool) and missing values
+    - memory usage, duplicates, and table displays
+    - sample row previews
     """
 
     # -------------------------------------------------------------
@@ -126,9 +120,8 @@ def generate_dataset_summary(
         return f"{size_in_bytes:.2f} {units[i]}"
 
     def column_memory_usage(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Compute per-column memory usage. Returns a DataFrame with:
-          Column, Dtype, Memory Usage (bytes), and Readable Memory Usage.
+        """Compute per-column memory usage. Returns a DataFrame with:
+        Column, Dtype, Memory Usage (bytes), and Readable Memory Usage.
         """
         usage_info = []
         for col in df.columns:
@@ -137,12 +130,14 @@ def generate_dataset_summary(
             except Exception:
                 # Fallback in case deep=True fails for any reason
                 col_bytes = df[col].memory_usage(deep=False)
-            usage_info.append({
-                "Column": col,
-                "Dtype": str(df[col].dtype),
-                "Memory Usage (bytes)": col_bytes,
-                "Readable Memory Usage": human_readable_size(col_bytes)
-            })
+            usage_info.append(
+                {
+                    "Column": col,
+                    "Dtype": str(df[col].dtype),
+                    "Memory Usage (bytes)": col_bytes,
+                    "Readable Memory Usage": human_readable_size(col_bytes),
+                }
+            )
         return pd.DataFrame(usage_info)
 
     def truncate_text(text, max_len=50):
@@ -152,8 +147,7 @@ def generate_dataset_summary(
         return text if len(text) <= max_len else text[: max_len - 3] + "..."
 
     def compute_duplicates_count(df: pd.DataFrame) -> (int, str):
-        """
-        Compute duplicated row count and duplicate rate (%) in a dataframe.
+        """Compute duplicated row count and duplicate rate (%) in a dataframe.
         For safety, converts unhashable (object) columns to string representation
         before calling .duplicated().
         """
@@ -192,7 +186,11 @@ def generate_dataset_summary(
                     for key in ["min", "max", "mean", "std"]:
                         if key in desc and pd.notna(desc[key]):
                             val = desc[key]
-                            parts.append(f"{key.capitalize()}: {val:.3f}" if isinstance(val, float) else f"{key.capitalize()}: {val}")
+                            parts.append(
+                                f"{key.capitalize()}: {val:.3f}"
+                                if isinstance(val, float)
+                                else f"{key.capitalize()}: {val}"
+                            )
                     lines.append("  - " + ", ".join(parts) if parts else "  - No valid numeric summary available")
 
                 elif pd.api.types.is_bool_dtype(col_data):
@@ -200,9 +198,11 @@ def generate_dataset_summary(
                     true_count = (col_data == True).sum()
                     false_count = (col_data == False).sum()
                     na_count = col_data.isna().sum()
-                    lines.append(f"  - True: {true_count} ({true_count/total:.2%}), False: {false_count} ({false_count/total:.2%})")
+                    lines.append(
+                        f"  - True: {true_count} ({true_count / total:.2%}), False: {false_count} ({false_count / total:.2%})"
+                    )
                     if na_count > 0:
-                        lines.append(f"  - Missing: {na_count} ({na_count/total:.2%})")
+                        lines.append(f"  - Missing: {na_count} ({na_count / total:.2%})")
 
                 elif pd.api.types.is_datetime64_any_dtype(dtype):
                     min_date = col_data.min()
@@ -221,17 +221,23 @@ def generate_dataset_summary(
                         set_lengths = non_null.map(lambda x: len(x) if isinstance(x, set) else None)
                         set_lengths = pd.to_numeric(set_lengths, errors="coerce").dropna()
                         if not set_lengths.empty:
-                            lines.append(f"    - Typical set length: mean={set_lengths.mean():.2f}, min={set_lengths.min()}, max={set_lengths.max()}")
+                            lines.append(
+                                f"    - Typical set length: mean={set_lengths.mean():.2f}, min={set_lengths.min()}, max={set_lengths.max()}"
+                            )
                         else:
                             lines.append("    - Could not determine typical set length")
 
-                    elif isinstance(sample_val, (list, tuple, np.ndarray, collections.abc.Sequence)) and not isinstance(sample_val, str):
+                    elif isinstance(sample_val, (list, tuple, np.ndarray, collections.abc.Sequence)) and not isinstance(
+                        sample_val, str
+                    ):
                         val_type = type(sample_val).__name__
                         lines.append(f"  - Contains unhashable sequence: {val_type}")
                         lengths = non_null.map(lambda x: len(x) if isinstance(x, collections.abc.Sized) else None)
                         lengths = pd.to_numeric(lengths, errors="coerce").dropna()
                         if not lengths.empty:
-                            lines.append(f"    - Typical length: mean={lengths.mean():.2f}, min={lengths.min()}, max={lengths.max()}")
+                            lines.append(
+                                f"    - Typical length: mean={lengths.mean():.2f}, min={lengths.min()}, max={lengths.max()}"
+                            )
                         else:
                             lines.append("    - Could not determine typical length")
 
@@ -243,10 +249,10 @@ def generate_dataset_summary(
                             freqs = col_data.value_counts(dropna=False).head(max_unique_for_freq)
                             for val, count in freqs.items():
                                 percent = count / len(df) * 100
-                                lines.append(f"    - {repr(val)}: {count} ({percent:.2f}%)")
+                                lines.append(f"    - {val!r}: {count} ({percent:.2f}%)")
 
             except Exception as e:
-                lines.append(f"  - Summary failed: {type(e).__name__} – {str(e)}")
+                lines.append(f"  - Summary failed: {type(e).__name__} – {e!s}")
 
         return "\n".join(lines)
 
@@ -265,31 +271,35 @@ def generate_dataset_summary(
     duplicate_count, duplicate_rate = compute_duplicates_count(df)
 
     # Combine memory, dtype, missing info into a single DataFrame
-    stats_df = pd.DataFrame({
-        "Column": df.columns,
-        "Dtype": mem_df["Dtype"],
-        "Memory Usage": mem_df["Readable Memory Usage"],
-        "Missing Count": missing_count.values,
-        "Missing Rate": missing_rate.values
-    })
+    stats_df = pd.DataFrame(
+        {
+            "Column": df.columns,
+            "Dtype": mem_df["Dtype"],
+            "Memory Usage": mem_df["Readable Memory Usage"],
+            "Missing Count": missing_count.values,
+            "Missing Rate": missing_rate.values,
+        }
+    )
 
     # Add a total row at the bottom
-    total_row = pd.DataFrame([
-        {
-            "Column": "",
-            "Dtype": "",
-            "Memory Usage": "",
-            "Missing Count": "",
-            "Missing Rate": "",
-        },
-        {
-            "Column": "**TOTAL**",
-            "Dtype": "N/A",
-            "Memory Usage": total_mem_readable,
-            "Missing Count": missing_count.sum(),
-            "Missing Rate": f"{(missing_count.sum() / (len(df)*len(df.columns))*100):.2f}%",
-        }
-    ])
+    total_row = pd.DataFrame(
+        [
+            {
+                "Column": "",
+                "Dtype": "",
+                "Memory Usage": "",
+                "Missing Count": "",
+                "Missing Rate": "",
+            },
+            {
+                "Column": "**TOTAL**",
+                "Dtype": "N/A",
+                "Memory Usage": total_mem_readable,
+                "Missing Count": missing_count.sum(),
+                "Missing Rate": f"{(missing_count.sum() / (len(df) * len(df.columns)) * 100):.2f}%",
+            },
+        ]
+    )
 
     stats_df = pd.concat([stats_df, total_row], ignore_index=True)
 
@@ -316,12 +326,16 @@ def generate_dataset_summary(
     for col in preview_df.select_dtypes(include=["object"]):
         try:
             preview_df[col] = preview_df[col].apply(
-                lambda x: truncate_text(x) if x is not None else None
+                lambda x: truncate_text(x) if x is not None else None,
             )
         except Exception:
             # If something fails, coerce to string and then truncate
-            preview_df[col] = preview_df[col].astype(str).apply(
-                lambda x: truncate_text(x) if x else None
+            preview_df[col] = (
+                preview_df[col]
+                .astype(str)
+                .apply(
+                    lambda x: truncate_text(x) if x else None,
+                )
             )
 
     # Identify columns that can be rendered
@@ -384,5 +398,5 @@ ub.saves(df, "hf://{repo_id}")
 ```
 
 (last updated: {pd.Timestamp.now()})
-""" 
+"""
     return readme_text
