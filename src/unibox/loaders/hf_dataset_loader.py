@@ -87,7 +87,6 @@ class HFDatasetLoader(BaseLoader):
 
         # Convert DataFrame to Dataset if needed
         if isinstance(data, pd.DataFrame):
-
             if "__index_level_0__" in data.columns:
                 data.drop(columns=["__index_level_0__"], inplace=True)
 

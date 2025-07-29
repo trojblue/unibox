@@ -64,10 +64,10 @@ def _gallery(
     images: List[PILImage.Image]
     paths: List[str]
     if isinstance(items[0], str):
-        paths = cast(List[str], items)
+        paths = cast("List[str]", items)
         images = concurrent_loads(paths, num_workers=num_workers, debug_print=debug_print)
     else:
-        images = cast(List[PILImage.Image], items)
+        images = cast("List[PILImage.Image]", items)
         paths = [f"Image {i}" for i in range(len(items))]
 
     figures = []

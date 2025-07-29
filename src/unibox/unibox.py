@@ -219,8 +219,7 @@ def presigns(s3_uri: str | list[str], expiration: int = 604800) -> str:
     global s3_client
     if s3_client is None:
         s3_client = S3Client()
-    
-    
+
     if isinstance(s3_uri, list):
         return [s3_client.generate_presigned_uri(uri, expiration=expiration) for uri in s3_uri]
 
