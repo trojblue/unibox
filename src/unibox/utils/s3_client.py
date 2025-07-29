@@ -19,6 +19,7 @@ def parse_s3_url(url: str):
 class S3Client:
     def __init__(self) -> None:
         import boto3
+
         # Simple S3 client init; if you need custom credentials or region,
         # pass them directly via environment variables or create a custom session.
         session = boto3.Session()

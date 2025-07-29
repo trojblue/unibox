@@ -1,14 +1,11 @@
 #!/usr/bin/env python
-"""
-Utility functions for execlib, including AWS and Hugging Face credential management.
-"""
+"""Utility functions for execlib, including AWS and Hugging Face credential management."""
 
+import hashlib
 import os
 import shutil
 import uuid
-import hashlib
 from pathlib import Path
-from typing import Optional
 
 
 def get_machine_hash(salt: str = "some_random_salt") -> str:
@@ -51,11 +48,10 @@ class CredentialManager:
         service = service.lower()
         if service == "aws":
             return self._hide_directory(self.aws_dir, self.hidden_aws_dir, "AWS")
-        elif service in ["hf", "huggingface"]:
+        if service in ["hf", "huggingface"]:
             return self._hide_directory(self.hf_dir, self.hidden_hf_dir, "Hugging Face")
-        else:
-            print(f"Unknown service: {service}")
-            return False
+        print(f"Unknown service: {service}")
+        return False
 
     def apply_aws(self) -> None:
         if not self.hidden_aws_dir.exists():
@@ -73,12 +69,13 @@ class CredentialManager:
 
         try:
             import boto3
-            session = boto3.Session(profile_name='default')
+
+            session = boto3.Session(profile_name="default")
             creds = session.get_credentials()
 
             os.environ["AWS_ACCESS_KEY_ID"] = creds.access_key
             os.environ["AWS_SECRET_ACCESS_KEY"] = creds.secret_key
-            if hasattr(creds, 'token') and creds.token:
+            if hasattr(creds, "token") and creds.token:
                 os.environ["AWS_SESSION_TOKEN"] = creds.token
             if session.region_name:
                 os.environ["AWS_DEFAULT_REGION"] = session.region_name
@@ -112,14 +109,12 @@ class CredentialManager:
                 print(f"Unsupported service: {service}")
 
 
-def apply_credentials( *services: str) -> None:
-    """
-    Apply credentials for the specified services.
-    """
+def apply_credentials(*services: str) -> None:
+    """Apply credentials for the specified services."""
     manager = CredentialManager()
     manager.apply_credentials(*services)
-    
+
 
 # Example usage:
 # manager = CredentialManager()
-# manager.apply_credentials("aws", "hf") 
+# manager.apply_credentials("aws", "hf")
