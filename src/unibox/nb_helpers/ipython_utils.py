@@ -1,6 +1,8 @@
 from io import BytesIO
+from typing import List, Union, cast
 
 from IPython.display import HTML, Image, display
+from PIL import Image as PILImage
 
 from ..unibox import concurrent_loads
 
@@ -21,7 +23,7 @@ def _src_from_data(data):
 
 
 def _gallery(
-    paths: list[str],
+    items: Union[List[str], List[PILImage.Image]],
     labels: list[str] = [],
     row_height="300px",
     num_workers=32,
@@ -32,8 +34,9 @@ def _gallery(
 
     Parameters
     ----------
-    paths: list of str
-        Paths to images to display. Can be local paths, URLs, or S3 paths.
+    items: list of str or list of PIL.Image
+        Paths to images to display or a list of PIL image objects.
+        Paths can be local paths, URLs, or S3 paths.
 
     row_height: str
         CSS height value to assign to all images. Set to 'auto' by default to show images
@@ -49,18 +52,28 @@ def _gallery(
     thumbnail_size: int (optional)
         If provided, resize images to this size using PIL's thumbnail method.
     """
-    if len(paths) > 1000:
+    if not items:
+        return
+
+    if len(items) > 1000:
         raise ValueError("Too many images to display.")
 
-    if len(labels) > 0 and len(labels) != len(paths):
-        raise ValueError("Number of labels must match number of paths.")
+    if len(labels) > 0 and len(labels) != len(items):
+        raise ValueError("Number of labels must match number of items.")
 
-    images = concurrent_loads(paths, num_workers=num_workers, debug_print=debug_print)
+    images: List[PILImage.Image]
+    paths: List[str]
+    if isinstance(items[0], str):
+        paths = cast(List[str], items)
+        images = concurrent_loads(paths, num_workers=num_workers, debug_print=debug_print)
+    else:
+        images = cast(List[PILImage.Image], items)
+        paths = [f"Image {i}" for i in range(len(items))]
 
     figures = []
     for i, image in enumerate(images):
         try:
-            if thumbnail_size > 0:
+            if thumbnail_size > 0 and image:
                 image.thumbnail((thumbnail_size, thumbnail_size))
 
             # Ensure image is in RGB mode for saving as JPEG
@@ -78,7 +91,7 @@ def _gallery(
             caption = f'<figcaption style="font-size: 0.6em">{caption_str}</figcaption>'
         except Exception as e:
             src = ""
-            caption = f'<figcaption style="font-size: 0.6em; color: red;">Error loading {paths[i]}: {e}</figcaption>'
+            caption = f'<figcaption style="font-size: 0.6em; color: red;">Error processing {paths[i]}: {e}</figcaption>'
 
         figures.append(f"""
             <figure style="margin: 5px !important;">

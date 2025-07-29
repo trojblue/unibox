@@ -95,6 +95,13 @@ class UniPeeker:
             "shape": data.shape,
         }
         preview = data.head(n)
+        try: 
+            from IPython.display import display
+            display(meta_dict)
+            display(preview)
+        except ModuleNotFoundError:
+            pass
+
         return meta_dict, preview
 
     @staticmethod

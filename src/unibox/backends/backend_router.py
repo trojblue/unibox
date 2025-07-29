@@ -3,6 +3,7 @@ from unibox.utils.utils import is_hf_uri, is_s3_uri, is_url
 
 from .base_backend import BaseBackend
 from .hf_hybrid_backend import HuggingfaceHybridBackend
+from .http_backend import HTTPBackend
 from .local_backend import LocalBackend
 from .s3_backend import S3Backend
 
@@ -20,7 +21,7 @@ def get_backend_for_uri(uri: str) -> BaseBackend:
         return HuggingfaceHybridBackend()
 
     if is_url(uri):
-        # Possibly define an HTTPBackend or just treat as local after manual download
-        return LocalBackend()
+        # Use HTTPBackend for HTTP/HTTPS URLs
+        return HTTPBackend()
 
     return LocalBackend()
