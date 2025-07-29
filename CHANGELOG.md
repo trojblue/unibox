@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.9.0](https://github.com/trojblue/unibox/releases/tag/0.9.0) - 2025-07-29
+
+<small>[Compare with 0.8.3](https://github.com/trojblue/unibox/compare/0.8.3...0.9.0)</small>
+
+### Features
+
+- adding http loader ([e6525a5](https://github.com/trojblue/unibox/commit/e6525a53853c7d82bfbfbf4d9ce749e30bd8b1c9) by yada).
+- adding credenial manager ([f55c63d](https://github.com/trojblue/unibox/commit/f55c63de1424faa52386d44cc1e1d78aad4c2c87) by yada).
+
+### Bug Fixes
+
+- cli error ([fffc2b6](https://github.com/trojblue/unibox/commit/fffc2b68dfd7faa7bfbcdac31e983019c9650b83) by yada).
+- case sensitivity for ls ([a2fd4de](https://github.com/trojblue/unibox/commit/a2fd4ded9c9019be4336c71bd9753fe07f5a3521) by yada).
+- adding pre-flight check for existing __index_level_0__ ([5a01a7f](https://github.com/trojblue/unibox/commit/5a01a7f74f60dc8270cbaf9ae4769a32557a1d6f) by yada).
+- robust handling for dataset card generation ([33a9d72](https://github.com/trojblue/unibox/commit/33a9d723a8f1edec85f2b585301dd9e24593f679) by yada).
+- adding robust handling for df utils ([85e61e5](https://github.com/trojblue/unibox/commit/85e61e512605d446eb6dd200d5b9c6ba9a152fdf) by yada).
+- removed imports ([41313bd](https://github.com/trojblue/unibox/commit/41313bda0c8c363bbb9fdcba35a5a54db4b05ed9) by yada).
+
+### Code Refactoring
+
+- removing old implementatinos of df ([585c9fc](https://github.com/trojblue/unibox/commit/585c9fc504426da5a112da134db6e4a07ac9d34e) by yada).
+
 ## [0.8.3](https://github.com/trojblue/unibox/releases/tag/0.8.3) - 2025-04-14
 
 <small>[Compare with 0.8.2](https://github.com/trojblue/unibox/compare/0.8.2...0.8.3)</small>
