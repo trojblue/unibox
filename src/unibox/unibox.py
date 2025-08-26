@@ -1,5 +1,6 @@
 # unibox.py
 import warnings
+import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
@@ -29,8 +30,9 @@ def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
 
     # Download the file if needed
     local_path = backend.download(str(uri), **kwargs)
-    if not local_path.exists():
-        raise FileNotFoundError(f"File not found: {local_path}")
+    resolved_path = Path(local_path).resolve(strict=False)
+    if not (resolved_path.exists() or os.path.lexists(str(resolved_path))):
+        raise FileNotFoundError(f"File not found: {resolved_path}")
 
     # Load the file contents
     with open(local_path, encoding="utf-8") as f:
@@ -61,9 +63,10 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
         if backend is None:
             raise ValueError(f"No backend found for URI: {uri}")
         local_path = backend.download(str(uri), **kwargs)
-        if not local_path.exists():
-            raise FileNotFoundError(f"File not found: {local_path}")
-        return local_path
+        resolved_path = Path(local_path).resolve(strict=False)
+        if not (resolved_path.exists() or os.path.lexists(str(resolved_path))):
+            raise FileNotFoundError(f"File not found: {resolved_path}")
+        return resolved_path
 
     # Use the loader router to handle both dataset and file loading
     return load_data(uri, loader_config=kwargs)

@@ -1,6 +1,7 @@
 # loader_router.py
 # ... etc
 import warnings
+import os
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -123,8 +124,11 @@ def load_data(path: Union[str, Path], loader_config: Optional[dict] = None) -> A
 
     # if it's huggingface, let loader load it instead of downloading at backend
     if not str(local_path).startswith("hf://"):
-        if not local_path.exists():
-            raise FileNotFoundError(f"Downloaded file/folder not found: {local_path}")
+        # Resolve symlinks (non-strict) so linked files work; accept symlinks via lexists
+        resolved_path = Path(local_path).resolve(strict=False)
+        if not (resolved_path.exists() or os.path.lexists(str(resolved_path))):
+            raise FileNotFoundError(f"Downloaded file/folder not found: {resolved_path}")
+        local_path = resolved_path
 
     # Otherwise, extension-based logic
     loader = get_loader_for_path(local_path)
