@@ -119,5 +119,5 @@ class HFDatasetLoader(BaseLoader):
                 self.hf_api_backend.update_readme(repo_id, readme_text, repo_type="dataset")
                 logger.info(f"Successfully updated README for dataset {hf_uri}")
             except Exception as e:
-                logger.error(f"Failed to update README for dataset {hf_uri}: {e}")
-                raise
+                # Non-fatal: dataset was pushed successfully; skip README update errors
+                logger.warning(f"Failed to update README for dataset {hf_uri}: {e}")
