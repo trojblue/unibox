@@ -74,9 +74,8 @@ class ImageLoader(BaseLoader):
         config = loader_config or {}
         used_keys: Set[str] = set()
 
-        # Ensure the image is loaded in memory
-        if data.fp is not None:
-            data.load()
+        # Ensure the image is loaded in memory without relying on private attrs like `.fp`
+        data.load()
 
         # Extract supported arguments from config
         kwargs = {}
