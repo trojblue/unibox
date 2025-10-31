@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.10.0](https://github.com/trojblue/unibox/releases/tag/0.10.0) - 2025-10-31
+
+<small>[Compare with 0.9.0](https://github.com/trojblue/unibox/compare/0.9.0...0.10.0)</small>
+
+### Features
+
+- adding plotting utils from dataproc4 ([36f990e](https://github.com/trojblue/unibox/commit/36f990e37ea7d0c1397b2d7d0c4244fb2005ff40) by yada).
+
+### Bug Fixes
+
+- prevent writing logs to user-unwritable locations ([fab3dc3](https://github.com/trojblue/unibox/commit/fab3dc361ab4b5f74bd55ef96240d86778b237c3) by yada).
+- image load / save logic ([a50781b](https://github.com/trojblue/unibox/commit/a50781b953699cd8b607cb8b098b546cd194d369) by yada).
+- change README update error handling to non-fatal warning ([4ac4edc](https://github.com/trojblue/unibox/commit/4ac4edc1646e53b9f2cf0498ee348662556b0043) by yada).
+- local mklink path resolving for hugginface data ([1846cfc](https://github.com/trojblue/unibox/commit/1846cfc9936659209d70d3c439fd8950a6cb2775) by yada).
+
+### Code Refactoring
+
+- update pyproject.toml for dynamic versioning and improve import order in multiple files ([3601958](https://github.com/trojblue/unibox/commit/36019581c9ce7632d1f27d5f0673dd9863a567f0) by yada).
+
 ## [0.9.0](https://github.com/trojblue/unibox/releases/tag/0.9.0) - 2025-07-29
 
 <small>[Compare with 0.8.3](https://github.com/trojblue/unibox/compare/0.8.3...0.9.0)</small>
