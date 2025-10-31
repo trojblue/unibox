@@ -12,6 +12,23 @@ NOTICE = 25  # Value between WARNING (30) and INFO (20)
 logging.addLevelName(NOTICE, "NOTICE")
 
 
+def _resolve_log_dir() -> str:
+    """Resolve the appropriate log directory based on environment and platform."""
+    env = os.getenv('UNIBOX_LOG_DIR')
+    if env:
+        return env
+
+    if os.name == 'nt':  # Windows
+        base = (os.getenv('LOCALAPPDATA')
+                or os.getenv('APPDATA')
+                or os.path.expanduser('~'))
+        return os.path.join(base, 'unibox', 'logs')
+
+    # POSIX systems (Linux, macOS, etc.)
+    base = os.getenv('XDG_CACHE_HOME') or os.path.join(os.path.expanduser('~'), '.cache')
+    return os.path.join(base, 'unibox', 'logs')
+
+
 class UniLogger:
     """A logger that:
     1) Uses colorlog for console color.
@@ -46,9 +63,14 @@ class UniLogger:
 
         # Optional file handler
         if self.write_log:
-            output_path = Path(output_dir)
-            output_path.mkdir(parents=True, exist_ok=True)
-            log_file = output_path / f"{file_suffix}_{datetime.now().strftime('%Y%m%d')}.log"
+            # Use resolved log directory if default output_dir is used
+            if output_dir == "logs":
+                log_dir = _resolve_log_dir()
+            else:
+                log_dir = output_dir
+
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, f"{file_suffix}_{datetime.now().strftime('%Y%m%d')}.log")
             fh = logging.FileHandler(log_file, mode="a", encoding="utf-8")
             self.handlers.append(fh)
 
