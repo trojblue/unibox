@@ -136,7 +136,7 @@ def generate_dataset_summary(
                     "Dtype": str(df[col].dtype),
                     "Memory Usage (bytes)": col_bytes,
                     "Readable Memory Usage": human_readable_size(col_bytes),
-                }
+                },
             )
         return pd.DataFrame(usage_info)
 
@@ -189,7 +189,7 @@ def generate_dataset_summary(
                             parts.append(
                                 f"{key.capitalize()}: {val:.3f}"
                                 if isinstance(val, float)
-                                else f"{key.capitalize()}: {val}"
+                                else f"{key.capitalize()}: {val}",
                             )
                     lines.append("  - " + ", ".join(parts) if parts else "  - No valid numeric summary available")
 
@@ -199,7 +199,7 @@ def generate_dataset_summary(
                     false_count = (col_data == False).sum()
                     na_count = col_data.isna().sum()
                     lines.append(
-                        f"  - True: {true_count} ({true_count / total:.2%}), False: {false_count} ({false_count / total:.2%})"
+                        f"  - True: {true_count} ({true_count / total:.2%}), False: {false_count} ({false_count / total:.2%})",
                     )
                     if na_count > 0:
                         lines.append(f"  - Missing: {na_count} ({na_count / total:.2%})")
@@ -222,13 +222,14 @@ def generate_dataset_summary(
                         set_lengths = pd.to_numeric(set_lengths, errors="coerce").dropna()
                         if not set_lengths.empty:
                             lines.append(
-                                f"    - Typical set length: mean={set_lengths.mean():.2f}, min={set_lengths.min()}, max={set_lengths.max()}"
+                                f"    - Typical set length: mean={set_lengths.mean():.2f}, min={set_lengths.min()}, max={set_lengths.max()}",
                             )
                         else:
                             lines.append("    - Could not determine typical set length")
 
                     elif isinstance(sample_val, (list, tuple, np.ndarray, collections.abc.Sequence)) and not isinstance(
-                        sample_val, str
+                        sample_val,
+                        str,
                     ):
                         val_type = type(sample_val).__name__
                         lines.append(f"  - Contains unhashable sequence: {val_type}")
@@ -236,7 +237,7 @@ def generate_dataset_summary(
                         lengths = pd.to_numeric(lengths, errors="coerce").dropna()
                         if not lengths.empty:
                             lines.append(
-                                f"    - Typical length: mean={lengths.mean():.2f}, min={lengths.min()}, max={lengths.max()}"
+                                f"    - Typical length: mean={lengths.mean():.2f}, min={lengths.min()}, max={lengths.max()}",
                             )
                         else:
                             lines.append("    - Could not determine typical length")
@@ -278,7 +279,7 @@ def generate_dataset_summary(
             "Memory Usage": mem_df["Readable Memory Usage"],
             "Missing Count": missing_count.values,
             "Missing Rate": missing_rate.values,
-        }
+        },
     )
 
     # Add a total row at the bottom
@@ -298,7 +299,7 @@ def generate_dataset_summary(
                 "Missing Count": missing_count.sum(),
                 "Missing Rate": f"{(missing_count.sum() / (len(df) * len(df.columns)) * 100):.2f}%",
             },
-        ]
+        ],
     )
 
     stats_df = pd.concat([stats_df, total_row], ignore_index=True)
