@@ -1,0 +1,121 @@
+(base) root@yada-dev-a-95bc58b9f-7jbk4:/local/yada/dev/unibox# python scripts/benchmark_ls.py
+=== ls benchmark ===                                     
+Python: 3.13.9
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Files found: 50288
+Elapsed: 0.314 s
+Throughput: 159962.0 files/s
+
+=== concurrent_loads benchmark ===
+Python: 3.13.9
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Batch size: 100, batches: 10, workers: 8
+Total files used: 1000                                   
+Batch 1/10: 1.002 s
+Batch 2/10: 1.043 s
+Batch 3/10: 1.285 s
+Batch 4/10: 1.437 s
+Batch 5/10: 1.270 s
+Batch 6/10: 1.240 s
+Batch 7/10: 1.256 s
+Batch 8/10: 1.239 s
+Batch 9/10: 1.245 s
+Batch 10/10: 1.223 s
+--- Summary ---
+Total time (all batches): 12.241 s
+Mean time per batch: 1.224 s
+Total files: 1000
+Throughput: 81.7 files/s
+
+(base) root@yada-dev-a-95bc58b9f-7jbk4:/local/yada/dev/unibox# python scripts/benchmark_ls.py
+=== ls benchmark ===                                     
+Python: 3.13.9
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Files found: 50288
+Elapsed: 0.325 s
+Throughput: 154762.8 files/s
+
+=== concurrent_loads benchmark ===
+Python: 3.13.9
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Batch size: 100, batches: 10, workers: 8
+Total files used: 1000                                   
+Batch 1/10: 0.982 s
+Batch 2/10: 1.002 s
+Batch 3/10: 1.183 s
+Batch 4/10: 1.275 s
+Batch 5/10: 1.313 s
+Batch 6/10: 1.343 s
+Batch 7/10: 1.239 s
+Batch 8/10: 1.239 s
+Batch 9/10: 1.300 s
+Batch 10/10: 1.209 s
+--- Summary ---
+Total time (all batches): 12.086 s
+Mean time per batch: 1.209 s
+Total files: 1000
+Throughput: 82.7 files/s
+
+
+
+
+===================================
+
+
+(base10) root@yada-dev-a-95bc58b9f-7jbk4:/local/yada/dev/unibox# python scripts/benchmark_ls.py
+=== ls benchmark ===                                     
+Python: 3.10.19
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Files found: 50288
+Elapsed: 0.348 s
+Throughput: 144535.3 files/s
+
+=== concurrent_loads benchmark ===
+Python: 3.10.19
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Batch size: 100, batches: 10, workers: 8
+Total files used: 1000                                   
+Batch 1/10: 1.577 s
+Batch 2/10: 0.987 s
+Batch 3/10: 1.062 s
+Batch 4/10: 1.004 s
+Batch 5/10: 0.983 s
+Batch 6/10: 0.977 s
+Batch 7/10: 0.975 s
+Batch 8/10: 0.995 s
+Batch 9/10: 1.033 s
+Batch 10/10: 1.138 s
+--- Summary ---
+Total time (all batches): 10.733 s
+Mean time per batch: 1.073 s
+Total files: 1000
+Throughput: 93.2 files/s
+
+(base10) root@yada-dev-a-95bc58b9f-7jbk4:/local/yada/dev/unibox# python scripts/benchmark_ls.py
+=== ls benchmark ===                                     
+Python: 3.10.19
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Files found: 50288
+Elapsed: 0.343 s
+Throughput: 146716.0 files/s
+
+=== concurrent_loads benchmark ===
+Python: 3.10.19
+Directory: /data/yada/data/qfty_celery/dit02-desu_refined_danbooru_50k-100k/output
+Batch size: 100, batches: 10, workers: 8
+Total files used: 1000                                   
+Batch 1/10: 1.566 s
+Batch 2/10: 1.082 s
+Batch 3/10: 1.195 s
+Batch 4/10: 1.276 s
+Batch 5/10: 1.197 s
+Batch 6/10: 1.247 s
+Batch 7/10: 1.215 s
+Batch 8/10: 1.232 s
+Batch 9/10: 1.295 s
+Batch 10/10: 1.154 s
+--- Summary ---
+Total time (all batches): 12.459 s
+Mean time per batch: 1.246 s
+Total files: 1000
+Throughput: 80.3 files/s
