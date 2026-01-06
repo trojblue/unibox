@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import pandas as pd
 from datasets import Dataset, DatasetDict, Image as DSImage, load_dataset
 
-from unibox.utils.df_utils import generate_dataset_summary
+from unibox.utils.df_utils import coerce_json_like_to_df, generate_dataset_summary
 from unibox.utils.utils import parse_hf_uri
 
 from ..backends.hf_hybrid_backend import HuggingfaceHybridBackend
@@ -83,8 +83,27 @@ class HFDatasetLoader(BaseLoader):
 
         dataset_split = loader_config.get("split", "train")
         is_private = loader_config.get("private", True)
+        dict_key_column = loader_config.get("dict_key_column")
+        value_column = loader_config.get("value_column")
+        flatten_sep = loader_config.get("flatten_sep")
+        max_depth = loader_config.get("max_depth")
 
         readme_text = None  # if not a dataframe, we don't generate a readme update
+
+        # Convert JSON-like input to DataFrame if needed
+        if isinstance(data, (dict, list, tuple)):
+            try:
+                data = coerce_json_like_to_df(
+                    data,
+                    dict_key_column=dict_key_column,
+                    value_column=value_column,
+                    flatten_sep=flatten_sep,
+                    max_depth=max_depth,
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Cannot convert JSON-like input to DataFrame for HF dataset save: {e}",
+                ) from e
 
         # Convert DataFrame to Dataset if needed and prepare README
         if isinstance(data, pd.DataFrame):
