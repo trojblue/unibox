@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.11.1](https://github.com/trojblue/unibox/releases/tag/0.11.1) - 2026-01-06
+
+<small>[Compare with 0.11.0](https://github.com/trojblue/unibox/compare/0.11.0...0.11.1)</small>
+
+### Bug Fixes
+
+- update release dependencies and fix mkdocs configuration ([563f2b0](https://github.com/trojblue/unibox/commit/563f2b0a0775e73bee02053fb4c56ae4246b897d) by trojblue).
+
 ## [0.11.0](https://github.com/trojblue/unibox/releases/tag/0.11.0) - 2026-01-06
 
 <small>[Compare with 0.10.0](https://github.com/trojblue/unibox/compare/0.10.0...0.11.0)</small>
