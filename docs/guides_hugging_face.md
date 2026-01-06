@@ -81,3 +81,33 @@ cfg = ub.loads("hf://my-org/my-dataset/config.json")
 - **Auth**: Make sure your token is available (see Credentials).
 - **Repo types**: `hf://owner/repo` is assumed to be a dataset.
 - **Splits**: If the split does not exist, `datasets` will raise an error.
+
+## Next steps
+
+<div class="grid cards" markdown>
+
+- __Credentials__
+
+  ---
+
+  Make sure your HF token is set up.
+
+  [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
+
+- __Supported formats__
+
+  ---
+
+  See which extensions map to which loaders.
+
+  [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
+
+- __Recipes__
+
+  ---
+
+  Quick tasks like previews and concurrent loads.
+
+  [:octicons-arrow-right-24: Recipes](recipes.md)
+
+</div>

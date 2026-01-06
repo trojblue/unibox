@@ -26,6 +26,7 @@ nav:
   - Supported Formats: supported_formats.md
   - Hugging Face: guides_hugging_face.md
   - S3: guides_s3.md
+  - Utilities: utilities.md
 - Recipes: recipes.md
 # defer to gen-files + literate-nav
 - API reference:
@@ -86,6 +87,7 @@ markdown_extensions:
 - admonition
 - callouts
 - footnotes
+- md_in_html
 - pymdownx.emoji:
     emoji_index: !!python/name:material.extensions.emoji.twemoji
     emoji_generator: !!python/name:material.extensions.emoji.to_svg

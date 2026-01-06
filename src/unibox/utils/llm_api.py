@@ -3,7 +3,7 @@ import json
 import requests
 
 
-def generate_gemini(prompt, api_key, model="gemini-1.5-flash"):
+def generate_gemini(prompt, api_key, model="gemini-2.5-flash"):
     """Generates content using Google's Generative Language API
 
     Args:

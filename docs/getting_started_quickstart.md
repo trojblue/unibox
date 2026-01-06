@@ -98,4 +98,20 @@ print(files[:5])
 
   [:octicons-arrow-right-24: HF Guide](guides_hugging_face.md)
 
+- __Utilities__
+
+  ---
+
+  Notebook helpers, image tools, and quick LLM calls.
+
+  [:octicons-arrow-right-24: Utilities](utilities.md)
+
+- __Recipes__
+
+  ---
+
+  Task‑oriented snippets for common workflows.
+
+  [:octicons-arrow-right-24: Recipes](recipes.md)
+
 </div>

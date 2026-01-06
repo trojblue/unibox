@@ -79,3 +79,33 @@ apply_credentials("aws", "hf")
 ```
 
 This helper loads standard credential locations and exports environment variables for the current process.
+
+## Next steps
+
+<div class="grid cards" markdown>
+
+- __Quickstart__
+
+  ---
+
+  Jump back to the 5‑minute tour.
+
+  [:octicons-arrow-right-24: Quickstart](getting_started_quickstart.md)
+
+- __Hugging Face guide__
+
+  ---
+
+  Load and save datasets and files.
+
+  [:octicons-arrow-right-24: HF Guide](guides_hugging_face.md)
+
+- __S3 guide__
+
+  ---
+
+  Read and write objects from S3.
+
+  [:octicons-arrow-right-24: S3 Guide](guides_s3.md)
+
+</div>

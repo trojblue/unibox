@@ -47,3 +47,33 @@ print(files[:3])
 
 !!! warning
     If you see AccessDenied errors, check IAM permissions and bucket policy.
+
+## Next steps
+
+<div class="grid cards" markdown>
+
+- __Credentials__
+
+  ---
+
+  Verify AWS access for your environment.
+
+  [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
+
+- __Supported formats__
+
+  ---
+
+  See which file types you can load/save.
+
+  [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
+
+- __Recipes__
+
+  ---
+
+  Task‑oriented snippets using S3.
+
+  [:octicons-arrow-right-24: Recipes](recipes.md)
+
+</div>
