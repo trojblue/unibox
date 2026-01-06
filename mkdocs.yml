@@ -19,6 +19,14 @@ nav:
   - Changelog: changelog.md
   - Credits: credits.md
   - License: license.md
+- Getting Started:
+  - Quickstart: getting_started_quickstart.md
+  - Credentials: getting_started_credentials.md
+- Guides:
+  - Supported Formats: supported_formats.md
+  - Hugging Face: guides_hugging_face.md
+  - S3: guides_s3.md
+- Recipes: recipes.md
 # defer to gen-files + literate-nav
 - API reference:
   - unibox: reference/
