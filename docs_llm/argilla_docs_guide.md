@@ -1,4 +1,37 @@
-Here is a summary of the organizational structure, tone, and key examples from the Argilla documentation. This reference is designed to help you replicate their successful use of `mkdocs-material`.
+Here is a summary of the organizational structure, tone, and key examples from the Argilla documentation. This reference is designed to help you **understand why their patterns work** so you can adapt them correctly in other projects (instead of blindly copying snippets).
+
+### How to use these patterns safely (quick checklist)
+Before copying any Argilla-style snippet into another MkDocs site, verify:
+
+1. **Theme feature is enabled:** For card grids, `theme.features` must include `content.cards`.
+2. **Markdown-in-HTML is enabled:** For `<div class="grid cards" markdown>`, the `md_in_html` extension must be enabled.
+3. **Indentation matches list semantics:** Card content must be indented as part of the list item. Otherwise, Markdown closes the `<li>` early and renders stray `<hr>` and `<p>` tags outside the card.
+4. **Relative links match your nav:** Ensure links (e.g., `getting_started/quickstart.md`) exist in your repo and nav.
+5. **Test render output:** If the HTML looks like separate `<ul>`, `<hr>`, `<p>` blocks, the list indentation is broken.
+
+Minimal working card grid (indentation matters):
+
+```markdown
+<div class="grid cards" markdown>
+
+-  __Card title__
+
+    ---
+
+    Short description of the destination.
+
+    [:octicons-arrow-right-24: Learn more](path/to/page.md)
+
+</div>
+```
+
+Common failure mode (do not do this):
+```markdown
+- __Card title__
+
+  ---
+```
+The 2-space indent causes the list item to close after the title, so the divider and text fall outside the card.
 
 ### 1. Organizational Structure
 The documentation follows the **Diátaxis framework** principles, separating content into four distinct modes of user needs. It is structured to guide users from "Hello World" to "Power User" and "Contributor."
@@ -19,9 +52,9 @@ The documentation follows the **Diátaxis framework** principles, separating con
 *   **Community (Engagement):**
     *   Explicitly separates "Contributor" (process) from "Developer" (environment setup).
 
-**MkDocs Features Used:**
+**MkDocs Features Used (and how to replicate correctly):**
 *   **Navigation:** Hidden table of contents on landing pages to reduce clutter.
-*   **Grids & Cards:** Used heavily in `index.md` files to visually route traffic to different sections.
+*   **Grids & Cards:** Used heavily in `index.md` files to visually route traffic to different sections. Requires `content.cards` in `theme.features` and `md_in_html` enabled. List indentation must keep card body inside the list item (see checklist above).
 *   **Admonitions:** Used frequently (Tips, Notes, Warnings) to break up text and highlight critical info.
 *   **Tabs:** Used to show alternatives (e.g., "From SDK" vs "From UI", or "Docker" vs "Hugging Face").
 

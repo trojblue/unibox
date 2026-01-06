@@ -74,44 +74,44 @@ print(files[:5])
 
 <div class="grid cards" markdown>
 
-- __Credentials__
+-  __Credentials__
 
-  ---
+    ---
 
-  Set up AWS and Hugging Face access once.
+    Set up AWS and Hugging Face access once.
 
-  [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
+    [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
 
-- __Supported formats__
+-  __Supported formats__
 
-  ---
+    ---
 
-  See which extensions map to which loaders.
+    See which extensions map to which loaders.
 
-  [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
+    [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
 
-- __Hugging Face guide__
+-  __Hugging Face guide__
 
-  ---
+    ---
 
-  Splits, revisions, and JSON-like saves.
+    Splits, revisions, and JSON-like saves.
 
-  [:octicons-arrow-right-24: HF Guide](guides_hugging_face.md)
+    [:octicons-arrow-right-24: HF Guide](guides_hugging_face.md)
 
-- __Utilities__
+-  __Utilities__
 
-  ---
+    ---
 
-  Notebook helpers, image tools, and quick LLM calls.
+    Notebook helpers, image tools, and quick LLM calls.
 
-  [:octicons-arrow-right-24: Utilities](utilities.md)
+    [:octicons-arrow-right-24: Utilities](utilities.md)
 
-- __Recipes__
+-  __Recipes__
 
-  ---
+    ---
 
-  Task‑oriented snippets for common workflows.
+    Task‑oriented snippets for common workflows.
 
-  [:octicons-arrow-right-24: Recipes](recipes.md)
+    [:octicons-arrow-right-24: Recipes](recipes.md)
 
 </div>

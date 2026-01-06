@@ -40,28 +40,28 @@ These are converted into a DataFrame and then uploaded as a dataset.
 
 <div class="grid cards" markdown>
 
-- __Hugging Face guide__
+-  __Hugging Face guide__
 
-  ---
+    ---
 
-  Learn dataset vs file semantics and save options.
+    Learn dataset vs file semantics and save options.
 
-  [:octicons-arrow-right-24: HF Guide](guides_hugging_face.md)
+    [:octicons-arrow-right-24: HF Guide](guides_hugging_face.md)
 
-- __S3 guide__
+-  __S3 guide__
 
-  ---
+    ---
 
-  Load and save common formats from S3.
+    Load and save common formats from S3.
 
-  [:octicons-arrow-right-24: S3 Guide](guides_s3.md)
+    [:octicons-arrow-right-24: S3 Guide](guides_s3.md)
 
-- __Recipes__
+-  __Recipes__
 
-  ---
+    ---
 
-  Task‑oriented snippets using these formats.
+    Task‑oriented snippets using these formats.
 
-  [:octicons-arrow-right-24: Recipes](recipes.md)
+    [:octicons-arrow-right-24: Recipes](recipes.md)
 
 </div>

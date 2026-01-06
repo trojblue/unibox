@@ -52,28 +52,28 @@ print(files[:3])
 
 <div class="grid cards" markdown>
 
-- __Credentials__
+-  __Credentials__
 
-  ---
+    ---
 
-  Verify AWS access for your environment.
+    Verify AWS access for your environment.
 
-  [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
+    [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
 
-- __Supported formats__
+-  __Supported formats__
 
-  ---
+    ---
 
-  See which file types you can load/save.
+    See which file types you can load/save.
 
-  [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
+    [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
 
-- __Recipes__
+-  __Recipes__
 
-  ---
+    ---
 
-  Task‑oriented snippets using S3.
+    Task‑oriented snippets using S3.
 
-  [:octicons-arrow-right-24: Recipes](recipes.md)
+    [:octicons-arrow-right-24: Recipes](recipes.md)
 
 </div>
