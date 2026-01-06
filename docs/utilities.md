@@ -127,28 +127,28 @@ url = ub.presigns("s3://my-bucket/data/file.parquet", expiration=3600)
 
 <div class="grid cards" markdown>
 
-- __Recipes__
+-  __Recipes__
 
-  ---
+    ---
 
-  Task‑oriented snippets using these helpers.
+    Task‑oriented snippets using these helpers.
 
-  [:octicons-arrow-right-24: Recipes](recipes.md)
+    [:octicons-arrow-right-24: Recipes](recipes.md)
 
-- __Quickstart__
+-  __Quickstart__
 
-  ---
+    ---
 
-  Back to the 5‑minute tour.
+    Back to the 5‑minute tour.
 
-  [:octicons-arrow-right-24: Quickstart](getting_started_quickstart.md)
+    [:octicons-arrow-right-24: Quickstart](getting_started_quickstart.md)
 
-- __Supported formats__
+-  __Supported formats__
 
-  ---
+    ---
 
-  See which file types you can load/save.
+    See which file types you can load/save.
 
-  [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
+    [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
 
 </div>

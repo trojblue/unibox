@@ -10,36 +10,36 @@ hide:
 
 <div class="grid cards" markdown>
 
-- __Quickstart__
+-  __Quickstart__
 
-  ---
+    ---
 
-  Get up and running in minutes.
+    Get up and running in minutes.
 
-  [:octicons-arrow-right-24: Quickstart](getting_started_quickstart.md)
+    [:octicons-arrow-right-24: Quickstart](getting_started_quickstart.md)
 
-- __Guides__
+-  __Guides__
 
-  ---
+    ---
 
-  Learn S3, Hugging Face, and supported formats.
+    Learn S3, Hugging Face, and supported formats.
 
-  [:octicons-arrow-right-24: Guides](supported_formats.md)
+    [:octicons-arrow-right-24: Guides](supported_formats.md)
 
-- __Utilities__
+-  __Utilities__
 
-  ---
+    ---
 
-  Notebook helpers and image tools.
+    Notebook helpers and image tools.
 
-  [:octicons-arrow-right-24: Utilities](utilities.md)
+    [:octicons-arrow-right-24: Utilities](utilities.md)
 
-- __Recipes__
+-  __Recipes__
 
-  ---
+    ---
 
-  Task‑oriented snippets for common workflows.
+    Task‑oriented snippets for common workflows.
 
-  [:octicons-arrow-right-24: Recipes](recipes.md)
+    [:octicons-arrow-right-24: Recipes](recipes.md)
 
 </div>

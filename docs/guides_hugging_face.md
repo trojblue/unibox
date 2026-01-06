@@ -86,28 +86,28 @@ cfg = ub.loads("hf://my-org/my-dataset/config.json")
 
 <div class="grid cards" markdown>
 
-- __Credentials__
+-  __Credentials__
 
-  ---
+    ---
 
-  Make sure your HF token is set up.
+    Make sure your HF token is set up.
 
-  [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
+    [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
 
-- __Supported formats__
+-  __Supported formats__
 
-  ---
+    ---
 
-  See which extensions map to which loaders.
+    See which extensions map to which loaders.
 
-  [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
+    [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
 
-- __Recipes__
+-  __Recipes__
 
-  ---
+    ---
 
-  Quick tasks like previews and concurrent loads.
+    Quick tasks like previews and concurrent loads.
 
-  [:octicons-arrow-right-24: Recipes](recipes.md)
+    [:octicons-arrow-right-24: Recipes](recipes.md)
 
 </div>
