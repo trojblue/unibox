@@ -54,3 +54,33 @@ ub.saves([{"id": 1}, {"id": 2}], "hf://me/quick-ds")
 # List of strings
 ub.saves(["alpha", "beta"], "hf://me/strings-ds")
 ```
+
+## Next steps
+
+<div class="grid cards" markdown>
+
+- __Utilities__
+
+  ---
+
+  Notebook helpers and image tools.
+
+  [:octicons-arrow-right-24: Utilities](utilities.md)
+
+- __Hugging Face guide__
+
+  ---
+
+  Full dataset save/load options.
+
+  [:octicons-arrow-right-24: HF Guide](guides_hugging_face.md)
+
+- __S3 guide__
+
+  ---
+
+  Load and save files on S3.
+
+  [:octicons-arrow-right-24: S3 Guide](guides_s3.md)
+
+</div>
