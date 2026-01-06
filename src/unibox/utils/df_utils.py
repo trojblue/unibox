@@ -1,12 +1,124 @@
 # pandas related code
 
 import collections.abc
+import json
 import logging
+import warnings
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+DICT_KEY_COLUMN_DEFAULT = "DICT_KEY"
+VALUE_COLUMN_DEFAULT = "VALUE"
+FLATTEN_SEP_DEFAULT = "__"
+FLATTEN_MAX_DEPTH_DEFAULT = 2
+
+
+def _key_to_str(key) -> str:
+    if isinstance(key, str):
+        return key
+    try:
+        return str(key)
+    except Exception:
+        return repr(key)
+
+
+def _flatten_dict(data: dict, parent_key: str, depth: int, max_depth: int, sep: str) -> dict:
+    items: dict = {}
+    for key, value in data.items():
+        key_str = _key_to_str(key)
+        new_key = f"{parent_key}{sep}{key_str}" if parent_key else key_str
+        if isinstance(value, dict):
+            if depth >= max_depth:
+                items[new_key] = json.dumps(value, default=str)
+            else:
+                items.update(_flatten_dict(value, new_key, depth + 1, max_depth, sep))
+        else:
+            items[new_key] = value
+    return items
+
+
+def flatten_value(value: Any, max_depth: int = FLATTEN_MAX_DEPTH_DEFAULT, sep: str = FLATTEN_SEP_DEFAULT) -> Any:
+    if isinstance(value, dict):
+        return _flatten_dict(value, "", 0, max_depth, sep)
+    return value
+
+
+def flatten_record(record: dict, max_depth: int = FLATTEN_MAX_DEPTH_DEFAULT, sep: str = FLATTEN_SEP_DEFAULT) -> dict:
+    flattened: dict = {}
+    for key, value in record.items():
+        key_str = _key_to_str(key)
+        if isinstance(value, dict):
+            if max_depth <= 0:
+                flattened[key_str] = json.dumps(value, default=str)
+            else:
+                flattened.update(_flatten_dict(value, key_str, 1, max_depth, sep))
+        else:
+            flattened[key_str] = value
+    return flattened
+
+
+def coerce_json_like_to_df(
+    data: Any,
+    dict_key_column: str = DICT_KEY_COLUMN_DEFAULT,
+    value_column: str = VALUE_COLUMN_DEFAULT,
+    flatten_sep: str = FLATTEN_SEP_DEFAULT,
+    max_depth: int = FLATTEN_MAX_DEPTH_DEFAULT,
+) -> pd.DataFrame:
+    if dict_key_column is None:
+        dict_key_column = DICT_KEY_COLUMN_DEFAULT
+    if value_column is None:
+        value_column = VALUE_COLUMN_DEFAULT
+    if flatten_sep is None:
+        flatten_sep = FLATTEN_SEP_DEFAULT
+    if max_depth is None:
+        max_depth = FLATTEN_MAX_DEPTH_DEFAULT
+
+    if isinstance(data, dict):
+        rows = []
+        for key, value in data.items():
+            row = {}
+            if isinstance(value, dict):
+                row.update(value)
+            else:
+                row[value_column] = value
+            row[dict_key_column] = key
+            rows.append(flatten_record(row, max_depth=max_depth, sep=flatten_sep))
+        df = pd.DataFrame(rows)
+        if dict_key_column in df.columns:
+            ordered_cols = [dict_key_column] + [col for col in df.columns if col != dict_key_column]
+            df = df[ordered_cols]
+        return df
+
+    if isinstance(data, (list, tuple)):
+        if len(data) == 0:
+            return pd.DataFrame(columns=[value_column])
+
+        has_dict = any(isinstance(item, dict) for item in data)
+        has_non_dict = any(not isinstance(item, dict) for item in data)
+        if has_dict and has_non_dict:
+            warnings.warn(
+                "Input list mixes dict and non-dict items; conversion may be lossy or inconsistent. "
+                "Consider normalizing the structure before saving.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        if has_dict:
+            rows = []
+            for item in data:
+                if isinstance(item, dict):
+                    rows.append(flatten_record(item, max_depth=max_depth, sep=flatten_sep))
+                else:
+                    rows.append({value_column: item})
+            return pd.DataFrame(rows)
+
+        return pd.DataFrame({value_column: list(data)})
+
+    raise ValueError("Cannot convert JSON-like input to DataFrame for HF dataset save")
 
 # ===== Sanitize Dataframes =====
 # see: https://gist.github.com/trojblue/04ec49e942c9aa72f636a13f387f9038
