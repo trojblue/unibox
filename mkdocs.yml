@@ -45,6 +45,7 @@ theme:
   - content.action.view
   - content.code.annotate
   - content.code.copy
+  - content.cards
   - content.tooltips
   - navigation.footer
   - navigation.indexes
