@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.11.2](https://github.com/trojblue/unibox/releases/tag/0.11.2) - 2026-01-07
+
+<small>[Compare with 0.11.1](https://github.com/trojblue/unibox/compare/0.11.1...0.11.2)</small>
+
+### Bug Fixes
+
+- incorrect huggingface memory table generation ([28383e1](https://github.com/trojblue/unibox/commit/28383e1b3c4cc18feeaae86a60b55d1c3e902567) by trojblue).
+- docs adding correct format ([6c13d50](https://github.com/trojblue/unibox/commit/6c13d505962edfebc2365ec045bf8f51e2d0519f) by trojblue).
+- mkdocs missing components ([5e0c111](https://github.com/trojblue/unibox/commit/5e0c1116028ca19a098a73444cb85e6081eeb92e) by trojblue).
+
 ## [0.11.1](https://github.com/trojblue/unibox/releases/tag/0.11.1) - 2026-01-06
 
 <small>[Compare with 0.11.0](https://github.com/trojblue/unibox/compare/0.11.0...0.11.1)</small>
