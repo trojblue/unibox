@@ -80,6 +80,16 @@ from unibox.utils.df_utils import (
 )
 ```
 
+### JSON-like to DataFrame
+
+If you have dicts or lists and want a DataFrame:
+
+```python
+import unibox as ub
+
+df = ub.to_df({"a": 1, "b": {"c": 2}})
+```
+
 ### Memory usage per column
 
 ```python
@@ -125,30 +135,6 @@ url = ub.presigns("s3://my-bucket/data/file.parquet", expiration=3600)
 
 ## Next steps
 
-<div class="grid cards" markdown>
-
--  __Recipes__
-
-    ---
-
-    Task‑oriented snippets using these helpers.
-
-    [:octicons-arrow-right-24: Recipes](recipes.md)
-
--  __Quickstart__
-
-    ---
-
-    Back to the 5‑minute tour.
-
-    [:octicons-arrow-right-24: Quickstart](getting_started_quickstart.md)
-
--  __Supported formats__
-
-    ---
-
-    See which file types you can load/save.
-
-    [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
-
-</div>
+- Task‑oriented snippets using these helpers. [→ Recipes](recipes.md)
+- Back to the 5‑minute tour. [→ Quickstart](getting_started_quickstart.md)
+- See which file types you can load/save. [→ Supported formats](supported_formats.md)

@@ -64,6 +64,15 @@ ub.saves([{"id": 1}, {"id": 2}], "hf://me/my-ds")
 ub.saves(["foo", "bar"], "hf://me/my-ds")
 ```
 
+You can also convert explicitly:
+
+```python
+import unibox as ub
+
+df = ub.to_df([{"id": 1}, {"id": 2}])
+ub.saves(df, "hf://me/my-ds")
+```
+
 !!! warning
     If the list mixes dicts and non-dicts, unibox will still convert but emits a warning.
 
@@ -84,30 +93,6 @@ cfg = ub.loads("hf://my-org/my-dataset/config.json")
 
 ## Next steps
 
-<div class="grid cards" markdown>
-
--  __Credentials__
-
-    ---
-
-    Make sure your HF token is set up.
-
-    [:octicons-arrow-right-24: Credentials](getting_started_credentials.md)
-
--  __Supported formats__
-
-    ---
-
-    See which extensions map to which loaders.
-
-    [:octicons-arrow-right-24: Supported Formats](supported_formats.md)
-
--  __Recipes__
-
-    ---
-
-    Quick tasks like previews and concurrent loads.
-
-    [:octicons-arrow-right-24: Recipes](recipes.md)
-
-</div>
+- Make sure your HF token is set up. [→ Credentials](getting_started_credentials.md)
+- See which extensions map to which loaders. [→ Supported formats](supported_formats.md)
+- Quick tasks like previews and concurrent loads. [→ Recipes](recipes.md)
