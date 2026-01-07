@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 
 from .backends.backend_router import get_backend_for_uri
 from .loaders.loader_router import get_loader_for_path, load_data
+from .utils.df_utils import coerce_json_like_to_df
 from .utils.logger import UniLogger
 from .utils.s3_client import S3Client
 
@@ -97,6 +98,30 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
 
     # Save using the loader (it will handle both dataset and file cases)
     loader.save(uri, data, loader_config=kwargs)
+
+
+def to_df(
+    data: Any,
+    dict_key_column: str = "DICT_KEY",
+    value_column: str = "VALUE",
+    flatten_sep: str = "__",
+    max_depth: int = 2,
+) -> pd.DataFrame:
+    """Convert JSON-like input to a pandas DataFrame.
+
+    Supports dict, list of dicts, list of scalars, or a DataFrame.
+    """
+    if isinstance(data, pd.DataFrame):
+        return data
+    if isinstance(data, (dict, list, tuple)):
+        return coerce_json_like_to_df(
+            data,
+            dict_key_column=dict_key_column,
+            value_column=value_column,
+            flatten_sep=flatten_sep,
+            max_depth=max_depth,
+        )
+    raise ValueError("to_df expects a dict, list/tuple, or DataFrame")
 
 
 def ls(
