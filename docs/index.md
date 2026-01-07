@@ -8,38 +8,7 @@ hide:
 
 ## Next steps
 
-<div class="grid cards" markdown>
-
--  __Quickstart__
-
-    ---
-
-    Get up and running in minutes.
-
-    [:octicons-arrow-right-24: Quickstart](getting_started_quickstart.md)
-
--  __Guides__
-
-    ---
-
-    Learn S3, Hugging Face, and supported formats.
-
-    [:octicons-arrow-right-24: Guides](supported_formats.md)
-
--  __Utilities__
-
-    ---
-
-    Notebook helpers and image tools.
-
-    [:octicons-arrow-right-24: Utilities](utilities.md)
-
--  __Recipes__
-
-    ---
-
-    Task‑oriented snippets for common workflows.
-
-    [:octicons-arrow-right-24: Recipes](recipes.md)
-
-</div>
+- Get up and running in minutes. [→ Quickstart](getting_started_quickstart.md)
+- Learn S3, Hugging Face, and supported formats. [→ Guides](supported_formats.md)
+- Notebook helpers and image tools. [→ Utilities](utilities.md)
+- Task‑oriented snippets for common workflows. [→ Recipes](recipes.md)
