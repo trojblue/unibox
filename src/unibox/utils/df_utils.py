@@ -207,6 +207,52 @@ def truncate_text(text, max_length=200):
 import pandas as pd
 
 
+def _markdown_cell(value: Any) -> str:
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except Exception:
+        pass
+    text = str(value)
+    return text.replace("\r", " ").replace("\n", " ").replace("|", "\\|")
+
+
+def dataframe_to_markdown_fallback(df: pd.DataFrame, index: bool = False) -> str:
+    """Convert DataFrame to markdown without requiring optional tabulate dependency."""
+    try:
+        return df.to_markdown(index=index)
+    except Exception as e:
+        logger.debug("to_markdown failed; falling back to manual markdown: %s", e)
+
+    table_df = df
+    if index:
+        table_df = df.copy()
+        table_df.insert(0, "index", df.index)
+
+    columns = [str(col) for col in table_df.columns]
+    if not columns:
+        return ""
+
+    rows = [[_markdown_cell(cell) for cell in row] for row in table_df.itertuples(index=False, name=None)]
+
+    widths = [len(col) for col in columns]
+    for row in rows:
+        for i, cell in enumerate(row):
+            if i < len(widths):
+                widths[i] = max(widths[i], len(cell))
+
+    def format_row(values: list[str]) -> str:
+        padded = [values[i].ljust(widths[i]) for i in range(len(widths))]
+        return "| " + " | ".join(padded) + " |"
+
+    lines = [format_row(columns), "| " + " | ".join("-" * w for w in widths) + " |"]
+    for row in rows:
+        lines.append(format_row(row))
+    return "\n".join(lines)
+
+
 def generate_dataset_summary(
     df: pd.DataFrame,
     repo_id: str,
@@ -418,7 +464,7 @@ def generate_dataset_summary(
 
     # Safely convert stats_df to a markdown table
     try:
-        stats_table = stats_df.to_markdown(index=False)
+        stats_table = dataframe_to_markdown_fallback(stats_df, index=False)
     except Exception:
         stats_table = "Error generating stats table."
 
@@ -465,7 +511,10 @@ def generate_dataset_summary(
         sample_table = f"No columns available for preview (data shape: {df.shape})."
     else:
         try:
-            sample_table = preview_df[renderable_cols].head(sample_rows).to_markdown(index=False)
+            sample_table = dataframe_to_markdown_fallback(
+                preview_df[renderable_cols].head(sample_rows),
+                index=False,
+            )
         except Exception:
             # Fallback: try .to_string if to_markdown fails
             try:

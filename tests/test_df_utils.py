@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import pytest
 
-from unibox.utils.df_utils import coerce_json_like_to_df
+from unibox.utils.df_utils import coerce_json_like_to_df, generate_dataset_summary
 
 
 def test_coerce_dict_input_adds_dict_key_and_flattens():
@@ -58,3 +58,18 @@ def test_coerce_mixed_list_warns_and_converts():
 
     assert "VALUE" in df.columns
     assert df.loc[1, "VALUE"] == "b"
+
+
+def test_generate_dataset_summary_fallback_markdown(monkeypatch):
+    df = pd.DataFrame({"a": [1, 2], "b": ["x", "y"]})
+
+    def _raise(*args, **kwargs):
+        raise ImportError("tabulate missing")
+
+    monkeypatch.setattr(pd.DataFrame, "to_markdown", _raise, raising=True)
+
+    summary = generate_dataset_summary(df, "owner/repo", sample_rows=2)
+
+    assert "## Column Stats:" in summary
+    assert "Error generating stats table." not in summary
+    assert "Memory Usage" in summary
