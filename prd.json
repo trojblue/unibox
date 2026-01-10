@@ -1,0 +1,52 @@
+{
+  "project": "Unibox",
+  "branchName": "ralph/unibox-hf-upload-refine",
+  "description": "Refine ub.saves(\"hf://...\") handling for HuggingFace uploads",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Parse and normalize hf:// URIs",
+      "description": "As a developer, I want ub.saves to parse hf:// URIs so uploads always target the intended repo and path.",
+      "acceptanceCriteria": [
+        "hf://org/repo maps to repo_id=org/repo and default repo_type=model",
+        "hf://org/repo/path/to/file splits repo_id=org/repo and path_in_repo=path/to/file",
+        "hf://org/repo@revision parses repo_id and revision",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Resolve HuggingFace token",
+      "description": "As a developer, I want token resolution to be consistent so private repos fail fast with clear errors.",
+      "acceptanceCriteria": [
+        "Token resolution order: UB_HF_TOKEN, HF_TOKEN, HUGGINGFACE_TOKEN",
+        "When no token is available, raise a clear error mentioning the missing env vars",
+        "Token is passed to HuggingFace API calls when available",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Upload files and folders reliably",
+      "description": "As a developer, I want uploads to handle both files and folders with a consistent result.",
+      "acceptanceCriteria": [
+        "If local path is a file, use HuggingFace file upload API",
+        "If local path is a directory, use HuggingFace folder upload API",
+        "Provide a default commit message when none is given",
+        "Return or log the resulting repo URL or commit info (consistent with existing patterns)",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

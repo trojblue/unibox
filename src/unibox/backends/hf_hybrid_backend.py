@@ -11,6 +11,7 @@ from huggingface_hub import HfApi, hf_hub_download
 from huggingface_hub.errors import RepositoryNotFoundError
 
 from .base_backend import BaseBackend
+from ..utils.utils import parse_hf_uri
 
 HF_PREFIX = "hf://"
 START_MARKER = "<!-- BEGIN unibox_hf_autodoc -->"
@@ -21,31 +22,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def parse_hf_uri(hf_uri: str):
-    """Parse the Hugging Face URI in the format "hf://{owner}/{repo}/{path_in_repo}".
-    Returns (repo_id, path_in_repo).
-    """
-    if not hf_uri.startswith(HF_PREFIX):
-        raise ValueError(f"Invalid HF URI (no hf:// prefix): {hf_uri}")
-    # Remove the "hf://" prefix.
-    trimmed = hf_uri[len(HF_PREFIX) :]
-    parts = trimmed.split("/", 2)
-    if len(parts) < 2:
-        # e.g. "hf://username/repo" with no trailing subpath -> path_in_repo=''
-        owner, name = parts[0], ""
-        repo_id = owner  # Not strictly valid, but let's handle carefully
-        path_in_repo = ""
-        return repo_id, path_in_repo
-    if len(parts) == 2:
-        # e.g. "hf://owner/repo"
-        owner, name = parts
-        if "/" not in name:
-            return f"{owner}/{name}", ""
-        # fallback if there's a slash
-    # normal case: 3 parts
-    owner, name, subpath = parts
-    repo_id = f"{owner}/{name}"
-    return repo_id, subpath
 
 
 class HuggingfaceHybridBackend(BaseBackend):
@@ -66,7 +42,11 @@ class HuggingfaceHybridBackend(BaseBackend):
         """
         if not uri.startswith(HF_PREFIX):
             raise ValueError(f"Invalid HF URI: {uri}")
-        repo_id, path_in_repo = parse_hf_uri(uri)
+        parts = parse_hf_uri(uri)
+        repo_id = parts.repo_id
+        path_in_repo = parts.path_in_repo
+        repo_type = parts.repo_type
+        revision = parts.revision or "main"
         if not path_in_repo:
             # do nothing, let loader handle it (load dataset as hf://.../)
             logger.info(f"{uri}: is a Huggingface dataset; skipping download.")
@@ -77,21 +57,27 @@ class HuggingfaceHybridBackend(BaseBackend):
         os.makedirs(target_dir, exist_ok=True)
 
         # Download
-        revision = "main"  # or read from kwargs if you prefer
-
-        try:
-            local_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
-        except RepositoryNotFoundError:
-            logger.info(f"{uri}: is not a model repo; trying to download as dataset...")
+        if repo_type == "model":
             try:
-                local_path = hf_hub_download(
-                    repo_id=repo_id,
-                    filename=path_in_repo,
-                    revision="main",
-                    repo_type="dataset",
-                )
+                local_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
             except RepositoryNotFoundError:
-                raise ValueError(f"File not found in HF repo: {uri}")
+                logger.info(f"{uri}: is not a model repo; trying to download as dataset...")
+                try:
+                    local_path = hf_hub_download(
+                        repo_id=repo_id,
+                        filename=path_in_repo,
+                        revision=revision,
+                        repo_type="dataset",
+                    )
+                except RepositoryNotFoundError:
+                    raise ValueError(f"File not found in HF repo: {uri}")
+        else:
+            local_path = hf_hub_download(
+                repo_id=repo_id,
+                filename=path_in_repo,
+                revision=revision,
+                repo_type=repo_type,
+            )
 
         # Copy from HF cache to target_dir if needed
         filename_only = os.path.basename(path_in_repo)
@@ -103,18 +89,22 @@ class HuggingfaceHybridBackend(BaseBackend):
         """Upload a single local file to HF at the given subpath in repo.
         If the subpath is empty => we treat that as 'folder'? Or raise error?
         """
-        repo_id, path_in_repo = parse_hf_uri(uri)
+        parts = parse_hf_uri(uri)
+        repo_id = parts.repo_id
+        path_in_repo = parts.path_in_repo
+        repo_type = parts.repo_type
         if not path_in_repo or path_in_repo.endswith("/"):
             # user wants a directory push
             path_in_repo = path_in_repo.rstrip("/") + "/" + local_path.name
 
         # Ensure repo exists
-        self.api.create_repo(repo_id=repo_id, private=True, exist_ok=True)
+        self.api.create_repo(repo_id=repo_id, private=True, exist_ok=True, repo_type=repo_type)
         # Upload
         self.api.upload_file(
             path_or_fileobj=str(local_path),
             path_in_repo=path_in_repo,
             repo_id=repo_id,
+            repo_type=repo_type,
         )
 
     def ls(
@@ -128,9 +118,15 @@ class HuggingfaceHybridBackend(BaseBackend):
         """List all files in the HF repo. If path_in_repo is a subfolder prefix, we can filter.
         For extension filtering or subpath filtering, you'd manually do it. Here we do a simple approach.
         """
-        repo_id, path_in_repo = parse_hf_uri(uri)
+        parts = parse_hf_uri(uri)
+        repo_id = parts.repo_id
+        path_in_repo = parts.path_in_repo
+        repo_type = parts.repo_type
         try:
-            files = self.api.list_repo_files(repo_id=repo_id)
+            if repo_type == "model":
+                files = self.api.list_repo_files(repo_id=repo_id)
+            else:
+                files = self.api.list_repo_files(repo_id=repo_id, repo_type=repo_type)
         except RepositoryNotFoundError:
             logger.info(f"{uri}: is not a model repo; trying to list as dataset...")
             files = self.api.list_repo_files(repo_id=repo_id, repo_type="dataset")
@@ -162,8 +158,17 @@ class HuggingfaceHybridBackend(BaseBackend):
 
     def load_file(self, hf_uri: str, revision: str = "main") -> str:
         """Download a single file from the HF repo and return the local path."""
-        repo_id, path_in_repo = parse_hf_uri(hf_uri)
-        local_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
+        parts = parse_hf_uri(hf_uri)
+        repo_id = parts.repo_id
+        path_in_repo = parts.path_in_repo
+        repo_type = parts.repo_type
+        effective_revision = revision if revision != "main" or parts.revision is None else parts.revision
+        local_path = hf_hub_download(
+            repo_id=repo_id,
+            filename=path_in_repo,
+            revision=effective_revision,
+            repo_type=repo_type,
+        )
         print(f"load_file {hf_uri} -> {local_path}")
         return local_path
 
@@ -171,14 +176,18 @@ class HuggingfaceHybridBackend(BaseBackend):
         """Copy (upload) a local file to a Hugging Face repository.
         (Provided for reference; 'upload()' is the simpler approach.)
         """
-        repo_id, path_in_repo = parse_hf_uri(hf_uri)
+        parts = parse_hf_uri(hf_uri)
+        repo_id = parts.repo_id
+        path_in_repo = parts.path_in_repo
+        repo_type = parts.repo_type
         if hf_uri.endswith("/") or not os.path.basename(path_in_repo):
             path_in_repo = path_in_repo.rstrip("/") + "/" + os.path.basename(local_file_path)
-        self.api.create_repo(repo_id=repo_id, private=private, exist_ok=True)
+        self.api.create_repo(repo_id=repo_id, private=private, exist_ok=True, repo_type=repo_type)
         self.api.upload_file(
             path_or_fileobj=local_file_path,
             path_in_repo=path_in_repo,
             repo_id=repo_id,
+            repo_type=repo_type,
         )
         print(f"cp {local_file_path} hf://{repo_id}/{path_in_repo}")
 
@@ -186,10 +195,19 @@ class HuggingfaceHybridBackend(BaseBackend):
         """Copy (download) a file from a Hugging Face repository to a local path.
         (Provided for reference; 'download()' is the simpler approach.)
         """
-        repo_id, path_in_repo = parse_hf_uri(hf_uri)
+        parts = parse_hf_uri(hf_uri)
+        repo_id = parts.repo_id
+        path_in_repo = parts.path_in_repo
+        repo_type = parts.repo_type
         if os.path.isdir(local_file_path):
             local_file_path = os.path.join(local_file_path, os.path.basename(path_in_repo))
-        cached_file_path = hf_hub_download(repo_id=repo_id, filename=path_in_repo, revision=revision)
+        effective_revision = revision if revision != "main" or parts.revision is None else parts.revision
+        cached_file_path = hf_hub_download(
+            repo_id=repo_id,
+            filename=path_in_repo,
+            revision=effective_revision,
+            repo_type=repo_type,
+        )
         shutil.copy(cached_file_path, local_file_path)
         print(f"cp {hf_uri} {local_file_path}")
 

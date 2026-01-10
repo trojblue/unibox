@@ -58,9 +58,10 @@ class HFDatasetLoader(BaseLoader):
             loader_config = {}
 
         to_pandas = loader_config.get("to_pandas", False)
-        repo_id, subpath = parse_hf_uri(local_path)
+        parts = parse_hf_uri(local_path)
+        repo_id = parts.repo_id
         split = loader_config.get("split", "train")
-        revision = loader_config.get("revision", "main")
+        revision = loader_config.get("revision") or parts.revision or "main"
         # num_proc = loader_config.get("num_proc", 8)
         num_proc = 8
 
@@ -77,7 +78,8 @@ class HFDatasetLoader(BaseLoader):
             loader_config (Optional[Dict]): Configuration options
         """
         # Parse configs
-        repo_id, _ = parse_hf_uri(hf_uri)
+        parts = parse_hf_uri(hf_uri)
+        repo_id = parts.repo_id
         if not loader_config:
             loader_config = {}
 

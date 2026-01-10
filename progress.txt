@@ -1,0 +1,13 @@
+# Ralph Progress Log
+Started: Thu Jan  8 05:44:50 UTC 2026
+---
+## Codebase Patterns
+- Use `parse_hf_uri` for Hugging Face URIs; it returns `HfUriParts` with repo/path/revision/repo_type and still unpacks as `(repo_id, path_in_repo)`.
+## 2026-01-08 05:50:12 UTC - US-001
+Session: 
+- What was implemented: Added structured HF URI parsing (repo/path/revision/repo_type) and updated loaders/backends to consume revision/repo_type; added tests covering hf:// variants and backwards-compatible unpacking.
+- Files changed: src/unibox/utils/utils.py, src/unibox/loaders/loader_router.py, src/unibox/loaders/hf_dataset_loader.py, src/unibox/backends/hf_hybrid_backend.py, tests/test_utils.py, progress.txt
+- **Learnings for future iterations:**
+  - Patterns discovered: `parse_hf_uri` now returns `HfUriParts` but still supports tuple-unpacking for repo/path.
+  - Gotchas encountered: `make` and `pytest` were not available in this environment.
+---

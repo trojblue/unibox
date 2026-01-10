@@ -258,6 +258,9 @@ def generate_dataset_summary(
     repo_id: str,
     sample_rows: int = 3,
     max_unique_for_freq: int = 20,
+    profile_rows: int = 200_000,
+    max_rows_for_deep_memory: int = 1_000_000,
+    max_rows_for_duplicates: int = 200_000,
 ) -> str:
     """Generate a combined dataset summary markdown text that merges:
     - robust column-wise checks (numeric, datetime, object, bool) and missing values
@@ -277,26 +280,24 @@ def generate_dataset_summary(
             i += 1
         return f"{size_in_bytes:.2f} {units[i]}"
 
-    def column_memory_usage(df: pd.DataFrame) -> pd.DataFrame:
+    def column_memory_usage(df: pd.DataFrame, deep: bool) -> pd.DataFrame:
         """Compute per-column memory usage. Returns a DataFrame with:
         Column, Dtype, Memory Usage (bytes), and Readable Memory Usage.
         """
-        usage_info = []
-        for col in df.columns:
-            try:
-                col_bytes = df[col].memory_usage(deep=True)
-            except Exception:
-                # Fallback in case deep=True fails for any reason
-                col_bytes = df[col].memory_usage(deep=False)
-            usage_info.append(
-                {
-                    "Column": col,
-                    "Dtype": str(df[col].dtype),
-                    "Memory Usage (bytes)": col_bytes,
-                    "Readable Memory Usage": human_readable_size(col_bytes),
-                },
-            )
-        return pd.DataFrame(usage_info)
+        try:
+            usage = df.memory_usage(deep=deep, index=False)
+        except Exception:
+            usage = df.memory_usage(deep=False, index=False)
+        dtypes = df.dtypes.astype(str)
+        usage_values = usage.values if hasattr(usage, "values") else usage
+        return pd.DataFrame(
+            {
+                "Column": df.columns,
+                "Dtype": dtypes.values,
+                "Memory Usage (bytes)": usage_values,
+                "Readable Memory Usage": [human_readable_size(val) for val in usage_values],
+            },
+        )
 
     def truncate_text(text, max_len=50):
         """Truncate text to a max length for preview."""
@@ -304,42 +305,89 @@ def generate_dataset_summary(
             text = str(text)
         return text if len(text) <= max_len else text[: max_len - 3] + "..."
 
-    def compute_duplicates_count(df: pd.DataFrame) -> (int, str):
-        """Compute duplicated row count and duplicate rate (%) in a dataframe.
-        For safety, converts unhashable (object) columns to string representation
-        before calling .duplicated().
+    def compute_duplicates_count(df: pd.DataFrame, max_rows: int) -> tuple[Any, str, str]:
+        """Compute duplicated row count and duplicate rate (%).
+        Uses a capped sample for large frames to avoid full-table scans.
         """
-        safe_df = df.copy()
-        for col in safe_df.columns:
-            # Convert 'object' or 'category' dtypes to string for safe dedup check
-            col_dtype = safe_df[col].dtype
-            if str(col_dtype) in ["object", "category"]:
-                safe_df[col] = safe_df[col].astype(str)
+        if len(df) == 0:
+            return 0, "N/A", ""
+
+        if max_rows and len(df) > max_rows:
+            dup_df = df.head(max_rows)
+            note = f"(sample of {len(dup_df)})"
+        else:
+            dup_df = df
+            note = ""
 
         try:
-            duplicate_count = safe_df.duplicated().sum()
-            if len(safe_df) > 0:
-                duplicate_rate = f"{(duplicate_count / len(safe_df) * 100):.2f}%"
-            else:
-                duplicate_rate = "N/A"
+            duplicate_count = dup_df.duplicated().sum()
         except Exception:
-            duplicate_count = "N/A"
-            duplicate_rate = "N/A"
-
-        return duplicate_count, duplicate_rate
-
-    def build_robust_column_summaries(df: pd.DataFrame, max_unique_for_freq=10) -> str:
-        lines = []
-        lines.append("## Column Summaries:")
-
-        for col in df.columns:
-            lines.append(f"\n→ {col} ({df[col].dtype})")
             try:
-                col_data = df[col]
-                dtype = col_data.dtype
+                obj_cols = dup_df.select_dtypes(include=["object", "category"]).columns
+                if len(obj_cols) > 0:
+                    safe_df = dup_df.copy()
+                    safe_df[obj_cols] = safe_df[obj_cols].astype(str)
+                else:
+                    safe_df = dup_df
+                duplicate_count = safe_df.duplicated().sum()
+            except Exception:
+                return "N/A", "N/A", note
 
-                if pd.api.types.is_numeric_dtype(col_data) and not pd.api.types.is_bool_dtype(col_data):
-                    desc = col_data.describe()
+        total = len(dup_df)
+        duplicate_rate = f"{(duplicate_count / total * 100):.2f}%" if total else "N/A"
+        return duplicate_count, duplicate_rate, note
+
+    def build_robust_column_summaries(
+        summary_df: pd.DataFrame,
+        max_unique_for_freq: int = 10,
+        sample_note: str | None = None,
+    ) -> str:
+        lines = []
+        header = "## Column Summaries:"
+        if sample_note:
+            header = f"## Column Summaries ({sample_note}):"
+        lines.append(header)
+
+        if summary_df.empty:
+            lines.append("\n(No rows available for summary.)")
+            return "\n".join(lines)
+
+        numeric_cols = [
+            col
+            for col in summary_df.columns
+            if pd.api.types.is_numeric_dtype(summary_df[col]) and not pd.api.types.is_bool_dtype(summary_df[col])
+        ]
+        bool_cols = [col for col in summary_df.columns if pd.api.types.is_bool_dtype(summary_df[col])]
+        datetime_cols = [col for col in summary_df.columns if pd.api.types.is_datetime64_any_dtype(summary_df[col])]
+        numeric_set = set(numeric_cols)
+        bool_set = set(bool_cols)
+        datetime_set = set(datetime_cols)
+
+        numeric_stats = None
+        if numeric_cols:
+            try:
+                numeric_stats = summary_df[numeric_cols].agg(["min", "max", "mean", "std"])
+            except Exception:
+                numeric_stats = None
+
+        datetime_stats = None
+        if datetime_cols:
+            try:
+                datetime_stats = summary_df[datetime_cols].agg(["min", "max"])
+            except Exception:
+                datetime_stats = None
+
+        total_rows = len(summary_df)
+        for col in summary_df.columns:
+            lines.append(f"\n→ {col} ({summary_df[col].dtype})")
+            try:
+                col_data = summary_df[col]
+
+                if col in numeric_set:
+                    if numeric_stats is not None and col in numeric_stats:
+                        desc = numeric_stats[col]
+                    else:
+                        desc = col_data.describe()
                     parts = []
                     for key in ["min", "max", "mean", "std"]:
                         if key in desc and pd.notna(desc[key]):
@@ -351,20 +399,27 @@ def generate_dataset_summary(
                             )
                     lines.append("  - " + ", ".join(parts) if parts else "  - No valid numeric summary available")
 
-                elif pd.api.types.is_bool_dtype(col_data):
-                    total = len(col_data)
+                elif col in bool_set:
+                    total = total_rows
                     true_count = (col_data == True).sum()
                     false_count = (col_data == False).sum()
                     na_count = col_data.isna().sum()
-                    lines.append(
-                        f"  - True: {true_count} ({true_count / total:.2%}), False: {false_count} ({false_count / total:.2%})",
-                    )
+                    if total > 0:
+                        lines.append(
+                            f"  - True: {true_count} ({true_count / total:.2%}), False: {false_count} ({false_count / total:.2%})",
+                        )
+                    else:
+                        lines.append("  - True: 0 (N/A), False: 0 (N/A)")
                     if na_count > 0:
                         lines.append(f"  - Missing: {na_count} ({na_count / total:.2%})")
 
-                elif pd.api.types.is_datetime64_any_dtype(dtype):
-                    min_date = col_data.min()
-                    max_date = col_data.max()
+                elif col in datetime_set:
+                    if datetime_stats is not None and col in datetime_stats:
+                        min_date = datetime_stats[col].get("min")
+                        max_date = datetime_stats[col].get("max")
+                    else:
+                        min_date = col_data.min()
+                        max_date = col_data.max()
                     if pd.notna(min_date) and pd.notna(max_date):
                         lines.append(f"  - Range: {min_date} → {max_date}")
                     else:
@@ -401,13 +456,22 @@ def generate_dataset_summary(
                             lines.append("    - Could not determine typical length")
 
                     else:
-                        unique_vals = non_null.unique()
-                        nunique = len(unique_vals)
+                        col_for_freq = col_data
+                        try:
+                            nunique = col_data.nunique(dropna=True)
+                        except Exception:
+                            try:
+                                col_for_freq = col_data.astype(str)
+                                nunique = col_for_freq.nunique(dropna=True)
+                            except Exception:
+                                lines.append("  - Unique values: N/A")
+                                continue
+
                         lines.append(f"  - Unique values: {nunique}")
                         if nunique <= max_unique_for_freq:
-                            freqs = col_data.value_counts(dropna=False).head(max_unique_for_freq)
+                            freqs = col_for_freq.value_counts(dropna=False).head(max_unique_for_freq)
                             for val, count in freqs.items():
-                                percent = count / len(df) * 100
+                                percent = count / total_rows * 100 if total_rows else 0
                                 lines.append(f"    - {val!r}: {count} ({percent:.2f}%)")
 
             except Exception as e:
@@ -418,16 +482,45 @@ def generate_dataset_summary(
     # -------------------------------------------------------------
     # 3) Compute memory, duplicates, missing info
     # -------------------------------------------------------------
-    mem_df = column_memory_usage(df)
+    row_count = len(df)
+    col_count = len(df.columns)
+
+    if profile_rows is None or profile_rows <= 0:
+        profile_rows = row_count
+
+    if row_count > profile_rows:
+        profile_df = df.head(profile_rows)
+        profile_note = f"first {len(profile_df)} rows"
+    else:
+        profile_df = df
+        profile_note = ""
+
+    object_cols_count = df.select_dtypes(include=["object"]).shape[1]
+    use_deep_memory = object_cols_count > 0 and row_count <= max_rows_for_deep_memory
+    mem_df = column_memory_usage(df, deep=use_deep_memory)
     total_mem = mem_df["Memory Usage (bytes)"].sum()
     total_mem_readable = human_readable_size(total_mem)
+    memory_note = ""
+    if not use_deep_memory and object_cols_count > 0:
+        memory_note = "Memory usage excludes deep object sizes for performance."
 
     # Missing stats
-    missing_count = df.isnull().sum()
-    missing_rate = (missing_count / len(df) * 100).round(2).astype(str) + "%"
+    missing_df = profile_df if profile_note else df
+    if len(missing_df) > 0:
+        missing_count = missing_df.isnull().sum()
+        missing_rate = (missing_count / len(missing_df) * 100).round(2).astype(str) + "%"
+    else:
+        missing_count = pd.Series([0] * col_count, index=df.columns)
+        missing_rate = pd.Series(["N/A"] * col_count, index=df.columns)
+
+    missing_count_label = "Missing Count"
+    missing_rate_label = "Missing Rate"
+    if profile_note:
+        missing_count_label = f"Missing Count (sample {len(missing_df)})"
+        missing_rate_label = "Missing Rate (sample)"
 
     # Duplicate stats
-    duplicate_count, duplicate_rate = compute_duplicates_count(df)
+    duplicate_count, duplicate_rate, duplicate_note = compute_duplicates_count(df, max_rows_for_duplicates)
 
     # Combine memory, dtype, missing info into a single DataFrame
     stats_df = pd.DataFrame(
@@ -435,27 +528,29 @@ def generate_dataset_summary(
             "Column": df.columns,
             "Dtype": mem_df["Dtype"],
             "Memory Usage": mem_df["Readable Memory Usage"],
-            "Missing Count": missing_count.values,
-            "Missing Rate": missing_rate.values,
+            missing_count_label: missing_count.values,
+            missing_rate_label: missing_rate.values,
         },
     )
 
     # Add a total row at the bottom
+    denom = len(missing_df) * col_count if col_count else 0
+    total_missing_rate = f"{(missing_count.sum() / denom * 100):.2f}%" if denom else "N/A"
     total_row = pd.DataFrame(
         [
             {
                 "Column": "",
                 "Dtype": "",
                 "Memory Usage": "",
-                "Missing Count": "",
-                "Missing Rate": "",
+                missing_count_label: "",
+                missing_rate_label: "",
             },
             {
                 "Column": "**TOTAL**",
                 "Dtype": "N/A",
                 "Memory Usage": total_mem_readable,
-                "Missing Count": missing_count.sum(),
-                "Missing Rate": f"{(missing_count.sum() / (len(df) * len(df.columns)) * 100):.2f}%",
+                missing_count_label: missing_count.sum(),
+                missing_rate_label: total_missing_rate,
             },
         ],
     )
@@ -472,14 +567,18 @@ def generate_dataset_summary(
     # 4) Build column summaries
     # -------------------------------------------------------------
     try:
-        column_summaries_text = build_robust_column_summaries(df)
+        column_summaries_text = build_robust_column_summaries(
+            profile_df,
+            max_unique_for_freq=max_unique_for_freq,
+            sample_note=profile_note or None,
+        )
     except Exception as e:
         column_summaries_text = f"Error generating column summaries: {e}"
 
     # -------------------------------------------------------------
     # 5) Build a safe sample preview
     # -------------------------------------------------------------
-    preview_df = df.copy()
+    preview_df = df.head(sample_rows).copy()
 
     # Truncate long object columns for preview
     for col in preview_df.select_dtypes(include=["object"]):
@@ -525,13 +624,21 @@ def generate_dataset_summary(
     # -------------------------------------------------------------
     # 6) Construct final markdown output
     # -------------------------------------------------------------
+    notes = []
+    if profile_note:
+        notes.append(f"Profiling based on {profile_note}.")
+    if memory_note:
+        notes.append(memory_note)
+    notes_text = f"- Notes: {' '.join(notes)}\n" if notes else ""
+
     readme_text = f"""# {repo_id}
 (Auto-generated summary)
 
 ## Basic Info:
 - Shape: **{df.shape[0]}** rows × **{df.shape[1]}** columns
 - Total Memory Usage: {total_mem_readable}
-- Duplicates: {duplicate_count} ({duplicate_rate})
+- Duplicates: {duplicate_count} ({duplicate_rate}) {duplicate_note}
+{notes_text}
 
 ## Column Stats:
 

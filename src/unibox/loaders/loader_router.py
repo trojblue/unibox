@@ -47,7 +47,8 @@ def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
 
     # Handle HuggingFace URIs
     if path_str.startswith("hf://"):
-        repo_id, subpath = parse_hf_uri(path_str)
+        parts = parse_hf_uri(path_str)
+        subpath = parts.path_in_repo
         # If no subpath or no extension in subpath, treat as dataset
         if not subpath or "." not in subpath:
             return HFDatasetLoader()
