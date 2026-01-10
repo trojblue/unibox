@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.12.0](https://github.com/trojblue/unibox/releases/tag/0.12.0) - 2026-01-10
+
+<small>[Compare with 0.11.2](https://github.com/trojblue/unibox/compare/0.11.2...0.12.0)</small>
+
+### Features
+
+- Enhance dataset summary generation with additional profiling options and improved memory usage calculations ([6f31bdf](https://github.com/trojblue/unibox/commit/6f31bdfeaeb6d66cfa947ecbdecdb2d3ba63d4b1) by trojblue).
+- US-001 - Parse and normalize hf:// URIs ([3db5b51](https://github.com/trojblue/unibox/commit/3db5b515ba9020c6980175d1bd9b8207093b0e34) by Ubuntu).
+
 ## [0.11.2](https://github.com/trojblue/unibox/releases/tag/0.11.2) - 2026-01-07
 
 <small>[Compare with 0.11.1](https://github.com/trojblue/unibox/compare/0.11.1...0.11.2)</small>
