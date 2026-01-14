@@ -64,3 +64,13 @@ def test_loads_and_saves(uri: str, expected_non_empty: bool, is_image: bool, tmp
         assert data.equals(reloaded)
     else:  # other types
         assert data == reloaded
+
+
+def test_saves_creates_parent_dir(tmp_path: Path) -> None:
+    data = {"hello": "world"}
+    save_path = tmp_path / "nested" / "dir" / "sample.json"
+
+    ub.saves(data, save_path)
+
+    assert save_path.exists()
+    assert ub.loads(save_path) == data

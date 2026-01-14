@@ -73,7 +73,13 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
     return load_data(uri, loader_config=kwargs)
 
 
-def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) -> None:
+def saves(
+    data: Any,
+    uri: Union[str, Path],
+    debug_print: bool = True,
+    create_dir: bool = True,
+    **kwargs,
+) -> None:
     """Save data to a file or dataset.
 
     For HuggingFace URIs:
@@ -84,12 +90,16 @@ def saves(data: Any, uri: Union[str, Path], debug_print: bool = True, **kwargs) 
         data: Data to save
         uri: Path or URI to save to
         debug_print: Whether to print debug info
+        create_dir: Whether to create parent directories for local file paths
         **kwargs: Additional arguments passed to loader
             For HF datasets: split, private, etc.
             For files: loader-specific arguments
     """
     if debug_print:
         logger.info(f"Saving to {uri}")
+
+    if create_dir and "://" not in str(uri):
+        Path(uri).expanduser().parent.mkdir(parents=True, exist_ok=True)
 
     # Get the appropriate loader
     loader = get_loader_for_path(uri)
