@@ -1,8 +1,11 @@
+import inspect
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 import unibox as ub
+from unibox.loaders.cdc_parquet_loader import CdcParquetLoader
 from unibox.loaders.loader_router import get_loader_for_path
 
 
@@ -74,3 +77,25 @@ def test_saves_creates_parent_dir(tmp_path: Path) -> None:
 
     assert save_path.exists()
     assert ub.loads(save_path) == data
+
+
+def test_cdc_parquet_roundtrip(tmp_path: Path) -> None:
+    if "use_content_defined_chunking" not in inspect.signature(pd.DataFrame.to_parquet).parameters:
+        pytest.skip("Parquet CDC not supported by installed pandas/pyarrow.")
+
+    df = pd.DataFrame({"id": [1, 2, 3], "name": ["a", "b", "c"]})
+    save_path = tmp_path / "sample.cdc.parquet"
+
+    loader = get_loader_for_path(save_path)
+    assert isinstance(loader, CdcParquetLoader)
+
+    ub.saves(df, save_path)
+    reloaded = ub.loads(save_path)
+
+    assert df.equals(reloaded)
+
+    alias_path = tmp_path / "sample_alias.parquet"
+    ub.saves(df, alias_path, cdc=True)
+    alias_reloaded = ub.loads(alias_path)
+
+    assert df.equals(alias_reloaded)

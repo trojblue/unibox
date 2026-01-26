@@ -21,6 +21,7 @@ class ParquetLoader(BaseLoader):
         "engine",  # str: 'pyarrow' or 'fastparquet'
         "compression",  # str or None: Compression method
         "index",  # bool: Whether to save index
+        "use_content_defined_chunking",  # bool: Enable Parquet CDC (pyarrow)
     }
 
     def load(self, file_path: Path, loader_config: Optional[Dict] = None) -> pd.DataFrame:
@@ -56,8 +57,20 @@ class ParquetLoader(BaseLoader):
             data (pd.DataFrame): DataFrame to save
             loader_config (Optional[Dict]): Configuration options for to_parquet
         """
-        config = loader_config or {}
+        config = dict(loader_config or {})
         used_keys: Set[str] = set()
+
+        if "cdc" in config:
+            if "use_content_defined_chunking" not in config:
+                config["use_content_defined_chunking"] = config["cdc"]
+            elif config["use_content_defined_chunking"] != config["cdc"]:
+                import warnings
+
+                warnings.warn(
+                    "Both cdc and use_content_defined_chunking are set; "
+                    "use_content_defined_chunking takes precedence.",
+                )
+            used_keys.add("cdc")
 
         # Extract supported arguments from config
         kwargs = {}

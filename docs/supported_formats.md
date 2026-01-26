@@ -12,6 +12,7 @@ Unibox routes files by extension and URI scheme. This page summarizes the curren
 | --- | --- | --- | --- |
 | Tabular | `.csv` | CSVLoader | Loads to DataFrame |
 | Tabular | `.parquet` | ParquetLoader | Loads to DataFrame |
+| Tabular | `.cdc.parquet`, `.parquet.cdc` | CdcParquetLoader | Parquet with content-defined chunking enabled |
 | JSON | `.json` | JSONLoader | Loads to dict/list |
 | JSONL | `.jsonl` | JSONLLoader | Loads to list of dicts |
 | Text | `.txt`, `.md`, `.markdown` | TxtLoader | Loads to string |
@@ -21,6 +22,10 @@ Unibox routes files by extension and URI scheme. This page summarizes the curren
 
 !!! note
     Image extensions are defined in `src/unibox/utils/constants.py`.
+
+!!! tip
+    For parquet saves, you can enable content-defined chunking with
+    `ub.saves(df, "path.parquet", cdc=True)` or `use_content_defined_chunking=True`.
 
 ## Hugging Face URIs
 

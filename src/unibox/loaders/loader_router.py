@@ -10,6 +10,7 @@ from ..utils.constants import IMG_FILES
 from ..utils.utils import parse_hf_uri
 from .base_loader import BaseLoader
 from .csv_loader import CSVLoader
+from .cdc_parquet_loader import CdcParquetLoader
 from .hf_dataset_loader import HFDatasetLoader
 from .image_loder import ImageLoader
 from .json_loader import JSONLoader
@@ -66,7 +67,11 @@ def get_loader_for_path(path: Union[str, Path]) -> Optional[BaseLoader]:
         return HFDatasetLoader()
 
     # Handle file extensions
-    suffix = Path(path_str).suffix.lower()
+    suffixes = [s.lower() for s in Path(path_str).suffixes]
+    suffix = suffixes[-1] if suffixes else ""
+
+    if len(suffixes) >= 2 and suffixes[-2:] in ([".cdc", ".parquet"], [".parquet", ".cdc"]):
+        return CdcParquetLoader()
     if suffix == ".csv":
         return CSVLoader()
     if suffix in IMG_FILES:
