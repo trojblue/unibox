@@ -1,7 +1,7 @@
 # unibox.py
 import os
 import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -10,6 +10,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from .backends.backend_router import get_backend_for_uri
+from .backends.http_backend import HTTPBackend
 from .loaders.loader_router import get_loader_for_path, load_data
 from .utils.df_utils import coerce_json_like_to_df
 from .utils.logger import UniLogger
@@ -17,6 +18,40 @@ from .utils.s3_client import S3Client
 
 s3_client = None
 logger = UniLogger()
+HTTP_DOWNLOAD_KWARGS = {"target_dir", "timeout", "retries", "retry_backoff", "chunk_size", "headers"}
+NON_HTTP_DOWNLOAD_KWARGS = HTTP_DOWNLOAD_KWARGS - {"target_dir"}
+
+
+def _resolve_downloaded_path(local_path: Union[str, Path]) -> Path:
+    resolved_path = Path(local_path).resolve(strict=False)
+    if not (resolved_path.exists() or os.path.lexists(str(resolved_path))):
+        raise FileNotFoundError(f"File not found: {resolved_path}")
+    return resolved_path
+
+
+def _load_from_local_path(local_path: Union[str, Path], loader_config: Optional[Dict[str, Any]] = None) -> Any:
+    resolved_path = _resolve_downloaded_path(local_path)
+    loader = get_loader_for_path(resolved_path)
+    if loader is None:
+        raise ValueError(f"No loader found for path: {resolved_path}")
+    return loader.load(resolved_path, loader_config=loader_config or {})
+
+
+def _split_http_download_kwargs(kwargs: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    download_kwargs = {key: value for key, value in kwargs.items() if key in HTTP_DOWNLOAD_KWARGS}
+    loader_kwargs = {key: value for key, value in kwargs.items() if key not in HTTP_DOWNLOAD_KWARGS}
+    return download_kwargs, loader_kwargs
+
+
+def _is_http_uri(uri: Union[str, Path]) -> bool:
+    return str(uri).startswith(("http://", "https://"))
+
+
+def _raise_if_unsupported_non_http_download_kwargs(kwargs: Dict[str, Any], context: str) -> None:
+    unsupported = sorted(key for key in kwargs if key in NON_HTTP_DOWNLOAD_KWARGS)
+    if unsupported:
+        joined = ", ".join(unsupported)
+        raise ValueError(f"{joined} {context} only supported for HTTP/HTTPS URIs.")
 
 
 def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
@@ -31,12 +66,10 @@ def load_file(uri: Union[str, Path], debug_print: bool = True, **kwargs) -> str:
 
     # Download the file if needed
     local_path = backend.download(str(uri), **kwargs)
-    resolved_path = Path(local_path).resolve(strict=False)
-    if not (resolved_path.exists() or os.path.lexists(str(resolved_path))):
-        raise FileNotFoundError(f"File not found: {resolved_path}")
+    resolved_path = _resolve_downloaded_path(local_path)
 
     # Load the file contents
-    with open(local_path, encoding="utf-8") as f:
+    with open(resolved_path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -49,7 +82,10 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
 
     Args:
         uri: Path or URI to load from
-        file: If True, return the local file path instead of parsing
+        file: If True, return the local file path instead of parsing.
+            For HTTP/HTTPS URIs, you can pass download options like
+            `target_dir`, `timeout`, `retries`, `retry_backoff`,
+            `chunk_size`, and `headers`.
         debug_print: Whether to print debug info
         **kwargs: Additional arguments passed to loader
             For HF datasets: split, streaming, revision, etc.
@@ -63,11 +99,18 @@ def loads(uri: Union[str, Path], file: bool = False, debug_print: bool = True, *
         backend = get_backend_for_uri(str(uri))
         if backend is None:
             raise ValueError(f"No backend found for URI: {uri}")
+        if not isinstance(backend, HTTPBackend):
+            _raise_if_unsupported_non_http_download_kwargs(kwargs, "are")
         local_path = backend.download(str(uri), **kwargs)
-        resolved_path = Path(local_path).resolve(strict=False)
-        if not (resolved_path.exists() or os.path.lexists(str(resolved_path))):
-            raise FileNotFoundError(f"File not found: {resolved_path}")
-        return resolved_path
+        return _resolve_downloaded_path(local_path)
+
+    if _is_http_uri(uri):
+        backend = get_backend_for_uri(str(uri))
+        if not isinstance(backend, HTTPBackend):
+            raise ValueError(f"No HTTP backend found for URI: {uri}")
+        download_kwargs, loader_kwargs = _split_http_download_kwargs(kwargs)
+        local_path = backend.download(str(uri), **download_kwargs)
+        return _load_from_local_path(local_path, loader_config=loader_kwargs)
 
     # Use the loader router to handle both dataset and file loading
     return load_data(uri, loader_config=kwargs)
@@ -154,15 +197,43 @@ def ls(
     return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, **kwargs)
 
 
-def concurrent_loads(uris_list: List[str], num_workers: int = 8, debug_print: bool = True) -> List[Any]:
-    """Load multiple files concurrently."""
+def concurrent_loads(
+    uris_list: List[Union[str, Path]],
+    num_workers: int = 8,
+    file: bool = False,
+    debug_print: bool = True,
+    **kwargs,
+) -> List[Any]:
+    """Load multiple files concurrently.
+
+    For pure HTTP/HTTPS batches, this uses a thread pool because the workload is
+    dominated by network I/O. Other URI types keep the existing process-based
+    behavior. For HTTP/HTTPS batches with `file=True`, pass `target_dir` to
+    save downloads into a specific directory.
+    """
+    uris = [str(uri) for uri in uris_list]
     results = [None] * len(uris_list)
-    with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        partial_load = partial(loads, debug_print=False)
-        future_to_idx = {executor.submit(partial_load, u): i for i, u in enumerate(uris_list)}
+    all_http = bool(uris) and all(_is_http_uri(uri) for uri in uris)
+
+    if file and not all_http:
+        _raise_if_unsupported_non_http_download_kwargs(kwargs, "are")
+
+    if all_http and file:
+        backend = HTTPBackend()
+        downloaded = backend.download_many(uris, num_workers=num_workers, debug_print=debug_print, **kwargs)
+        results = [_resolve_downloaded_path(path) if path is not None else None for path in downloaded]
+        missing = sum(path is None for path in results)
+        if missing > 0:
+            logger.warning(f"{missing} loads returned None.")
+        return results
+
+    executor_cls = ThreadPoolExecutor if all_http else ProcessPoolExecutor
+    with executor_cls(max_workers=num_workers) as executor:
+        partial_load = partial(loads, file=file, debug_print=False, **kwargs)
+        future_to_idx = {executor.submit(partial_load, uri): i for i, uri in enumerate(uris)}
 
         if debug_print:
-            futures_iter = tqdm(as_completed(future_to_idx), total=len(uris_list), desc="Loading concurrent")
+            futures_iter = tqdm(as_completed(future_to_idx), total=len(uris), desc="Loading concurrent")
         else:
             futures_iter = as_completed(future_to_idx)
 
@@ -171,7 +242,7 @@ def concurrent_loads(uris_list: List[str], num_workers: int = 8, debug_print: bo
             try:
                 results[idx] = future.result()
             except Exception as e:
-                logger.error(f"Exception reading {uris_list[idx]}: {e}")
+                logger.error(f"Exception reading {uris[idx]}: {e}")
 
     missing = sum(r is None for r in results)
     if missing > 0:

@@ -34,6 +34,25 @@ items = ub.concurrent_loads(uris, num_workers=8)
 print(len(items))
 ```
 
+For HTTP downloads only, `file=True` returns local cached paths and uses a thread pool under the hood. Pass `target_dir` to save into a specific directory:
+
+```python
+import unibox as ub
+
+urls = [
+    "https://example.com/a.jpg",
+    "https://example.com/b.jpg",
+]
+
+paths = ub.concurrent_loads(
+    urls,
+    num_workers=16,
+    file=True,
+    target_dir="downloads",
+)
+print(paths[0])
+```
+
 ## List and filter by extension
 
 ```python
