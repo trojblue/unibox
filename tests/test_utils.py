@@ -1,4 +1,25 @@
+import logging
+from uuid import uuid4
+
+from unibox.utils.logger import UniLogger
 from unibox.utils.utils import parse_hf_uri
+
+
+def test_unilogger_reuses_existing_handlers(tmp_path) -> None:
+    logger_name = f"test-unibox-{uuid4()}"
+    first = UniLogger(output_dir=str(tmp_path), logger_name=logger_name)
+    try:
+        initial_handlers = list(first.logger.handlers)
+
+        UniLogger(output_dir=str(tmp_path), logger_name=logger_name)
+        UniLogger(output_dir=str(tmp_path), logger_name=logger_name)
+
+        assert first.logger.handlers == initial_handlers
+        assert sum(isinstance(handler, logging.FileHandler) for handler in initial_handlers) == 1
+    finally:
+        for handler in list(first.logger.handlers):
+            first.logger.removeHandler(handler)
+            handler.close()
 
 
 def test_parse_hf_uri_basic() -> None:

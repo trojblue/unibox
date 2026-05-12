@@ -151,6 +151,17 @@ def column_memory_usage(dataframe: pd.DataFrame) -> pd.DataFrame:
     return mem_df
 
 
+def _object_string_or_category_columns(df: pd.DataFrame, include_category: bool = False) -> list[Any]:
+    columns = []
+    for col in df.columns:
+        dtype = df[col].dtype
+        if pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(dtype):
+            columns.append(col)
+        elif include_category and isinstance(dtype, pd.CategoricalDtype):
+            columns.append(col)
+    return columns
+
+
 def downcast_numerical_columns(df: pd.DataFrame):
     """Reduce precision of numerical columns using to_numeric with downcast"""
     numerical_columns = df.select_dtypes(include=["int64", "float64"]).columns
@@ -202,9 +213,6 @@ def truncate_text(text, max_length=200):
             return text[:max_length] + "..."
         return text.replace("\n", " ")  # Remove excessive newlines
     return text
-
-
-import pandas as pd
 
 
 def _markdown_cell(value: Any) -> str:
@@ -323,7 +331,7 @@ def generate_dataset_summary(
             duplicate_count = dup_df.duplicated().sum()
         except Exception:
             try:
-                obj_cols = dup_df.select_dtypes(include=["object", "category"]).columns
+                obj_cols = _object_string_or_category_columns(dup_df, include_category=True)
                 if len(obj_cols) > 0:
                     safe_df = dup_df.copy()
                     safe_df[obj_cols] = safe_df[obj_cols].astype(str)
@@ -401,8 +409,8 @@ def generate_dataset_summary(
 
                 elif col in bool_set:
                     total = total_rows
-                    true_count = (col_data == True).sum()
-                    false_count = (col_data == False).sum()
+                    true_count = col_data.eq(True).sum()
+                    false_count = col_data.eq(False).sum()
                     na_count = col_data.isna().sum()
                     if total > 0:
                         lines.append(
@@ -495,7 +503,7 @@ def generate_dataset_summary(
         profile_df = df
         profile_note = ""
 
-    object_cols_count = df.select_dtypes(include=["object"]).shape[1]
+    object_cols_count = len(_object_string_or_category_columns(df))
     use_deep_memory = object_cols_count > 0 and row_count <= max_rows_for_deep_memory
     mem_df = column_memory_usage(df, deep=use_deep_memory)
     total_mem = mem_df["Memory Usage (bytes)"].sum()
@@ -581,7 +589,7 @@ def generate_dataset_summary(
     preview_df = df.head(sample_rows).copy()
 
     # Truncate long object columns for preview
-    for col in preview_df.select_dtypes(include=["object"]):
+    for col in _object_string_or_category_columns(preview_df):
         try:
             preview_df[col] = preview_df[col].apply(
                 lambda x: truncate_text(x) if x is not None else None,

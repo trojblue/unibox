@@ -34,6 +34,76 @@ class HFDatasetLoader(BaseLoader):
         self.hf_api_backend = HuggingfaceHybridBackend()
         self._max_rows_for_df_summary = 200_000
 
+    def _install_hf_xet_session_downloader(self) -> None:
+        """Use the non-deprecated hf_xet session API when Hugging Face Hub has not adopted it yet."""
+        try:
+            import huggingface_hub.file_download as hf_file_download
+            from hf_xet import XetFileInfo, XetSession
+        except (ImportError, AttributeError):
+            return
+
+        current_xet_get = getattr(hf_file_download, "xet_get", None)
+        if current_xet_get is None or getattr(current_xet_get, "_unibox_uses_xet_session", False):
+            return
+        try:
+            import inspect
+
+            source = inspect.getsource(current_xet_get)
+        except (OSError, TypeError):
+            return
+        if "download_files(" not in source:
+            return
+
+        def xet_get(
+            *,
+            incomplete_path,
+            xet_file_data,
+            headers,
+            expected_size=None,
+            displayed_filename=None,
+            tqdm_class=None,
+            _tqdm_bar=None,
+        ) -> None:
+            connection_info = hf_file_download.refresh_xet_connection_info(file_data=xet_file_data, headers=headers)
+            file_info = XetFileInfo(hash=xet_file_data.file_hash, file_size=expected_size)
+
+            if not displayed_filename:
+                displayed_filename = incomplete_path.name
+            if len(displayed_filename) > 40:
+                displayed_filename = f"{displayed_filename[:40]}(...)"
+
+            progress_cm = hf_file_download._get_progress_bar_context(
+                desc=displayed_filename,
+                log_level=hf_file_download.logger.getEffectiveLevel(),
+                total=expected_size,
+                initial=0,
+                name="huggingface_hub.xet_get",
+                tqdm_class=tqdm_class,
+                _tqdm_bar=_tqdm_bar,
+            )
+
+            xet_headers = headers.copy()
+            xet_headers.pop("authorization", None)
+            with progress_cm as progress:
+                with XetSession().new_file_download_group(
+                    endpoint=connection_info.endpoint,
+                    token=connection_info.access_token,
+                    token_expiry_unix_secs=connection_info.expiration_unix_epoch,
+                    token_refresh_url=xet_file_data.refresh_route,
+                    token_refresh_headers=headers,
+                    custom_headers=xet_headers,
+                ) as download_group:
+                    download = download_group.start_download_file(file_info, str(incomplete_path.absolute()))
+                    download.result()
+
+                if expected_size is not None:
+                    remaining = expected_size - getattr(progress, "n", 0)
+                    if remaining > 0:
+                        progress.update(remaining)
+
+        setattr(xet_get, "_unibox_uses_xet_session", True)
+        hf_file_download.xet_get = xet_get
+
     def load(self, local_path: str, loader_config: Optional[Dict] = None) -> Any:
         """Load a dataset from a local path or cache.
 
@@ -65,9 +135,12 @@ class HFDatasetLoader(BaseLoader):
         # num_proc = loader_config.get("num_proc", 8)
         num_proc = 8
 
+        self._install_hf_xet_session_downloader()
+        dataset = load_dataset(repo_id, split=split, revision=revision, num_proc=num_proc)
+
         if to_pandas:
-            return load_dataset(repo_id, split=split, revision=revision, num_proc=num_proc).to_pandas()
-        return load_dataset(repo_id, split=split, revision=revision, num_proc=num_proc)
+            return dataset.to_pandas()
+        return dataset
 
     def save(self, hf_uri: str, data: Any, loader_config: Optional[Dict] = None) -> None:
         """Save data as a HuggingFace dataset to a local path.

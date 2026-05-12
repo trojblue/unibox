@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 from datetime import datetime
-from pathlib import Path
 
 import colorama
 import colorlog
@@ -59,9 +58,13 @@ class UniLogger:
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
         # Prepare handlers
-        self.handlers = []
+        if self.logger.handlers:
+            self.handlers = list(self.logger.handlers)
+            self._setup_formatters()
+            return
 
         # Optional file handler
+        self.handlers = []
         if self.write_log:
             # Use resolved log directory if default output_dir is used
             if output_dir == "logs":
@@ -79,9 +82,8 @@ class UniLogger:
         self.handlers.append(ch)
 
         # Add handlers to logger
-        if not self.logger.hasHandlers():
-            for h in self.handlers:
-                self.logger.addHandler(h)
+        for h in self.handlers:
+            self.logger.addHandler(h)
 
         self._setup_formatters()
 
