@@ -1,6 +1,7 @@
 # unibox.py
 import os
 import warnings
+from collections.abc import Iterable, Mapping
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
@@ -178,13 +179,39 @@ def to_df(
 
 
 def ls(
-    uri: Union[str, Path],
+    uri: Union[str, Path, Iterable[Union[str, Path]]],
     exts: Optional[List[str]] = None,
     relative_unix: bool = False,
     debug_print: bool = True,
     **kwargs,
 ) -> list[str]:
-    """List files in a directory or dataset."""
+    """List files in one or more directories or datasets."""
+    include_extensions = kwargs.pop("include_extensions", None)
+    if include_extensions is not None:
+        warnings.warn(
+            "`include_extensions` is deprecated; use `exts` instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        exts = include_extensions
+
+    if isinstance(uri, Mapping):
+        raise TypeError("uri must be a string, Path, or iterable of strings/Paths.")
+
+    if not isinstance(uri, (str, bytes, Path)) and isinstance(uri, Iterable):
+        files = []
+        for item in uri:
+            files.extend(
+                ls(
+                    item,
+                    exts=exts,
+                    relative_unix=relative_unix,
+                    debug_print=debug_print,
+                    **kwargs,
+                )
+            )
+        return files
+
     if debug_print:
         logger.info(f"Listing contents of {uri}")
 
@@ -194,7 +221,7 @@ def ls(
         raise ValueError(f"No backend found for URI: {uri}")
 
     # List the files
-    return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, **kwargs)
+    return backend.ls(str(uri), exts=exts, relative_unix=relative_unix, debug_print=debug_print, **kwargs)
 
 
 def concurrent_loads(

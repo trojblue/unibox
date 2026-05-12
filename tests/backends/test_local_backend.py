@@ -1,3 +1,4 @@
+import importlib
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,6 @@ def test_folder(tmp_path):
     test_dir.mkdir()
 
     # Add sample files in the root directory
-    extensions = ["jpg", "json", "parquet"]
     file_counts = {"jpg": 6, "json": 3, "parquet": 1}
     for ext, count in file_counts.items():
         for i in range(count):
@@ -55,6 +55,41 @@ def test_ls_exts(test_folder):
 
     # Ensure the total number of files is correct
     assert len(files) == 6 + 3 + 1, "Incorrect number of files returned for extensions jpg and json"
+
+
+def test_ls_multiple_paths(tmp_path):
+    """Test that ls() accepts multiple root directories."""
+    first_dir = tmp_path / "first"
+    second_dir = tmp_path / "second"
+    first_dir.mkdir()
+    second_dir.mkdir()
+    (first_dir / "first.webp").touch()
+    (first_dir / "first.txt").touch()
+    (second_dir / "second.webp").touch()
+
+    files = ub.ls([first_dir, second_dir], exts=ub.IMG_FILES, debug_print=False)
+
+    assert files == [
+        str(first_dir.resolve() / "first.webp"),
+        str(second_dir.resolve() / "second.webp"),
+    ]
+
+
+def test_ls_forwards_debug_print(monkeypatch):
+    """Test that the public ls() debug_print flag reaches the selected backend."""
+    unibox_module = importlib.import_module("unibox.unibox")
+    received_debug_print = []
+
+    class Backend:
+        def ls(self, uri, exts=None, relative_unix=False, debug_print=True, **kwargs):
+            received_debug_print.append(debug_print)
+            return []
+
+    monkeypatch.setattr(unibox_module, "get_backend_for_uri", lambda uri: Backend())
+
+    ub.ls("local/path", debug_print=False)
+
+    assert received_debug_print == [False]
 
 
 def test_ls_backward_compatibility(test_folder):
