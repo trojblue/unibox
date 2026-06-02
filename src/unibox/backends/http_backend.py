@@ -1,4 +1,5 @@
 import hashlib
+import mimetypes
 import os
 import shutil
 import threading
@@ -16,6 +17,27 @@ from tqdm.auto import tqdm
 from ..utils.constants import BLACKLISTED_PATHS
 from ..utils.logger import UniLogger
 from .base_backend import BaseBackend
+
+
+CONTENT_TYPE_EXTENSIONS = {
+    "application/json": ".json",
+    "application/toml": ".toml",
+    "application/vnd.apache.parquet": ".parquet",
+    "application/x-ndjson": ".jsonl",
+    "application/x-yaml": ".yaml",
+    "application/yaml": ".yaml",
+    "image/bmp": ".bmp",
+    "image/gif": ".gif",
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/svg+xml": ".svg",
+    "image/tiff": ".tiff",
+    "image/webp": ".webp",
+    "text/csv": ".csv",
+    "text/markdown": ".md",
+    "text/plain": ".txt",
+    "text/yaml": ".yaml",
+}
 
 
 class HTTPBackend(BaseBackend):
@@ -91,6 +113,47 @@ class HTTPBackend(BaseBackend):
         # Default to no extension
         return ""
 
+    def _guess_extension_from_content_type(self, content_type: Optional[str]) -> str:
+        """Guess file extension from an HTTP Content-Type header."""
+        if not content_type:
+            return ""
+
+        media_type = content_type.split(";", 1)[0].strip().lower()
+        if not media_type or media_type == "application/octet-stream":
+            return ""
+
+        extension = (
+            CONTENT_TYPE_EXTENSIONS.get(media_type)
+            or mimetypes.guess_extension(media_type)
+            or ""
+        )
+        if extension == ".jpe":
+            return ".jpg"
+        return extension
+
+    def _path_with_content_type_extension(self, local_path: Path, content_type: Optional[str]) -> Path:
+        if local_path.suffix:
+            return local_path
+
+        extension = self._guess_extension_from_content_type(content_type)
+        if not extension:
+            return local_path
+        return local_path.with_name(f"{local_path.name}{extension}")
+
+    def _get_cached_path(self, local_path: Path) -> Optional[Path]:
+        if not local_path.suffix:
+            suffixed_candidates = sorted(
+                path
+                for path in local_path.parent.glob(f"{local_path.name}.*")
+                if path.is_file()
+            )
+            if suffixed_candidates:
+                return suffixed_candidates[0]
+
+        if local_path.exists():
+            return local_path
+        return None
+
     @classmethod
     def _get_lock(cls, local_path: Path) -> threading.Lock:
         key = str(local_path.resolve(strict=False))
@@ -122,15 +185,23 @@ class HTTPBackend(BaseBackend):
         timeout: float,
         chunk_size: int,
         headers: Optional[Dict[str, str]],
-    ) -> None:
+    ) -> Path:
         request = Request(uri, headers=headers or {})
-        temp_path = local_path.with_name(f".{local_path.name}.{uuid.uuid4().hex}.part")
+        temp_path = None
         try:
-            with urlopen(request, timeout=timeout) as response, temp_path.open("wb") as output_file:
-                shutil.copyfileobj(response, output_file, length=chunk_size)
-            temp_path.replace(local_path)
+            with urlopen(request, timeout=timeout) as response:
+                content_type = response.headers.get("Content-Type")
+                final_path = self._path_with_content_type_extension(local_path, content_type)
+                if final_path.exists():
+                    return final_path
+
+                temp_path = final_path.with_name(f".{final_path.name}.{uuid.uuid4().hex}.part")
+                with temp_path.open("wb") as output_file:
+                    shutil.copyfileobj(response, output_file, length=chunk_size)
+                temp_path.replace(final_path)
+                return final_path
         finally:
-            if temp_path.exists():
+            if temp_path is not None and temp_path.exists():
                 temp_path.unlink()
 
     def download(
@@ -160,32 +231,34 @@ class HTTPBackend(BaseBackend):
         local_path = abs_target_dir / filename
 
         # Check if file already exists (simple caching)
-        if local_path.exists():
-            self.logger.debug(f"File already exists locally: {local_path}")
-            return local_path
+        cached_path = self._get_cached_path(local_path)
+        if cached_path is not None:
+            self.logger.debug(f"File already exists locally: {cached_path}")
+            return cached_path
 
         lock = self._get_lock(local_path)
         with lock:
-            if local_path.exists():
-                self.logger.debug(f"File already exists locally: {local_path}")
-                return local_path
+            cached_path = self._get_cached_path(local_path)
+            if cached_path is not None:
+                self.logger.debug(f"File already exists locally: {cached_path}")
+                return cached_path
 
             self.logger.debug(f"Downloading {uri} to {local_path}")
             last_error: Optional[Exception] = None
             for attempt in range(retries + 1):
                 try:
-                    self._download_once(
+                    downloaded_path = self._download_once(
                         uri=uri,
                         local_path=local_path,
                         timeout=timeout,
                         chunk_size=chunk_size,
                         headers=headers,
                     )
-                    if not local_path.exists():
-                        raise FileNotFoundError(f"Download failed: {local_path} was not created")
+                    if not downloaded_path.exists():
+                        raise FileNotFoundError(f"Download failed: {downloaded_path} was not created")
 
                     self.logger.info(f"Successfully downloaded {uri}")
-                    return local_path
+                    return downloaded_path
                 except Exception as e:
                     last_error = e
                     if local_path.exists():

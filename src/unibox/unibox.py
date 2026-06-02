@@ -34,8 +34,27 @@ def _load_from_local_path(local_path: Union[str, Path], loader_config: Optional[
     resolved_path = _resolve_downloaded_path(local_path)
     loader = get_loader_for_path(resolved_path)
     if loader is None:
+        loader = _detect_image_loader(resolved_path)
+    if loader is None:
         raise ValueError(f"No loader found for path: {resolved_path}")
     return loader.load(resolved_path, loader_config=loader_config or {})
+
+
+def _detect_image_loader(local_path: Path) -> Any:
+    if not local_path.is_file():
+        return None
+
+    try:
+        from PIL import Image, UnidentifiedImageError
+
+        from .loaders.image_loder import ImageLoader
+
+        with Image.open(local_path) as image:
+            image.verify()
+    except (OSError, UnidentifiedImageError, ValueError):
+        return None
+
+    return ImageLoader()
 
 
 def _split_http_download_kwargs(kwargs: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:

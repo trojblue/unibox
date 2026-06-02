@@ -1,10 +1,12 @@
 import threading
 from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
 import pytest
+from PIL import Image
 
 import unibox as ub
 
@@ -54,6 +56,45 @@ def http_file_server(tmp_path: Path):
         server.server_close()
 
 
+@pytest.fixture
+def extensionless_image_server():
+    image_buffer = BytesIO()
+    Image.new("RGB", (2, 1), color=(255, 0, 0)).save(image_buffer, format="PNG")
+    image_payload = image_buffer.getvalue()
+
+    class ImageHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/typed-image":
+                content_type = "image/png"
+            elif self.path == "/generic-image":
+                content_type = "application/octet-stream"
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
+
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(image_payload)))
+            self.end_headers()
+            self.wfile.write(image_payload)
+
+        def log_message(self, format, *args):  # noqa: A003
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), ImageHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    try:
+        host, port = server.server_address
+        yield f"http://{host}:{port}"
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+
 def test_loads_http_file_mode(http_file_server: str):
     local_path = ub.loads(f"{http_file_server}/alpha.txt", file=True, debug_print=False)
 
@@ -65,6 +106,48 @@ def test_loads_http_preserves_loader_kwargs(http_file_server: str):
     data = ub.loads(f"{http_file_server}/spaced.txt", strip=False, skip_empty=True, debug_print=False)
 
     assert data == ["alpha", "  beta  "]
+
+
+def test_loads_http_extensionless_image_uses_content_type(
+    extensionless_image_server: str, tmp_path: Path
+):
+    url = f"{extensionless_image_server}/typed-image"
+
+    image = ub.loads(url, target_dir=str(tmp_path), debug_print=False)
+    local_path = ub.loads(url, file=True, target_dir=str(tmp_path), debug_print=False)
+
+    assert image.size == (2, 1)
+    assert local_path.suffix == ".png"
+
+
+def test_loads_http_extensionless_image_falls_back_to_pil(
+    extensionless_image_server: str, tmp_path: Path
+):
+    image = ub.loads(
+        f"{extensionless_image_server}/generic-image",
+        target_dir=str(tmp_path),
+        debug_print=False,
+    )
+
+    assert image.size == (2, 1)
+
+
+def test_concurrent_loads_http_extensionless_images(
+    extensionless_image_server: str, tmp_path: Path
+):
+    urls = [
+        f"{extensionless_image_server}/typed-image",
+        f"{extensionless_image_server}/generic-image",
+    ]
+
+    images = ub.concurrent_loads(
+        urls,
+        num_workers=2,
+        target_dir=str(tmp_path),
+        debug_print=False,
+    )
+
+    assert [image.size for image in images] == [(2, 1), (2, 1)]
 
 
 def test_concurrent_loads_http_file_mode(http_file_server: str):
