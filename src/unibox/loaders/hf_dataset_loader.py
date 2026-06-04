@@ -1,4 +1,5 @@
 import logging
+from functools import wraps
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -104,6 +105,83 @@ class HFDatasetLoader(BaseLoader):
         setattr(xet_get, "_unibox_uses_xet_session", True)
         hf_file_download.xet_get = xet_get
 
+    @staticmethod
+    def _complete_progress_bar(bar: Any) -> None:
+        if bar is None:
+            return
+
+        total = getattr(bar, "total", None)
+        current = getattr(bar, "n", None)
+        if total is None or current is None:
+            return
+
+        remaining = total - current
+        if remaining > 0:
+            bar.update(remaining)
+
+    @staticmethod
+    def _finalize_hf_xet_upload_progress(progress_callback: Any) -> None:
+        reporter = getattr(progress_callback, "__self__", None)
+        if reporter is None:
+            return
+
+        data_processing_bar = getattr(reporter, "data_processing_bar", None)
+        upload_bar = getattr(reporter, "upload_bar", None)
+
+        HFDatasetLoader._complete_progress_bar(data_processing_bar)
+        HFDatasetLoader._complete_progress_bar(upload_bar)
+
+        if getattr(reporter, "per_file_progress", False):
+            for bar in getattr(reporter, "current_bars", []) or []:
+                HFDatasetLoader._complete_progress_bar(bar)
+                if hasattr(bar, "refresh"):
+                    bar.refresh()
+
+        known_items = getattr(reporter, "known_items", None)
+        completed_items = getattr(reporter, "completed_items", None)
+        if isinstance(known_items, set) and isinstance(completed_items, set):
+            completed_items.update(known_items)
+
+        if data_processing_bar is not None and known_items is not None and completed_items is not None:
+            total_files = getattr(reporter, "total_files", None)
+            if total_files is None:
+                total_files = len(known_items)
+
+            desc = f"Processing Files ({len(completed_items)} / {total_files})"
+            format_desc = getattr(reporter, "format_desc", None)
+            if callable(format_desc):
+                desc = format_desc(desc, False)
+            if hasattr(data_processing_bar, "set_description"):
+                data_processing_bar.set_description(desc, refresh=False)
+            if hasattr(data_processing_bar, "refresh"):
+                data_processing_bar.refresh()
+
+        notify_upload_complete = getattr(reporter, "notify_upload_complete", None)
+        if callable(notify_upload_complete):
+            notify_upload_complete()
+
+    def _install_hf_xet_upload_progress_finalizer(self) -> None:
+        """Complete HF Xet upload bars when hf_xet returns without a final callback."""
+        try:
+            import hf_xet
+        except ImportError:
+            return
+
+        for upload_name in ("upload_files", "upload_bytes"):
+            upload_func = getattr(hf_xet, upload_name, None)
+            if upload_func is None or getattr(upload_func, "_unibox_finalizes_xet_progress", False):
+                continue
+
+            @wraps(upload_func)
+            def wrapped_upload(*args, _upload_func=upload_func, **kwargs):
+                result = _upload_func(*args, **kwargs)
+                progress_callback = args[4] if len(args) > 4 else kwargs.get("progress_updater")
+                HFDatasetLoader._finalize_hf_xet_upload_progress(progress_callback)
+                return result
+
+            setattr(wrapped_upload, "_unibox_finalizes_xet_progress", True)
+            setattr(hf_xet, upload_name, wrapped_upload)
+
     def load(self, local_path: str, loader_config: Optional[Dict] = None) -> Any:
         """Load a dataset from a local path or cache.
 
@@ -206,6 +284,7 @@ class HFDatasetLoader(BaseLoader):
             raise ValueError("Data must be a pandas DataFrame, datasets.Dataset, or datasets.DatasetDict")
 
         # Save to Hugging Face Hub
+        self._install_hf_xet_upload_progress_finalizer()
         try:
             if isinstance(data, DatasetDict):
                 for split_name, split_ds in data.items():

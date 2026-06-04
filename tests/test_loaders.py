@@ -1,12 +1,52 @@
 import inspect
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 
 import unibox as ub
 from unibox.loaders.cdc_parquet_loader import CdcParquetLoader
+from unibox.loaders.hf_dataset_loader import HFDatasetLoader
 from unibox.loaders.loader_router import get_loader_for_path
+
+
+class FakeProgressBar:
+    def __init__(self, n: int, total: int):
+        self.n = n
+        self.total = total
+        self.description = None
+        self.refreshed = False
+
+    def update(self, value: int) -> None:
+        self.n += value
+
+    def set_description(self, value: str, refresh: bool = True) -> None:
+        self.description = value
+
+    def refresh(self) -> None:
+        self.refreshed = True
+
+
+class FakeXetProgressReporter:
+    def __init__(self):
+        self.data_processing_bar = FakeProgressBar(n=158, total=162)
+        self.upload_bar = FakeProgressBar(n=133, total=133)
+        self.per_file_progress = True
+        self.current_bars = [FakeProgressBar(n=158, total=162)]
+        self.known_items = {"data/train-00000-of-00001.parquet"}
+        self.completed_items = set()
+        self.total_files = None
+        self.notified_complete = False
+
+    def format_desc(self, name: str, indent: bool) -> str:
+        return name
+
+    def notify_upload_complete(self) -> None:
+        self.notified_complete = True
+
+    def update_progress(self, total_update: SimpleNamespace, item_updates: list[SimpleNamespace]) -> None:
+        raise AssertionError("The test only needs this as a bound callback")
 
 
 @pytest.mark.parametrize(
@@ -99,3 +139,16 @@ def test_cdc_parquet_roundtrip(tmp_path: Path) -> None:
     alias_reloaded = ub.loads(alias_path)
 
     assert df.equals(alias_reloaded)
+
+
+def test_hf_xet_upload_progress_finalizer_completes_successful_upload_bars() -> None:
+    reporter = FakeXetProgressReporter()
+
+    HFDatasetLoader._finalize_hf_xet_upload_progress(reporter.update_progress)
+
+    assert reporter.data_processing_bar.n == reporter.data_processing_bar.total
+    assert reporter.upload_bar.n == reporter.upload_bar.total
+    assert reporter.current_bars[0].n == reporter.current_bars[0].total
+    assert reporter.completed_items == reporter.known_items
+    assert reporter.data_processing_bar.description == "Processing Files (1 / 1)"
+    assert reporter.notified_complete
